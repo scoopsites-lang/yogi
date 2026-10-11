@@ -275,6 +275,7 @@ function weekInst(off){
 const EMPTY={regs:[],late:[],waived:[],done:false,cancelled:false};
 const getS=k=>S.sessions[k]||EMPTY;
 const ensure=inst=>S.sessions[inst.k]||(S.sessions[inst.k]={t:inst.t,name:inst.c.name,cap:inst.c.cap,regs:[],late:[],waived:[],done:false,cancelled:false,place:inst.c.place});
+const appUrl=()=>{try{return /^https?:/.test(location.protocol)&&!/claude|usercontent/.test(location.host)?location.origin+location.pathname.replace(/index\.html$/,''):'https://yogis.co.il/'}catch(e){return'https://yogis.co.il/'}};
 const findP=id=>S.people.find(x=>x.id===id);
 const isFull=(n,c)=>c.cap>0&&n>=c.cap;
 const capTxt=c=>c.cap>0?c.cap:'∞';
@@ -707,7 +708,7 @@ function waSheet(){
   else if(s==='done')body='ניצלת את כל '+c.total+' השיעורים בכרטיסייה. נשמח לחדש לך!';
   else if(s==='expired')body='תוקף הכרטיסייה הסתיים ב־'+fmt(c.expires)+'. נשמח לחדש לך!';
   else body='נותרו לך '+left(c)+' שיעורים מתוך '+c.total+', בתוקף עד '+fmt(effExpires(c))+'.';
-  const text='היי '+first(p)+' 🌿\n'+body+'\nהכרטיסייה והלו״ז שלך:\nhttps://yogi.co.il/c/'+p.id+'\n\n'+S.studio.name;
+  const text='היי '+first(p)+' 🌿\n'+body+'\nהכרטיסייה והלו״ז שלך:\n'+appUrl()+'\n\n'+S.studio.name;
   const phone='972'+p.phone.replace(/\D/g,'').replace(/^0/,'');
   sheet('<h3>שליחה ב־WhatsApp</h3><p class="lead">ההודעה מוכנה ל'+esc(p.name)+'.</p>'+waText('https://wa.me/'+phone+'?text='+encodeURIComponent(text),text,'בגרסת ההדגמה הקישור עדיין לא פעיל.'));
   bindCopy(text);
@@ -716,7 +717,7 @@ function weekSheet(){
   const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
   let lines='',last=-1;
   list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳) · '+i.c.place+'\n';last=d});
-  const text='שבוע טוב 🌿\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה בלחיצה:\nhttps://yogi.co.il/s/hila\n\nביטול חופשי עד '+CUTOFF+' שעות לפני השיעור.\n'+S.studio.name;
+  const text='שבוע טוב 🌿\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה בלחיצה:\n'+appUrl()+'\n\nביטול חופשי עד '+CUTOFF+' שעות לפני השיעור.\n'+S.studio.name;
   sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. כל מתרגלת נכנסת עם הקישור האישי שלה ונרשמת.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text,'בגרסה המלאה אפשר לתזמן שליחה אוטומטית בכל יום ראשון בבוקר.'));
   bindCopy(text);
   bg.querySelector('a.btn').addEventListener('click',()=>{S.studio.sent=now();save()});
