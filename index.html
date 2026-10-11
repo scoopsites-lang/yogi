@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>YoGi</title>
+<meta name="theme-color" content="#F7F3EC">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="YoGi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bellefair&family=Assistant:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: one phone-width app column. Admin: sticky header + 5-tab bar. Practitioner: my card on top, weekly schedule below. Palette from the YoGi brand card: cream, slate ink, terracotta line-art, sage leaves, golden eyebrow. */
+:root{
+  --bg:#F7F3EC; --surface:#FFFDF9; --surface-2:#F1ECE3; --ink:#34424A; --muted:#76808A; --line:#E4DCD0;
+  --sage:#9DB096; --sage-deep:#5D7A5A; --sage-soft:#E1E9DC; --on-sage:#FFFFFF;
+  --clay:#A33B2C; --clay-soft:#F4DFD9; --gold:#C2861C; --lav:#B2A8CB; --lav-soft:#E8E3F1; --sand:#EADBC3;
+  --warn:#A9701F; --warn-soft:#F6E7CF; --bad:#A33B2C; --bad-soft:#F4DFD9;
+  --shadow:0 1px 2px rgba(52,66,74,.06),0 8px 24px rgba(52,66,74,.08);
+  --f-display:"Bellefair","Frank Ruhl Libre",Georgia,serif;
+  --f-body:"Assistant","Heebo",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1C1B19; --surface:#262421; --surface-2:#2E2B27; --ink:#ECE5DA; --muted:#A39A8F; --line:#3A3631;
+  --sage:#9DB597; --sage-deep:#A9C3A2; --sage-soft:#2C3829; --on-sage:#1C1B19;
+  --clay:#E08672; --clay-soft:#3E2722; --gold:#E2AE55; --lav:#B4AAD0; --lav-soft:#322D40; --sand:#55473A;
+  --warn:#E2AE55; --warn-soft:#3B3020; --bad:#E08672; --bad-soft:#3E2722;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1B19; --surface:#262421; --surface-2:#2E2B27; --ink:#ECE5DA; --muted:#A39A8F; --line:#3A3631;
+  --sage:#9DB597; --sage-deep:#A9C3A2; --sage-soft:#2C3829; --on-sage:#1C1B19;
+  --clay:#E08672; --clay-soft:#3E2722; --gold:#E2AE55; --lav:#B4AAD0; --lav-soft:#322D40; --sand:#55473A;
+  --warn:#E2AE55; --warn-soft:#3B3020; --bad:#E08672; --bad-soft:#3E2722;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sage-deep);outline-offset:2px;border-radius:8px}
+.app{max-width:460px;margin:0 auto;min-height:100%;padding:0 16px 104px;position:relative}
+.app.pmode{padding-bottom:40px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.brand b{font-family:var(--f-display);font-size:1.75rem;font-weight:400;line-height:1;color:var(--clay);letter-spacing:.01em}
+.brand small{display:block;color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo{flex:none;color:var(--clay)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:12px;min-height:40px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600}
+h1{font-family:var(--f-display);font-weight:400;font-size:2rem;line-height:1.15;margin:6px 0 4px;text-wrap:balance}
+h2{font-size:1rem;font-weight:700;margin:24px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+h2 span{font-weight:500;color:var(--muted);font-size:.85rem}
+.lead{color:var(--muted);margin:0}
+.eyebrow{display:flex;align-items:center;gap:12px;color:var(--gold);font-weight:800;margin:28px 0 4px;letter-spacing:.02em}
+.eyebrow::before,.eyebrow::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,var(--sage) 60%,transparent)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.stat{background:var(--surface);border-radius:16px;padding:12px 14px;border:1px solid var(--line)}
+.stat b{display:block;font-family:var(--f-display);font-size:2rem;font-weight:400;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.85rem}
+.stat.sage{background:var(--sage-soft);border-color:transparent}
+.stat.lav{background:var(--lav-soft);border-color:transparent}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;text-align:start;width:100%}
+.rowmain{display:flex;align-items:center;gap:12px;flex:1;min-width:0;background:none;border:0;padding:0;text-align:start}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;flex:none;background:var(--sand);color:var(--ink);font-size:.95rem}
+.who{flex:1;min-width:0}
+.who b{display:block;font-weight:600}
+.who small{color:var(--muted);font-size:.82rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.count{font-variant-numeric:tabular-nums;font-weight:700;text-align:center;line-height:1.1;min-width:44px}
+.count small{display:block;font-weight:500;color:var(--muted);font-size:.72rem}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.p-active{background:var(--sage-soft);color:var(--sage-deep)}
+.p-soon{background:var(--warn-soft);color:var(--warn)}
+.p-frozen{background:var(--lav-soft);color:var(--ink)}
+.p-done,.p-expired{background:var(--bad-soft);color:var(--bad)}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;text-decoration:none;text-align:center}
+.btn-primary{background:var(--sage-deep);color:var(--on-sage)}
+.btn-soft{background:var(--surface-2);border:1px solid var(--line)}
+.btn-clay{background:var(--clay-soft);color:var(--clay)}
+.btn-lav{background:var(--lav-soft);color:var(--ink)}
+.btn-sm{min-height:36px;padding:6px 12px;font-size:.88rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.full{width:100%}
+.punch{background:var(--sage-deep);color:var(--on-sage);border:0;border-radius:12px;padding:8px 14px;font-weight:700;min-height:40px}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin-top:12px}
+.search input{border:0;background:transparent;flex:1;min-width:0;padding:12px 0;outline:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.88rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--surface);border-radius:22px;padding:20px;box-shadow:var(--shadow);margin-top:14px;position:relative;overflow:hidden}
+.card.frozen{background:linear-gradient(160deg,var(--lav-soft),var(--surface) 70%)}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card-head b{font-weight:700}
+.card-head small{display:block;color:var(--muted);font-size:.85rem}
+.big{display:flex;align-items:baseline;gap:8px;margin:12px 0 2px}
+.big b{font-family:var(--f-display);font-size:3.6rem;font-weight:400;line-height:1;font-variant-numeric:tabular-nums;color:var(--clay)}
+.big span{color:var(--muted)}
+.dots{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0 6px;max-width:290px}
+.dot{aspect-ratio:1;border-radius:50%;border:2px dashed var(--sage);display:grid;place-items:center;max-width:100%}
+.dot.used{background:var(--sage);border:2px solid var(--sage);color:var(--on-sage)}
+.dot.res{background:var(--lav-soft);border:2px solid var(--lav)}
+.dot svg{width:55%;height:55%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:5px;vertical-align:-1px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.meta div{background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.meta small{display:block;color:var(--muted);font-size:.78rem}
+.meta b{font-variant-numeric:tabular-nums}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.actions .wide{grid-column:1/-1}
+.hist{display:flex;flex-direction:column}
+.hist div{display:flex;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:.92rem}
+.hist div:last-child{border-bottom:0}
+.hist span{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--muted);font-size:.9rem;margin-top:14px}
+.empty{text-align:center;color:var(--muted);padding:24px 10px}
+/* schedule */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:12px;padding:3px;border:1px solid var(--line);margin-top:12px}
+.seg button{border:0;background:none;border-radius:10px;padding:8px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.dayh{display:flex;justify-content:space-between;align-items:baseline;margin:18px 2px 8px;font-weight:700}
+.dayh span{color:var(--muted);font-weight:500;font-size:.85rem;font-variant-numeric:tabular-nums}
+.dayh em{font-style:normal;color:var(--gold);font-size:.8rem;margin-inline-start:6px}
+.cls{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;width:100%;text-align:start;transition:background .15s,border-color .15s}
+.cls .tm{min-width:52px;text-align:center;font-variant-numeric:tabular-nums;font-weight:800;font-size:1.05rem;line-height:1.15;padding-inline-end:12px;border-inline-end:1px solid var(--line)}
+.cls .tm small{display:block;font-weight:500;color:var(--muted);font-size:.72rem}
+.cls .info{flex:1;min-width:0}
+.cls .info b{display:block;font-weight:700}
+.cls .info small{color:var(--muted);font-size:.82rem;display:block}
+.cap{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden;max-width:160px}
+.cap i{display:block;height:100%;background:var(--sage)}
+.st{flex:none;font-size:.82rem;font-weight:700;border-radius:999px;padding:6px 12px;border:1.5px dashed var(--sage-deep);color:var(--sage-deep);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.cls.in{background:var(--sage-soft);border-color:var(--sage)}
+.cls.in .st{background:var(--sage-deep);border:1.5px solid var(--sage-deep);color:var(--on-sage)}
+.cls.pending{background:var(--warn-soft);border-color:var(--warn)}
+.cls.pending .st{border:1.5px solid var(--warn);color:var(--warn)}
+.cls.full .st,.cls.past .st,.cls.off .st{border:1.5px solid var(--line);color:var(--muted)}
+.cls.past,.cls.off{opacity:.6}
+.cls.off .info b{text-decoration:line-through}
+.req{background:var(--warn-soft);border:1px solid var(--warn);border-radius:16px;padding:12px}
+.req q{display:block;margin:6px 0 10px;font-size:.92rem}
+.req .btns{display:flex;gap:8px;flex-wrap:wrap}
+.req .btns .btn{flex:1}
+.nextcls{background:var(--surface);border-radius:20px;padding:16px;border:1px solid var(--line);margin-top:10px}
+.names{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.names span{background:var(--surface-2);border-radius:999px;padding:3px 10px;font-size:.85rem}
+.names span.pend{background:var(--warn-soft)}
+/* chrome */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav div{max-width:460px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.nav button{background:none;border:0;padding:10px 2px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.76rem;color:var(--muted)}
+.nav button[aria-current="page"]{color:var(--clay);font-weight:700}
+.fab{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9;inset-inline-start:max(16px,calc(50% - 214px));box-shadow:var(--shadow)}
+.demo{display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);border-radius:0 0 14px 14px;padding:8px 12px;font-size:.82rem;margin:0 -4px}
+.demo select{background:transparent;border:1px solid currentColor;border-radius:8px;padding:2px 6px;color:inherit;min-width:0;flex:1}
+.demo select option{color:#222}
+.demo button{background:var(--bg);color:var(--ink);border:0;border-radius:8px;padding:4px 10px;font-weight:700;font-size:.8rem;white-space:nowrap}
+.sheet-bg{position:fixed;inset:0;background:rgba(30,28,25,.4);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:460px;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));max-height:90%;overflow:auto;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.cls{transition:none}}
+.sheet h3{font-family:var(--f-display);font-weight:400;font-size:1.6rem;margin:0 0 6px}
+.field{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.field label{font-size:.88rem;font-weight:600}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px 12px;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.opt{border:1.5px solid var(--line);background:var(--surface-2);border-radius:14px;padding:12px;text-align:start}
+.opt[aria-pressed="true"]{border-color:var(--sage-deep);background:var(--sage-soft)}
+.opt b{display:block}
+.opt small{color:var(--muted);font-size:.8rem}
+.opt.locked{opacity:.55;cursor:not-allowed}
+.soon-tag{display:inline-block;background:var(--lav-soft);border-radius:999px;font-size:.7rem;padding:1px 8px;margin-inline-start:4px;font-weight:600}
+.msg{background:var(--sage-soft);border-radius:14px 14px 4px 14px;padding:12px 14px;white-space:pre-line;font-size:.95rem;margin-top:10px}
+.sheet-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.sheet-actions .btn{flex:1 1 140px}
+.stack{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:14px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.toast button{background:none;border:0;color:var(--sand);font-weight:700;text-decoration:underline}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:8px}
+.switch b{display:block}
+.switch small{color:var(--muted);font-size:.85rem}
+.tog{appearance:none;width:48px;height:28px;border-radius:999px;background:var(--line);position:relative;flex:none;cursor:pointer;transition:background .2s}
+.tog::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);transition:inset-inline-start .2s}
+.tog:checked{background:var(--sage-deep)}
+.tog:checked::after{inset-inline-start:23px}
+.platform{background:var(--surface);border-radius:20px;padding:16px;border:1px solid var(--line);margin-top:12px}
+.platform header{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.platform header .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center}
+.platform header small{display:block;color:var(--muted);font-size:.8rem}
+.steps{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:8px;counter-reset:s}
+.steps li{display:flex;gap:12px;align-items:flex-start;counter-increment:s}
+.steps li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:none}
+.steps b{display:block}
+.steps small{color:var(--muted)}
+.back{background:none;border:0;color:var(--muted);display:inline-flex;align-items:center;gap:4px;padding:6px 0}
+.linkbtn{background:none;border:0;color:var(--sage-deep);font-weight:700;text-decoration:underline;padding:6px 0}
+.tmpl{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.tmpl:last-child{border-bottom:0}
+.tmpl .d{width:34px;height:34px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;font-weight:700;flex:none}
+.x{background:none;border:1px solid var(--line);border-radius:10px;width:34px;height:34px;color:var(--muted);flex:none}
+.foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:28px}
+</style>
+</head>
+<body>
+
+<div class="app" dir="rtl" lang="he" id="app"></div>
+<nav class="nav" dir="rtl" id="nav"><div>
+  <button data-go="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>היום</button>
+  <button data-go="sched"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/></svg>לו״ז</button>
+  <button data-go="people"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg>מתרגלים</button>
+  <button data-go="install"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7m-3-3 3 3 3-3M10 18.5h4"/></svg>התקנה</button>
+  <button data-go="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>הגדרות</button>
+</div></nav>
+
+<script>
+(function(){
+const DAY=864e5,H=36e5,KEY='yogi-demo-v1',CUTOFF=12;
+const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+const I={
+ check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ ck:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+ plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+ back:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
+ snow:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 4l3 2 3-2M9 20l3-2 3 2"/></svg>',
+ msg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-3.8A8 8 0 1 1 8 19z"/></svg>',
+ eye:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ renew:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
+ apple:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 7c-1-2.5 1-4.5 3-4.5M16.5 8c-2 0-3 1-4.5 1S9.5 8 7.5 8C5 8 3.5 10.5 3.5 13c0 4 3 8.5 5 8.5 1.3 0 2-.8 3.5-.8s2.2.8 3.5.8c2 0 5-4.5 5-8.5 0-2.5-1.5-5-4-5z"/></svg>',
+ android:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="9" width="14" height="11" rx="2"/><path d="M5 13a7 7 0 0 1 14 0M8 5l1.5 2.5M16 5l-1.5 2.5"/></svg>'
+};
+/* YoGi mark: seated figure, heart-shaped torso with an inner heart, crossed legs */
+const logo=s=>'<svg class="logo" width="'+s+'" height="'+s+'" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="50" cy="15" rx="9" ry="8"/><path d="M50 40C45 31 30 28 26 39c-4 12 9 23 24 37 15-14 28-25 24-37-4-11-19-8-24 1z"/><path d="M45 52c-3-5 1-10 5-7 4-3 8 2 5 7-1 2-3 4-5 6"/><path d="M62 82C48 72 22 68 18 79c-3 9 20 11 44 1"/><path d="M38 82c14-10 40-14 44-3 3 9-20 11-44 1"/></svg>';
+
+const now=()=>Date.now();
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+const addMonths=(ts,m)=>{const d=new Date(ts);d.setMonth(d.getMonth()+m);return d.getTime()};
+const p2=n=>String(n).padStart(2,'0');
+const fmt=ts=>{const d=new Date(ts);return p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'+d.getFullYear()};
+const dm=ts=>{const d=new Date(ts);return d.getDate()+'.'+(d.getMonth()+1)};
+const hm=ts=>{const d=new Date(ts);return p2(d.getHours())+':'+p2(d.getMinutes())};
+const dayTime=ts=>'יום '+DL[new Date(ts).getDay()]+' '+hm(ts);
+const inTxt=ms=>{const h=Math.floor(ms/H),m=Math.round((ms%H)/6e4);return h?(h+' שעות'+(m?' ו־'+m+' דק׳':'')):m+' דק׳'};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const initials=n=>n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('');
+const first=p=>p.name.split(' ')[0];
+const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
+
+function weekInst(off){
+  const base=new Date(wkStart(now()));base.setDate(base.getDate()+7*off);
+  return S.classes.map(c=>{const d=new Date(base);d.setDate(d.getDate()+c.day);const tm=c.time.split(':').map(Number);d.setHours(tm[0],tm[1],0,0);const t=d.getTime();
+    return{c,t,k:c.id+'_'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}}).sort((a,b)=>a.t-b.t);
+}
+const EMPTY={regs:[],late:[],waived:[],done:false,cancelled:false};
+const getS=k=>S.sessions[k]||EMPTY;
+const ensure=inst=>S.sessions[inst.k]||(S.sessions[inst.k]={t:inst.t,name:inst.c.name,cap:inst.c.cap,regs:[],late:[],waived:[],done:false,cancelled:false});
+const findP=id=>S.people.find(x=>x.id===id);
+
+function seed(){
+  const t=today(), mk=(daysAgo,total,usedDays,extra)=>{const start=t-daysAgo*DAY;return Object.assign({id:uid(),type:'punch',total,start,expires:addMonths(start,3),used:usedDays.map(d=>({t:t-d*DAY,why:'שיעור'})),freezes:[],frozen:null},extra||{})};
+  const P=(name,phone,card)=>({id:uid(),name,phone,cards:[card]});
+  const people=[
+    P('נועה ברק','050-7341122',mk(40,10,[38,33,26,19,12,5])),
+    P('מיכל שגיא','052-6609814',mk(82,10,[80,72,64,55,40,22,9])),
+    P('יעל אורן','054-3187720',mk(30,10,[28,21,14],{frozen:{since:t-12*DAY,reason:'היריון'}})),
+    P('תמר לוין','053-9045561',mk(5,10,[3])),
+    P('דנה ריבק','058-2214907',mk(50,5,[47,36,25,15,4])),
+    P('רוני אדלר','050-8872135',mk(100,10,[98,90,83,70,61,45,30,18])),
+    P('שירה גולן','052-4417390',mk(20,10,[18,11,4])),
+    P('אורית כהן','054-6620183',mk(12,10,[10,6])),
+    P('ליאת מור','050-3398710',mk(33,20,[31,29,24,22,17,15,10,8,3])),
+    P('עדי שמש','053-7712045',mk(8,10,[7])),
+    P('מאיה רון','058-9930412',mk(60,10,[58,50,44,37,30,21,14,7]))
+  ];
+  const classes=[
+    {id:'c1',day:0,time:'08:00',name:'יוגה בוקר',dur:60,cap:12},
+    {id:'c2',day:0,time:'19:00',name:'יוגה ערב',dur:75,cap:12},
+    {id:'c3',day:1,time:'08:00',name:'יוגה בוקר',dur:60,cap:12},
+    {id:'c4',day:2,time:'19:30',name:'יוגה רכה',dur:60,cap:10},
+    {id:'c5',day:3,time:'08:00',name:'יוגה בוקר',dur:60,cap:12},
+    {id:'c6',day:4,time:'19:00',name:'יוגה ערב',dur:75,cap:12},
+    {id:'c7',day:5,time:'09:00',name:'יוגה של שישי',dur:90,cap:14}
+  ];
+  return {studio:{name:'הילה רותם · יוגה',teacher:'הילה',monthly:false,defaultTotal:10,sent:null},people,classes,sessions:{},seeded:false};
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.people)S=seed();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+/* card logic */
+const cur=p=>p.cards[p.cards.length-1];
+const effExpires=c=>c.frozen?c.expires+(today()-c.frozen.since):c.expires;
+const left=c=>c.type==='monthly'?Infinity:c.total-c.used.length;
+function status(c){
+  if(c.frozen)return'frozen';
+  if(today()>c.expires)return'expired';
+  if(c.type==='punch'&&left(c)<=0)return'done';
+  if(c.expires-today()<=14*DAY)return'soon';
+  return'active';
+}
+const LABEL={active:'פעילה',soon:'פגה בקרוב',frozen:'מוקפאת',done:'נוצלה',expired:'פג תוקף'};
+const pill=s=>'<span class="pill p-'+s+'">'+LABEL[s]+'</span>';
+const daysTo=c=>Math.max(0,Math.ceil((effExpires(c)-today())/DAY));
+function myRegs(p){const out=[];for(const k in S.sessions){const s=S.sessions[k];if(s.done||s.cancelled)continue;const r=s.regs.find(r=>r.pid===p.id);if(r)out.push({k,s,r})}return out.sort((a,b)=>a.s.t-b.s.t)}
+const reserved=p=>myRegs(p).length;
+const avail=p=>{const c=cur(p);return c.type==='monthly'?Infinity:left(c)-reserved(p)};
+
+/* seed registrations once, then auto-punch every class that has started */
+function seedRegs(){
+  if(S.seeded)return;S.seeded=true;
+  const noa=S.people[0],michal=S.people[1];
+  const w0=weekInst(0),w1=weekInst(1);
+  const reg=(inst,p,extra)=>{const s=ensure(inst);if(s.regs.length<s.cap&&!s.regs.some(r=>r.pid===p.id))s.regs.push(Object.assign({pid:p.id,at:now(),status:'in'},extra||{}))};
+  const eve=w0.find(i=>i.c.id==='c2'),soft=w0.find(i=>i.c.id==='c4');
+  if(eve&&eve.t>now()){reg(eve,noa);reg(eve,michal,{status:'pending',reason:'הבת שלי חולה היום ואין לי עם מי להשאיר אותה.',reqAt:now()})}
+  if(soft)reg(soft,noa);
+  const pool=S.people.slice(3);
+  [...w0,...w1].forEach((inst,ix)=>{pool.forEach((p,j)=>{const st=status(cur(p));if((st==='active'||st==='soon')&&avail(p)>0&&((j*7+ix*3)%5<2))reg(inst,p)})});
+}
+function autoPunch(){
+  let ch=false;
+  for(const k in S.sessions){const s=S.sessions[k];
+    if(s.done||s.cancelled||s.t>now())continue;
+    s.regs.forEach(r=>{const p=findP(r.pid);if(!p)return;cur(p).used.push({t:s.t,why:s.name+' · '+dayTime(s.t),sk:k});r.punched=true});
+    s.done=true;ch=true}
+  if(ch)save();
+}
+
+/* state */
+let mode='admin',view='home',sel=null,pvId=null,q='',filter='all',wkOff=0,pwkOff=0,INST={};
+const app=document.getElementById('app');
+function go(v,id){view=v;if(id)sel=id;render();window.scrollTo(0,0)}
+function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
+function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGi</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn" data-act="topv">'+I.eye+'צד מתרגלת</button></div>'}
+function pendingReqs(){const out=[];for(const k in S.sessions){const s=S.sessions[k];if(s.cancelled)continue;s.regs.forEach(r=>{if(r.status==='pending')out.push({k,s,r,p:findP(r.pid)})})}return out.sort((a,b)=>a.s.t-b.s.t)}
+
+function row(p,withPunch){
+  const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
+  const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
+  return '<div class="row"><button class="rowmain" data-open="'+p.id+'"><span class="av">'+esc(initials(p.name))+'</span><span class="who"><b>'+esc(p.name)+'</b><small>'+sub+'</small></span>'+
+   (c.type==='monthly'?'<span class="count">∞<small>חודשי</small></span>':'<span class="count">'+left(c)+'/'+c.total+'<small>נותרו</small></span>')+'</button>'+
+   (withPunch?(canPunch?'<button class="punch" data-punch="'+p.id+'">'+(c.type==='monthly'?'כניסה':'ניקוב')+'</button>':pill(s)):'')+'</div>';
+}
+function reqCard(x){
+  return '<div class="req"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(x.p.name)+'</b><span class="lead" style="font-size:.85rem">'+esc(x.s.name)+' · '+dayTime(x.s.t)+'</span></div>'+
+   '<q>'+esc(x.r.reason||'ללא הסבר')+'</q><div class="btns"><button class="btn btn-primary btn-sm" data-approve="'+x.k+'|'+x.r.pid+'">ביטול ללא ניקוב</button><button class="btn btn-soft btn-sm" data-decline="'+x.k+'|'+x.r.pid+'">השארת הניקוב</button></div></div>';
+}
+
+function vHome(){
+  const all=S.people.map(p=>[p,cur(p),status(cur(p))]);
+  const act=all.filter(x=>x[2]==='active'||x[2]==='soon').length;
+  const month=new Date(today());month.setDate(1);
+  const punches=all.reduce((n,x)=>n+x[1].used.filter(u=>u.t>=month.getTime()).length,0);
+  const regsWeek=weekInst(0).filter(i=>i.t>now()).reduce((n,i)=>n+getS(i.k).regs.length,0);
+  const frozen=all.filter(x=>x[2]==='frozen').length;
+  const attn=all.filter(x=>['soon','done','expired'].includes(x[2]));
+  const ready=all.filter(x=>x[2]==='active'||x[2]==='soon').map(x=>x[0]);
+  const reqs=pendingReqs();
+  const nxt=[...weekInst(0),...weekInst(1)].find(i=>i.t>now()&&!getS(i.k).cancelled);
+  let next='';
+  if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים מתוך '+nxt.c.cap+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc(findP(r.pid).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
+  return header()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+
+   '<div class="stats"><div class="stat sage"><b>'+act+'</b><span>כרטיסיות פעילות</span></div><div class="stat"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></div><div class="stat"><b>'+punches+'</b><span>ניקובים החודש</span></div><div class="stat lav"><b>'+frozen+'</b><span>מוקפאות כרגע</span></div></div>'+
+   (reqs.length?'<h2>בקשות ביטול <span>'+reqs.length+' ממתינות</span></h2><div class="list">'+reqs.map(reqCard).join('')+'</div>':'')+
+   next+
+   (attn.length?'<h2>דורשות תשומת לב <span>'+attn.length+'</span></h2><div class="list">'+attn.map(x=>row(x[0],true)).join('')+'</div>':'')+
+   '<h2>ניקוב ידני <span>למי שהגיעה בלי הרשמה</span></h2><div class="list">'+ready.map(p=>row(p,true)).join('')+'</div>';
+}
+
+function weekLabel(off){const ws=new Date(wkStart(now()));ws.setDate(ws.getDate()+7*off);const we=new Date(ws);we.setDate(we.getDate()+6);return dm(ws.getTime())+'–'+dm(we.getTime())}
+function groupDays(list,rowFn){
+  let html='',lastDay=-1;const td=today();
+  list.forEach(inst=>{const d=new Date(inst.t);d.setHours(0,0,0,0);const dt=d.getTime();
+    if(dt!==lastDay){lastDay=dt;const tag=dt===td?'<em>היום</em>':dt===td+DAY?'<em>מחר</em>':'';html+='<div class="dayh"><div>יום '+DAYS[d.getDay()]+tag+'</div><span>'+dm(dt)+'</span></div>'}
+    html+=rowFn(inst)});
+  return html;
+}
+function adminCls(inst){
+  INST[inst.k]=inst;const s=getS(inst.k),n=s.regs.length,past=inst.t<=now(),pend=s.regs.filter(r=>r.status==='pending').length;
+  const cls=s.cancelled?'off':past?'past':pend?'pending':'';
+  const st=s.cancelled?'בוטל':past?(s.done?'נוקב':'עבר'):pend?pend+' בקשות':n>=inst.c.cap?'מלא':(inst.c.cap-n)+' פנויים';
+  return '<button class="cls '+cls+'" data-ses="'+inst.k+'"><span class="tm">'+inst.c.time+'<small>'+inst.c.dur+' דק׳</small></span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+n+' / '+inst.c.cap+' רשומים</small><span class="cap"><i style="width:'+Math.min(100,n/inst.c.cap*100)+'%"></i></span></span><span class="st">'+st+'</span></button>';
+}
+function vSched(){
+  const list=weekInst(wkOff);
+  return header()+'<h1>לו״ז שיעורים</h1><p class="lead">המתרגלות נרשמות מהטלפון. ביטול חופשי עד '+CUTOFF+' שעות לפני השיעור.</p>'+
+   '<div class="seg"><button data-wk="0" aria-pressed="'+(wkOff===0)+'">השבוע · '+weekLabel(0)+'</button><button data-wk="1" aria-pressed="'+(wkOff===1)+'">שבוע הבא · '+weekLabel(1)+'</button></div>'+
+   '<button class="btn btn-primary full" style="margin-top:12px" data-act="sendwk">'+I.msg+'שליחת הלו״ז ב־WhatsApp</button>'+
+   (S.studio.sent?'<p class="lead" style="font-size:.82rem;margin-top:6px;text-align:center">נשלח לאחרונה ב־'+fmt(S.studio.sent)+'</p>':'')+
+   '<div class="list" style="gap:8px">'+(list.length?groupDays(list,adminCls):'<div class="empty">אין שיעורים קבועים. הוסיפי שיעור למטה.</div>')+'</div>'+
+   '<h2>שיעורים קבועים <span>חוזרים כל שבוע</span></h2><div class="card" style="padding:6px 14px;box-shadow:none;border:1px solid var(--line)">'+
+   S.classes.slice().sort((a,b)=>a.day-b.day||a.time.localeCompare(b.time)).map(c=>'<div class="tmpl"><span class="d">'+DL[c.day]+'</span><span class="who"><b>'+esc(c.name)+' · '+c.time+'</b><small>'+c.dur+' דקות · עד '+c.cap+' משתתפות</small></span><button class="x" data-deltmpl="'+c.id+'" aria-label="הסרת השיעור הקבוע">×</button></div>').join('')+
+   '</div><button class="btn btn-soft full" style="margin-top:10px" data-act="addtmpl">'+I.plus+'שיעור קבוע חדש</button>';
+}
+
+function vPeople(){
+  const f=S.people.filter(p=>{const s=status(cur(p));
+    if(q&&!(p.name.includes(q)||p.phone.replace(/-/g,'').includes(q.replace(/-/g,''))))return false;
+    if(filter==='active')return s==='active'||s==='soon';
+    if(filter==='frozen')return s==='frozen';
+    if(filter==='ended')return s==='done'||s==='expired';
+    return true});
+  const chip=(k,t)=>'<button class="chip" data-filter="'+k+'" aria-pressed="'+(filter===k)+'">'+t+'</button>';
+  return header()+'<h1>מתרגלים</h1><p class="lead">'+S.people.length+' מתרגלים בסטודיו</p>'+
+   '<label class="search">'+I.search+'<input id="q" type="search" placeholder="חיפוש לפי שם או טלפון" value="'+esc(q)+'"></label>'+
+   '<div class="chips">'+chip('all','הכל')+chip('active','פעילות')+chip('frozen','מוקפאות')+chip('ended','הסתיימו')+'</div>'+
+   '<div class="list" style="margin-top:12px">'+(f.length?f.map(p=>row(p,true)).join(''):'<div class="empty">לא נמצאו מתרגלים. נסי שם אחר או הוסיפי מתרגלת חדשה.</div>')+'</div>'+
+   '<button class="btn btn-primary fab" data-act="add">'+I.plus+'מתרגל חדש</button>';
+}
+
+function cardBody(c,p,forP){
+  const s=status(c);
+  if(c.type==='monthly'){
+    return '<div class="big"><b>∞</b><span>מנוי חודשי ללא הגבלה</span></div><div class="meta"><div><small>כניסות החודש</small><b>'+c.used.length+'</b></div><div><small>בתוקף עד</small><b>'+fmt(effExpires(c))+'</b></div></div>';
+  }
+  const res=Math.min(reserved(p),Math.max(0,left(c)));
+  let dots='';for(let i=0;i<c.total;i++){const u=i<c.used.length,r=!u&&i<c.used.length+res;dots+='<span class="dot'+(u?' used':r?' res':'')+'">'+(u?I.check:'')+'</span>'}
+  return '<div class="big"><b>'+Math.max(0,left(c))+'</b><span>שיעורים נותרו מתוך '+c.total+'</span></div><div class="dots" style="grid-template-columns:repeat('+Math.min(5,c.total)+',1fr)">'+dots+'</div>'+
+   '<div class="legend"><span><i style="background:var(--sage)"></i>נוצלו</span>'+(res?'<span><i style="background:var(--lav)"></i>שמורים לשיעורים שנרשמת אליהם</span>':'')+'<span><i style="border:1.5px dashed var(--sage)"></i>פנויים</span></div>'+
+   '<div class="meta"><div><small>'+(s==='frozen'?'תוקף נוכחי (מתארך)':'בתוקף עד')+'</small><b>'+fmt(effExpires(c))+'</b></div><div><small>'+(s==='expired'?'פג תוקף לפני':'ימים לתום התוקף')+'</small><b>'+(s==='expired'?Math.ceil((today()-c.expires)/DAY)+' ימים':daysTo(c))+'</b></div></div>'+
+   (s==='frozen'?'<div class="note">'+(forP?'הכרטיסייה שלך מוקפאת מאז ':'מוקפאת מאז ')+fmt(c.frozen.since)+' ('+esc(c.frozen.reason)+'). הימים בהקפאה לא נספרים, והתוקף יוארך בהתאם.</div>':'');
+}
+function history(c){
+  const ev=c.used.map((u,i)=>({t:u.t,txt:(i+1)+'. '+u.why}));
+  c.freezes.forEach(f=>ev.push({t:f.to,txt:'הקפאה ('+f.reason+') · '+Math.round((f.to-f.from)/DAY)+' ימים'}));
+  if(c.frozen)ev.push({t:c.frozen.since,txt:'הוקפאה ('+c.frozen.reason+')'});
+  ev.push({t:c.start,txt:c.type==='monthly'?'מנוי חודשי נפתח':'כרטיסייה של '+c.total+' שיעורים נפתחה'});
+  ev.sort((a,b)=>b.t-a.t);
+  return '<div class="hist">'+ev.map(e=>'<div>'+esc(e.txt)+'<span>'+fmt(e.t)+'</span></div>').join('')+'</div>';
+}
+
+function vPerson(){
+  const p=findP(sel);if(!p)return vPeople();
+  const c=cur(p),s=status(c),can=s==='active'||s==='soon',ended=s==='done'||s==='expired',mr=myRegs(p);
+  return header()+'<button class="back" data-go="people">'+I.back+'כל המתרגלים</button>'+
+   '<div style="display:flex;align-items:center;gap:12px;margin-top:4px"><span class="av" style="width:52px;height:52px;font-size:1.1rem">'+esc(initials(p.name))+'</span><div style="min-width:0"><h1 style="margin:0">'+esc(p.name)+'</h1><span class="lead" dir="ltr">'+esc(p.phone)+'</span></div></div>'+
+   '<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</b><small>נפתחה ב־'+fmt(c.start)+(c.type==='punch'?' · תקפה 3 חודשים':'')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p)+'</div>'+
+   '<div class="actions">'+
+    (ended?'<button class="btn btn-primary wide" data-act="renew">'+I.renew+'חידוש כרטיסייה</button>':'<button class="btn btn-primary wide" data-punch="'+p.id+'"'+(can?'':' disabled')+'>'+I.ck+(c.type==='monthly'?'רישום כניסה':'ניקוב ידני')+'</button>')+
+    '<button class="btn btn-soft" data-act="wa">'+I.msg+'שליחה ב־WhatsApp</button>'+
+    (s==='frozen'?'<button class="btn btn-lav" data-act="unfreeze">'+I.snow+'הפשרה</button>':'<button class="btn btn-lav" data-act="freeze"'+(ended?' disabled':'')+'>'+I.snow+'הקפאה</button>')+
+    '<button class="btn btn-soft wide" data-act="pview">'+I.eye+'איך '+esc(first(p))+' רואה את האפליקציה</button>'+
+   '</div><h2>שיעורים קרובים <span>'+mr.length+'</span></h2>'+
+   (mr.length?'<div class="hist">'+mr.map(x=>'<div>'+esc(x.s.name)+(x.r.status==='pending'?' · בקשת ביטול ממתינה':'')+'<span>'+dayTime(x.s.t)+' · '+dm(x.s.t)+'</span></div>').join('')+'</div>':'<p class="lead">לא רשומה לשיעורים כרגע.</p>')+
+   '<h2>היסטוריה</h2>'+history(c);
+}
+
+/* practitioner side */
+function pCls(p){return inst=>{
+  INST[inst.k]=inst;const s=getS(inst.k),mine=s.regs.find(r=>r.pid===p.id),past=inst.t<=now(),n=s.regs.length,full=n>=inst.c.cap;
+  let cls='',st='הרשמה';
+  if(s.cancelled){cls='off';st='בוטל'}
+  else if(past){cls='past';st=mine?'השתתפת':'עבר'}
+  else if(mine&&mine.status==='pending'){cls='pending';st='ממתין לאישור'}
+  else if(mine){cls='in';st=I.ck+'נרשמת'}
+  else if(full){cls='full';st='מלא'}
+  const sub=inst.c.dur+' דק׳ · '+(s.cancelled?'השיעור בוטל':full&&!mine?'אין מקומות':(inst.c.cap-n)+' מקומות פנויים');
+  return '<button class="cls '+cls+'" data-ptap="'+inst.k+'"'+(past||s.cancelled?' aria-disabled="true"':'')+'><span class="tm">'+inst.c.time+'</span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+sub+'</small></span><span class="st">'+st+'</span></button>';
+}}
+function demoBar(){
+  return '<div class="demo"><span>תצוגת מתרגלת:</span><select id="pvsel" aria-label="בחירת מתרגלת להדגמה">'+S.people.map(x=>'<option value="'+x.id+'"'+(x.id===pvId?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select><button data-act="toadmin">לממשק המורה</button></div>';
+}
+function vP(){
+  const p=findP(pvId)||S.people[0];pvId=p.id;
+  const c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p);
+  return demoBar()+'<div class="top" style="position:static"><div class="brand">'+logo(40)+'<div><b>YoGi</b><small>'+esc(S.studio.name)+'</small></div></div></div>'+
+   '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+
+   '<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>'+
+   (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
+   (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
+   '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.<br>ביטול חופשי עד '+CUTOFF+' שעות לפני השיעור.</p>'+
+   '<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
+   '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
+   '<h2>השיעורים שלי</h2>'+history(c)+
+   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGi על מסך הבית</button><br>זה המסך שנפתח מהקישור האישי. אין צורך להוריד אפליקציה מהחנות.</div>';
+}
+
+function vInstall(){
+  return (mode==='p'?demoBar()+'<button class="back" data-act="pback">'+I.back+'חזרה</button>':header())+'<h1>התקנה על מסך הבית</h1><p class="lead">YoGi נפתחת כמו אפליקציה, במסך מלא ובלי חנות אפליקציות. בוחרים את הטלפון שלך ועוקבים אחרי הצעדים.</p>'+
+  '<div class="platform"><header><span class="ic" style="background:var(--clay-soft);color:var(--clay)">'+I.apple+'</span><div><b>iPhone ו־iPad</b><small>בדפדפן Safari · כדקה</small></div></header><ol class="steps">'+
+   '<li><div><b>פותחים את YoGi ב־Safari</b><small>חשוב להשתמש ב־Safari ולא בדפדפן אחר.</small></div></li>'+
+   '<li><div><b>מקישים על כפתור השיתוף</b><small>הריבוע עם החץ למעלה, בתחתית המסך או ליד שורת הכתובת.</small></div></li>'+
+   '<li><div><b>בוחרים "הוספה למסך הבית"</b><small>אם האפשרות לא מופיעה, גוללים מעט למטה ברשימה.</small></div></li>'+
+   '<li><div><b>מקישים "הוסף"</b><small>האייקון של YoGi מופיע על מסך הבית.</small></div></li></ol></div>'+
+  '<div class="platform"><header><span class="ic" style="background:var(--sage-soft);color:var(--sage-deep)">'+I.android+'</span><div><b>Android</b><small>בדפדפן Chrome · כחצי דקה</small></div></header><ol class="steps">'+
+   '<li><div><b>פותחים את YoGi ב־Chrome</b><small>מהקישור שקיבלת או מכתובת האתר.</small></div></li>'+
+   '<li><div><b>מקישים "התקנת האפליקציה"</b><small>החלון קופץ בדרך כלל לבד. אם לא, בתפריט שלוש הנקודות בוחרים "התקנת אפליקציה".</small></div></li>'+
+   '<li><div><b>מאשרים את ההתקנה</b><small>מקישים "התקנה" בחלון שנפתח.</small></div></li>'+
+   '<li><div><b>פותחים מהמסך הראשי</b><small>YoGi נפתחת במסך מלא, ישר לכרטיסייה וללו״ז.</small></div></li></ol></div>'+
+  '<div class="note">ב־iPhone אין כפתור התקנה אוטומטי. אפל מאפשרת זאת רק דרך תפריט השיתוף, ולכן ההוראות שונות.</div>';
+}
+
+function vSettings(){
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, סוגי כרטיסיות ומדיניות ביטול.</p>'+
+  '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
+  '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
+  '<h2>מדיניות ביטול</h2><div class="switch"><div><b>ביטול חופשי עד '+CUTOFF+' שעות לפני השיעור</b><small>אחרי זה ביטול מנקב שיעור, או שהמתרגלת שולחת אלייך בקשה עם הסבר ואת מחליטה.</small></div></div>'+
+  '<h2>סוגי כרטיסיות</h2>'+
+  '<div class="switch"><div><b>כרטיסיית שיעורים</b><small>מספר שיעורים קבוע, תוקף של 3 חודשים מיום הפתיחה. ניתן להקפאה.</small></div><input type="checkbox" class="tog" checked disabled aria-label="כרטיסיית שיעורים פעילה"></div>'+
+  '<div class="switch"><div><b>מנוי חודשי ללא הגבלה <span class="soon-tag">'+(S.studio.monthly?'פעיל':'כבוי')+'</span></b><small>כניסה חופשית לכל השיעורים למשך חודש. כשהאפשרות כבויה היא מוצגת למורה אך לא ניתנת לבחירה.</small></div><input type="checkbox" class="tog" id="mon"'+(S.studio.monthly?' checked':'')+' aria-label="הפעלת מנוי חודשי"></div>'+
+  '<h2>נתוני הדגמה</h2><div class="note" style="margin-top:0">כל הנתונים כאן לדוגמה ונשמרים רק בדפדפן הזה.</div><div class="sheet-actions"><button class="btn btn-soft" data-act="reset">איפוס נתוני ההדגמה</button></div>';
+}
+
+function render(){
+  seedRegs();autoPunch();INST={};
+  let html;
+  if(mode==='p')html=view==='install'?vInstall():vP();
+  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings}[view]||vHome)();
+  app.innerHTML=html;app.classList.toggle('pmode',mode==='p');
+  document.getElementById('nav').hidden=mode==='p';
+  const tab=view==='person'?'people':view;
+  document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
+  const qi=document.getElementById('q');
+  if(qi)qi.addEventListener('input',e=>{q=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
+  const bind=(id,k,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{S.studio[k]=num?+e.target.value:e.target.value;save();if(id==='sn')render()})};
+  bind('sn','name');bind('tn','teacher');bind('dt','defaultTotal',1);
+  const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{S.studio.monthly=e.target.checked;save();render();toast(e.target.checked?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
+  const ps=document.getElementById('pvsel');if(ps)ps.addEventListener('change',e=>{pvId=e.target.value;view='p';render()});
+}
+
+/* sheets & toast */
+let bg=null;
+function sheet(html){close();bg=document.createElement('div');bg.className='sheet-bg';bg.setAttribute('dir','rtl');bg.innerHTML='<div class="sheet" role="dialog" aria-modal="true">'+html+'</div>';bg.addEventListener('click',e=>{if(e.target===bg){close();return}onClick(e)});document.body.appendChild(bg);const f=bg.querySelector('input,textarea,button');if(f)f.focus()}
+function close(){if(bg){bg.remove();bg=null}}
+let tt;
+function toast(txt,undo){document.querySelectorAll('.toast').forEach(t=>t.remove());clearTimeout(tt);const t=document.createElement('div');t.className='toast';t.setAttribute('dir','rtl');t.setAttribute('role','status');t.innerHTML='<span>'+txt+'</span>'+(undo?'<button>ביטול</button>':'');if(undo)t.querySelector('button').onclick=()=>{undo();t.remove()};document.body.appendChild(t);tt=setTimeout(()=>t.remove(),4200)}
+
+function askPunch(id){
+  const p=findP(id),c=cur(p),mon=c.type==='monthly';
+  sheet('<h3>'+(mon?'רישום כניסה':'ניקוב ידני')+'</h3><p class="lead">'+esc(p.name)+(mon?' · מנוי חודשי':' · נותרו '+left(c)+' מתוך '+c.total)+'</p>'+
+   (mon?'':'<p>אחרי הניקוב יישארו <b>'+(left(c)-1)+'</b> שיעורים. מתרגלות שנרשמו מראש מנוקבות אוטומטית כשהשיעור מתחיל.</p>')+
+   '<div class="sheet-actions"><button class="btn btn-primary" data-confirm="'+id+'">אישור '+(mon?'כניסה':'ניקוב')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+}
+function doPunch(id){
+  const p=findP(id),c=cur(p),stamp=now();
+  c.used.push({t:stamp,why:'ניקוב ידני'});save();close();render();
+  toast(esc(c.type==='monthly'?'נרשמה כניסה ל'+first(p):'נוקב. ל'+first(p)+' נותרו '+left(c)+' שיעורים'),()=>{c.used=c.used.filter(u=>u.t!==stamp);save();render()});
+}
+
+/* practitioner tap on a class row */
+function pTap(k){
+  const inst=INST[k],p=findP(pvId),c=cur(p),s=getS(k),mine=s.regs.find(r=>r.pid===p.id),ms=inst.t-now();
+  if(s.cancelled){toast('השיעור הזה בוטל');return}
+  if(ms<=0){toast('השיעור כבר התחיל');return}
+  if(!mine){
+    const st=status(c);
+    if(st==='frozen'){toast('הכרטיסייה מוקפאת. אפשר לפנות ל'+esc(S.studio.teacher)+' כדי להפשיר');return}
+    if(st==='done'||st==='expired'){toast('הכרטיסייה הסתיימה. צריך לחדש אותה כדי להירשם');return}
+    if(inst.t>effExpires(c)+DAY){toast('השיעור אחרי תום תוקף הכרטיסייה');return}
+    if(avail(p)<=0){toast('כל השיעורים בכרטיסייה כבר שמורים לשיעורים אחרים');return}
+    if(s.regs.length>=inst.c.cap){toast('השיעור מלא');return}
+    const ss=ensure(inst);ss.regs.push({pid:p.id,at:now(),status:'in'});save();render();
+    toast('נרשמת ל'+esc(inst.c.name)+', '+dayTime(inst.t),()=>{ss.regs=ss.regs.filter(r=>r.pid!==p.id);save();render()});
+    return;
+  }
+  if(mine.status==='pending'){
+    sheet('<h3>הבקשה ממתינה</h3><p class="lead">שלחת ל'+esc(S.studio.teacher)+' בקשה לבטל את '+esc(inst.c.name)+' ('+dayTime(inst.t)+') בלי ניקוב.</p><div class="msg">'+esc(mine.reason||'')+'</div><div class="stack"><button class="btn btn-soft" data-act="withdraw" data-k="'+k+'">משיכת הבקשה. אני מגיעה</button><button class="btn btn-soft" data-act="close">סגירה</button></div>');
+    return;
+  }
+  if(ms>=CUTOFF*H){
+    const ss=ensure(inst),keep=mine;ss.regs=ss.regs.filter(r=>r!==mine);save();render();
+    toast('ההרשמה ל'+esc(inst.c.name)+' בוטלה',()=>{ss.regs.push(keep);save();render()});
+    return;
+  }
+  sheet('<h3>ביטול מאוחר</h3><p class="lead">'+esc(inst.c.name)+' מתחיל בעוד '+inTxt(ms)+'. ביטול בפחות מ־'+CUTOFF+' שעות לפני השיעור מנקב שיעור מהכרטיסייה.</p>'+
+   '<div class="stack"><button class="btn btn-clay" data-act="latecancel" data-k="'+k+'">ביטול וניקוב שיעור</button>'+
+   '<button class="btn btn-soft" data-act="showreq">בקשה מ'+esc(S.studio.teacher)+' לבטל בלי ניקוב</button>'+
+   '<div id="reqbox" hidden><div class="field"><label for="rr">הסבר קצר ל'+esc(S.studio.teacher)+'</label><textarea id="rr" rows="3" placeholder="לדוגמה: חליתי הבוקר"></textarea></div><p id="rerr" style="color:var(--bad);margin:6px 0 0" hidden>כתבי כמה מילים כדי ש'+esc(S.studio.teacher)+' תוכל להחליט.</p><button class="btn btn-primary full" style="margin-top:10px" data-act="sendreq" data-k="'+k+'">שליחת הבקשה</button></div>'+
+   '<button class="btn btn-soft" data-act="close">השארת ההרשמה</button></div>');
+}
+
+/* admin: one session */
+function sesSheet(k){
+  const inst=INST[k],s=getS(k),past=inst.t<=now();
+  const nm=pid=>esc((findP(pid)||{name:'?'}).name);
+  let body='';
+  if(s.cancelled)body='<div class="note">השיעור בוטל. ההרשמות הוסרו בלי ניקוב.</div>';
+  else{
+    body+='<h2>'+(past?'השתתפו ונוקבו':'רשומות')+' <span>'+s.regs.length+' / '+inst.c.cap+'</span></h2>';
+    body+=s.regs.length?'<div class="hist">'+s.regs.map(r=>'<div><span style="color:var(--ink)">'+nm(r.pid)+(r.status==='pending'?' · <b style="color:var(--warn)">בקשת ביטול</b>':'')+(r.refunded?' · הניקוב הוחזר':'')+'</span>'+(past&&r.punched&&!r.refunded?'<button class="btn btn-soft btn-sm" data-refund="'+k+'|'+r.pid+'">החזרת ניקוב</button>':'')+'</div>').join('')+'</div>':'<p class="lead">אין נרשמות עדיין.</p>';
+    const reqs=s.regs.filter(r=>r.status==='pending');
+    if(reqs.length)body+='<h2>בקשות ביטול</h2><div class="list">'+reqs.map(r=>reqCard({k,s,r,p:findP(r.pid)})).join('')+'</div>';
+    if(s.late.length)body+='<h2>ביטולים מאוחרים (נוקבו)</h2><div class="names">'+s.late.map(pid=>'<span>'+nm(pid)+'</span>').join('')+'</div>';
+    if(s.waived.length)body+='<h2>בוטלו בלי ניקוב</h2><div class="names">'+s.waived.map(pid=>'<span>'+nm(pid)+'</span>').join('')+'</div>';
+  }
+  sheet('<h3>'+esc(inst.c.name)+'</h3><p class="lead">יום '+DAYS[new Date(inst.t).getDay()]+' '+dm(inst.t)+' · '+inst.c.time+' · '+inst.c.dur+' דקות</p>'+(past?'':'<p class="lead" style="font-size:.88rem">הרשומות ינוקבו אוטומטית כשהשיעור יתחיל.</p>')+body+
+   '<div class="sheet-actions">'+(!past&&!s.cancelled?'<button class="btn btn-clay" data-act="cancelses" data-k="'+k+'">ביטול השיעור הזה</button>':'')+'<button class="btn btn-soft" data-act="close">סגירה</button></div>');
+}
+function resolveReq(k,pid,approve){
+  const s=S.sessions[k],r=s.regs.find(x=>x.pid===pid),p=findP(pid);if(!r)return;
+  if(approve){
+    if(r.punched){const c=cur(p);const i=c.used.findIndex(u=>u.sk===k);if(i>-1)c.used.splice(i,1)}
+    s.regs=s.regs.filter(x=>x!==r);s.waived.push(pid);toast('הבקשה של '+esc(first(p))+' אושרה. לא ינוקב שיעור')
+  }else{r.status='in';delete r.reason;toast(esc(first(p))+' נשארת רשומה. השיעור ינוקב')}
+  save();close();render();
+}
+
+function addSheet(renewFor){
+  const p=renewFor&&findP(renewFor);
+  let type='punch',total=S.studio.defaultTotal;
+  const draw=()=>{
+    const opt=(k,t,s,locked)=>'<button class="opt'+(locked?' locked':'')+'" data-type="'+k+'" aria-pressed="'+(type===k)+'"'+(locked?' aria-disabled="true"':'')+'><b>'+t+(locked?'<span class="soon-tag">בקרוב</span>':'')+'</b><small>'+s+'</small></button>';
+    sheet('<h3>'+(p?'חידוש כרטיסייה':'מתרגל חדש')+'</h3>'+(p?'<p class="lead">'+esc(p.name)+'</p>':'<div class="field"><label for="nn">שם מלא</label><input id="nn" autocomplete="off" placeholder="לדוגמה: אורית כהן"></div><div class="field"><label for="np">טלפון</label><input id="np" inputmode="tel" dir="ltr" style="text-align:right" placeholder="050-0000000"></div>')+
+     '<div class="field"><label>סוג כרטיסייה</label><div class="opts">'+opt('punch','כרטיסיית שיעורים','תוקף 3 חודשים')+opt('monthly','מנוי חודשי','ללא הגבלת שיעורים',!S.studio.monthly)+'</div></div>'+
+     (type==='punch'?'<div class="field"><label for="nt">מספר שיעורים</label><select id="nt">'+[5,10,20].map(n=>'<option'+(n==total?' selected':'')+'>'+n+'</option>').join('')+'</select></div><p class="lead" style="font-size:.88rem;margin-top:8px">בתוקף עד '+fmt(addMonths(today(),3))+'</p>':'<p class="lead" style="font-size:.88rem;margin-top:8px">בתוקף עד '+fmt(addMonths(today(),1))+'</p>')+
+     '<p id="err" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="'+(p?'saverenew':'saveadd')+'">'+(p?'פתיחת כרטיסייה חדשה':'הוספה ופתיחת כרטיסייה')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+    const nt=bg.querySelector('#nt');if(nt)nt.onchange=e=>total=+e.target.value;
+    bg.querySelectorAll('[data-type]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.dataset.type==='monthly'&&!S.studio.monthly){toast('מנוי חודשי עוד לא הופעל. אפשר להפעיל בהגדרות.');return}
+      const nn=bg.querySelector('#nn'),keep=nn?[nn.value,bg.querySelector('#np').value]:null;type=b.dataset.type;draw();if(keep){bg.querySelector('#nn').value=keep[0];bg.querySelector('#np').value=keep[1]}});
+  };
+  draw();
+  addSheet.make=()=>{const s=today();return type==='monthly'?{id:uid(),type,total:0,start:s,expires:addMonths(s,1),used:[],freezes:[],frozen:null}:{id:uid(),type,total,start:s,expires:addMonths(s,3),used:[],freezes:[],frozen:null}};
+}
+function tmplSheet(){
+  sheet('<h3>שיעור קבוע חדש</h3><p class="lead">השיעור יופיע בלו״ז בכל שבוע.</p>'+
+   '<div class="field"><label for="tnm">שם השיעור</label><input id="tnm" value="יוגה"></div>'+
+   '<div class="grid2"><div class="field"><label for="tdy">יום</label><select id="tdy">'+DAYS.map((d,i)=>'<option value="'+i+'">'+d+'</option>').join('')+'</select></div><div class="field"><label for="ttm">שעה</label><input id="ttm" type="time" value="18:00"></div></div>'+
+   '<div class="grid2"><div class="field"><label for="tdu">משך</label><select id="tdu">'+[45,60,75,90].map(n=>'<option value="'+n+'"'+(n===60?' selected':'')+'>'+n+' דקות</option>').join('')+'</select></div><div class="field"><label for="tcp">מקסימום משתתפות</label><input id="tcp" type="number" min="1" max="60" value="12"></div></div>'+
+   '<div class="sheet-actions"><button class="btn btn-primary" data-act="savetmpl">הוספה ללו״ז</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+}
+function freezeSheet(){
+  let reason='חופשה';const reasons=['חופשה','היריון','פציעה','מחלה','אחר'];
+  sheet('<h3>הקפאת כרטיסייה</h3><p class="lead">בזמן ההקפאה אי אפשר לנקב או להירשם, והימים לא נספרים בתוקף. בהפשרה התוקף מתארך במספר הימים שעברו. הרשמות קיימות יבוטלו בלי ניקוב.</p><div class="field"><label>סיבה</label><div class="chips">'+reasons.map(r=>'<button class="chip" data-r="'+r+'" aria-pressed="'+(r===reason)+'">'+r+'</button>').join('')+'</div></div><div class="sheet-actions"><button class="btn btn-primary" data-act="dofreeze">הקפאה מהיום</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+  bg.querySelectorAll('[data-r]').forEach(b=>b.onclick=e=>{e.stopPropagation();reason=b.dataset.r;bg.querySelectorAll('[data-r]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  freezeSheet.reason=()=>reason;
+}
+function waText(href,text,note){
+  return '<div class="msg">'+esc(text)+'</div><div class="sheet-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="'+href+'">פתיחה ב־WhatsApp</a><button class="btn btn-soft" id="cp">העתקת ההודעה</button></div>'+(note?'<p class="lead" style="font-size:.82rem;margin-top:10px">'+note+'</p>':'');
+}
+function bindCopy(text){bg.querySelector('#cp').onclick=e=>{e.stopPropagation();navigator.clipboard.writeText(text).then(()=>toast('ההודעה הועתקה'),()=>{const r=document.createRange();r.selectNodeContents(bg.querySelector('.msg'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('ההודעה מסומנת. אפשר להעתיק ידנית')})}}
+function waSheet(){
+  const p=findP(sel),c=cur(p),s=status(c);
+  let body;
+  if(c.type==='monthly')body='המנוי החודשי שלך פעיל עד '+fmt(effExpires(c))+'.';
+  else if(s==='frozen')body='הכרטיסייה שלך מוקפאת. נותרו בה '+left(c)+' שיעורים, והתוקף יוארך כשנפשיר אותה.';
+  else if(s==='done')body='ניצלת את כל '+c.total+' השיעורים בכרטיסייה. נשמח לחדש לך!';
+  else if(s==='expired')body='תוקף הכרטיסייה הסתיים ב־'+fmt(c.expires)+'. נשמח לחדש לך!';
+  else body='נותרו לך '+left(c)+' שיעורים מתוך '+c.total+', בתוקף עד '+fmt(effExpires(c))+'.';
+  const text='היי '+first(p)+' 🌿\n'+body+'\nהכרטיסייה והלו״ז שלך:\nhttps://yogi.co.il/c/'+p.id+'\n\n'+S.studio.name;
+  const phone='972'+p.phone.replace(/\D/g,'').replace(/^0/,'');
+  sheet('<h3>שליחה ב־WhatsApp</h3><p class="lead">ההודעה מוכנה ל'+esc(p.name)+'.</p>'+waText('https://wa.me/'+phone+'?text='+encodeURIComponent(text),text,'בגרסת ההדגמה הקישור עדיין לא פעיל.'));
+  bindCopy(text);
+}
+function weekSheet(){
+  const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
+  let lines='',last=-1;
+  list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳)\n';last=d});
+  const text='שבוע טוב 🌿\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה בלחיצה:\nhttps://yogi.co.il/s/hila\n\nביטול חופשי עד '+CUTOFF+' שעות לפני השיעור.\n'+S.studio.name;
+  sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. כל מתרגלת נכנסת עם הקישור האישי שלה ונרשמת.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text,'בגרסה המלאה אפשר לתזמן שליחה אוטומטית בכל יום ראשון בבוקר.'));
+  bindCopy(text);
+  bg.querySelector('a.btn').addEventListener('click',()=>{S.studio.sent=now();save()});
+}
+
+function onClick(e){
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl]');if(!t)return;
+  const d=t.dataset;
+  if(d.go){close();mode='admin';go(d.go)}
+  else if(d.open){go('person',d.open)}
+  else if(d.punch){askPunch(d.punch)}
+  else if(d.confirm){doPunch(d.confirm)}
+  else if(d.filter){filter=d.filter;render()}
+  else if(d.ses){sesSheet(d.ses)}
+  else if(d.ptap){pTap(d.ptap)}
+  else if(d.wk){wkOff=+d.wk;render()}
+  else if(d.pwk){pwkOff=+d.pwk;render()}
+  else if(d.approve){const a=d.approve.split('|');resolveReq(a[0],a[1],true)}
+  else if(d.decline){const a=d.decline.split('|');resolveReq(a[0],a[1],false)}
+  else if(d.refund){const a=d.refund.split('|'),s=S.sessions[a[0]],r=s.regs.find(x=>x.pid===a[1]),c=cur(findP(a[1]));const i=c.used.findIndex(u=>u.sk===a[0]);if(i>-1)c.used.splice(i,1);r.refunded=true;save();render();sesSheet(a[0]);toast('הניקוב הוחזר')}
+  else if(d.deltmpl){
+    if(t.dataset.armed){S.classes=S.classes.filter(c=>c.id!==d.deltmpl);save();render();toast('השיעור הוסר מהלו״ז הקבוע')}
+    else{t.dataset.armed='1';t.textContent='הסרה?';t.style.width='auto';t.style.padding='0 10px';t.style.color='var(--bad)';setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='×';t.removeAttribute('style')}},3000)}
+  }
+  else if(d.act){
+    const p=sel&&findP(sel),c=p&&cur(p);
+    switch(d.act){
+      case'close':close();break;
+      case'add':addSheet();break;
+      case'renew':addSheet(sel);break;
+      case'saveadd':{const n=bg.querySelector('#nn').value.trim(),ph=bg.querySelector('#np').value.trim(),err=bg.querySelector('#err');
+        if(!n){err.textContent='צריך להזין שם.';err.hidden=false;return}
+        if(ph.replace(/\D/g,'').length<9){err.textContent='מספר הטלפון קצר מדי. הזיני 10 ספרות.';err.hidden=false;return}
+        const np={id:uid(),name:n,phone:ph,cards:[addSheet.make()]};S.people.unshift(np);save();close();go('person',np.id);toast('נוספה כרטיסייה ל'+esc(n.split(' ')[0]));break}
+      case'saverenew':p.cards.push(addSheet.make());save();close();render();toast('כרטיסייה חדשה נפתחה');break;
+      case'freeze':freezeSheet();break;
+      case'dofreeze':{c.frozen={since:today(),reason:freezeSheet.reason()};let n=0;myRegs(p).forEach(x=>{x.s.regs=x.s.regs.filter(r=>r.pid!==p.id);n++});save();close();render();toast('הכרטיסייה הוקפאה'+(n?' ו־'+n+' הרשמות בוטלו':''));break}
+      case'unfreeze':{const days=Math.round((today()-c.frozen.since)/DAY);c.expires+=today()-c.frozen.since;c.freezes.push({from:c.frozen.since,to:today(),reason:c.frozen.reason});c.frozen=null;save();render();toast('הופשרה. התוקף הוארך ב־'+days+' ימים');break}
+      case'wa':waSheet();break;
+      case'sendwk':weekSheet();break;
+      case'addtmpl':tmplSheet();break;
+      case'savetmpl':{const nm=bg.querySelector('#tnm').value.trim()||'יוגה',cap=Math.max(1,+bg.querySelector('#tcp').value||12);
+        S.classes.push({id:'c'+uid(),day:+bg.querySelector('#tdy').value,time:bg.querySelector('#ttm').value||'18:00',name:nm,dur:+bg.querySelector('#tdu').value,cap});save();close();render();toast('השיעור נוסף ללו״ז');break}
+      case'cancelses':{
+        if(!t.dataset.armed){t.dataset.armed='1';t.textContent='לבטל? ההרשמות יוסרו בלי ניקוב';return}
+        const inst=INST[d.k],s=ensure(inst);s.cancelled=true;s.regs=[];save();close();render();toast('השיעור בוטל');break}
+      case'pview':pvId=sel;mode='p';view='p';render();window.scrollTo(0,0);break;
+      case'topv':pvId=pvId||S.people[0].id;mode='p';view='p';render();window.scrollTo(0,0);break;
+      case'toadmin':mode='admin';view='home';render();window.scrollTo(0,0);break;
+      case'pinstall':view='install';render();window.scrollTo(0,0);break;
+      case'pback':view='p';render();break;
+      case'showreq':bg.querySelector('#reqbox').hidden=false;t.hidden=true;bg.querySelector('#rr').focus();break;
+      case'sendreq':{const txt=bg.querySelector('#rr').value.trim();if(txt.length<3){bg.querySelector('#rerr').hidden=false;return}
+        const r=getS(d.k).regs.find(x=>x.pid===pvId);r.status='pending';r.reason=txt;r.reqAt=now();save();close();render();toast('הבקשה נשלחה ל'+esc(S.studio.teacher));break}
+      case'latecancel':{const inst=INST[d.k],s=ensure(inst),pp=findP(pvId);s.regs=s.regs.filter(r=>r.pid!==pvId);s.late.push(pvId);cur(pp).used.push({t:now(),why:'ביטול מאוחר · '+inst.c.name+' '+dayTime(inst.t),sk:d.k});save();close();render();toast('ההרשמה בוטלה ונוקב שיעור');break}
+      case'withdraw':{const r=getS(d.k).regs.find(x=>x.pid===pvId);r.status='in';delete r.reason;save();close();render();toast('הבקשה נמשכה. נתראה בשיעור');break}
+      case'reset':S=seed();save();q='';filter='all';wkOff=0;pwkOff=0;pvId=null;render();toast('נתוני ההדגמה אופסו');break;
+    }
+  }
+}
+document.addEventListener('click',e=>{if(e.target.closest('.sheet-bg'))return;onClick(e)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+render();
+})();
+</script>
+
+<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));</script>
+</body>
+</html>
