@@ -36,6 +36,7 @@ const inTxt=ms=>{const h=Math.floor(ms/H),m=Math.round((ms%H)/6e4);return h?(h+'
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const initials=n=>n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('');
 const first=p=>p.name.split(' ')[0];
+const G=(p,f,m)=>p&&p.gender==='m'?m:f;
 const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
 const appUrl=()=>location.origin+location.pathname.replace(/index\.html$/,'');
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
@@ -105,7 +106,7 @@ async function loadAdmin(){
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
   S={studio:{name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,sent:st.last_sent?Date.parse(st.last_sent):null},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
-    people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,
+    people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
       cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
@@ -118,7 +119,7 @@ async function loadP(){
     sessions[s.class_id+'_'+s.on_date]={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.t),name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs,late:[],waived:[]}});
   const card=v.card?mapCard(v.card,(v.card.used||[]).map(u=>({t:Date.parse(u.t),why:u.why})),v.card.freezes||[]):null;
   S={studio:{name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff},places:[],classes:(v.classes||[]).map(mapClass),sessions,
-    people:[{id:me.id,name:me.name,cards:card?[card]:[]}],
+    people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
     notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),title:n.title,body:n.body,kind:n.kind,read:n.read}))};
   phoneNotify();
 }
@@ -145,7 +146,7 @@ function sysNotify(title,body){try{if(!('Notification' in window)||Notification.
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
-function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGi</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
+function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
   const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
@@ -186,8 +187,8 @@ function history(c){
 
 /* ---------- manager views ---------- */
 function vLogin(){
-  return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGi</b><small>כניסת מורה</small></div></div></div>'+
-   '<h1>כניסה לניהול הסטודיו</h1><p class="lead">מתרגלות נכנסות דרך הקישור האישי שקיבלו ב־WhatsApp, בלי סיסמה.</p>'+
+  return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>כניסת מורה</small></div></div></div>'+
+   '<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח פעם אחת את הקישור האישי שקיבלתם מהמורה ב־WhatsApp. מאותו רגע האפליקציה זוכרת אתכם.</small></div></div><h1>כניסה לניהול הסטודיו</h1><p class="lead">כניסה למורה בלבד.</p>'+
    '<form id="loginf" class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="em">אימייל</label><input id="em" type="email" autocomplete="username" dir="ltr" required></div>'+
    '<div class="field"><label for="pw">סיסמה</label><input id="pw" type="password" autocomplete="current-password" dir="ltr" required></div>'+
    '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">כניסה</button></form>';
@@ -256,7 +257,7 @@ function vPerson(){
     '<button class="btn btn-soft" data-act="editp">'+I.renew.replace('M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7','M4 20h4L19 9l-4-4L4 16zM14 6l4 4')+'עריכת פרטים</button>'+
     '<button class="btn btn-soft" data-act="plink">'+I.link+'הקישור האישי של '+esc(first(p))+'</button>'+
    '</div><h2>שיעורים קרובים <span>'+mr.length+'</span></h2>'+
-   (mr.length?'<div class="hist">'+mr.map(x=>'<div>'+esc(x.s.name)+(x.r.status==='pending'?' · בקשת ביטול ממתינה':'')+'<span>'+dayTime(x.s.t)+' · '+dm(x.s.t)+'</span></div>').join('')+'</div>':'<p class="lead">לא רשומה לשיעורים כרגע.</p>')+
+   (mr.length?'<div class="hist">'+mr.map(x=>'<div>'+esc(x.s.name)+(x.r.status==='pending'?' · בקשת ביטול ממתינה':'')+'<span>'+dayTime(x.s.t)+' · '+dm(x.s.t)+'</span></div>').join('')+'</div>':'<p class="lead">'+G(p,'לא רשומה','לא רשום')+' לשיעורים כרגע.</p>')+
    '<h2>היסטוריה</h2>'+history(c);
 }
 function vSettings(){
@@ -271,17 +272,17 @@ function vSettings(){
   '<h2>חשבון</h2><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה מהחשבון</button></div>';
 }
 function vInstall(){
-  return (mode==='p'?'<button class="back" data-act="pback">'+I.back+'חזרה</button>':header())+'<h1>התקנה על מסך הבית</h1><p class="lead">YoGi נפתחת כמו אפליקציה, במסך מלא ובלי חנות אפליקציות.'+(mode==='p'?' חשוב להתקין מתוך הקישור האישי, כדי שהאפליקציה תיפתח ישר לכרטיסייה שלך.':'')+'</p>'+
+  return (mode==='p'?'<button class="back" data-act="pback">'+I.back+'חזרה</button>':header())+'<h1>התקנה על מסך הבית</h1><p class="lead">YoGis נפתחת כמו אפליקציה, במסך מלא ובלי חנות אפליקציות.'+(mode==='p'?' חשוב להתקין מתוך הקישור האישי, כדי שהאפליקציה תיפתח ישר לכרטיסייה שלך.':'')+'</p>'+
   '<div class="platform"><header><span class="ic" style="background:var(--clay-soft);color:var(--clay)">'+I.apple+'</span><div><b>iPhone ו־iPad</b><small>בדפדפן Safari · כדקה</small></div></header><ol class="steps">'+
-   '<li><div><b>פותחים את YoGi ב־Safari</b><small>חשוב להשתמש ב־Safari ולא בדפדפן אחר.</small></div></li>'+
+   '<li><div><b>פותחים את YoGis ב־Safari</b><small>חשוב להשתמש ב־Safari ולא בדפדפן אחר.</small></div></li>'+
    '<li><div><b>מקישים על כפתור השיתוף</b><small>הריבוע עם החץ למעלה, בתחתית המסך או ליד שורת הכתובת.</small></div></li>'+
    '<li><div><b>בוחרים "הוספה למסך הבית"</b><small>אם האפשרות לא מופיעה, גוללים מעט למטה ברשימה.</small></div></li>'+
-   '<li><div><b>מקישים "הוסף"</b><small>האייקון של YoGi מופיע על מסך הבית.</small></div></li></ol></div>'+
+   '<li><div><b>מקישים "הוסף"</b><small>האייקון של YoGis מופיע על מסך הבית.</small></div></li></ol></div>'+
   '<div class="platform"><header><span class="ic" style="background:var(--sage-soft);color:var(--sage-deep)">'+I.android+'</span><div><b>Android</b><small>בדפדפן Chrome · כחצי דקה</small></div></header><ol class="steps">'+
-   '<li><div><b>פותחים את YoGi ב־Chrome</b><small>מהקישור שקיבלת.</small></div></li>'+
+   '<li><div><b>פותחים את YoGis ב־Chrome</b><small>מהקישור שקיבלת.</small></div></li>'+
    '<li><div><b>מקישים "התקנת האפליקציה"</b><small>החלון קופץ בדרך כלל לבד. אם לא, בתפריט שלוש הנקודות בוחרים "התקנת אפליקציה".</small></div></li>'+
    '<li><div><b>מאשרים את ההתקנה</b><small>מקישים "התקנה" בחלון שנפתח.</small></div></li>'+
-   '<li><div><b>פותחים מהמסך הראשי</b><small>YoGi נפתחת במסך מלא.</small></div></li></ol></div>';
+   '<li><div><b>פותחים מהמסך הראשי</b><small>YoGis נפתחת במסך מלא.</small></div></li></ol></div>';
 }
 
 /* ---------- practitioner view ---------- */
@@ -301,25 +302,25 @@ function pCls(p){return inst=>{
 }}
 function vP(){
   const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read).length;
-  return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGi</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
+  return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
-   (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין לך כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
+   (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
    (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
-   '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.<br>ביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.</p>'+
+   '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.</p>'+
    '<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
-   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGi על מסך הבית</button></div>';
+   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGis על מסך הבית</button></div>';
 }
 
 /* ---------- render ---------- */
 function render(){
   INST={};let html;
-  if(mode==='loading')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGi</b><small>טוען…</small></div></div></div><p class="lead" style="margin-top:40px;text-align:center">טוען את הנתונים…</p>';
-  else if(loadErr&&(mode==='p'||mode==='admin')&&!S.classes.length)html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGi</b></div></div></div><h1>לא הצלחנו לטעון</h1><p class="lead">'+esc(loadErr)+'</p><div class="sheet-actions"><button class="btn btn-primary" data-act="refresh">ניסיון נוסף</button>'+(mode==='p'?'<button class="btn btn-soft" data-act="forget">כניסת מורה</button>':'')+'</div>';
+  if(mode==='loading')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>טוען…</small></div></div></div><p class="lead" style="margin-top:40px;text-align:center">טוען את הנתונים…</p>';
+  else if(loadErr&&(mode==='p'||mode==='admin')&&!S.classes.length)html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>לא הצלחנו לטעון</h1><p class="lead">'+esc(loadErr)+'</p><div class="sheet-actions"><button class="btn btn-primary" data-act="refresh">ניסיון נוסף</button>'+(mode==='p'?'<button class="btn btn-soft" data-act="forget">כניסת מורה</button>':'')+'</div>';
   else if(mode==='login')html=vLogin();
-  else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGi</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
+  else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
   else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings}[view]||vHome)();
   app.innerHTML=html;app.classList.toggle('pmode',mode!=='admin');
@@ -376,19 +377,19 @@ function sesSheet(k){
 }
 function addSheet(renewFor){
   const p=renewFor&&findP(renewFor);
-  let type='punch',total=S.studio.defaultTotal;
+  let type='punch',total=S.studio.defaultTotal,gender='f',exp=iso(addMonths(today(),3));
   const draw=()=>{
     const opt=(k,t,s,locked)=>'<button class="opt'+(locked?' locked':'')+'" data-type="'+k+'" aria-pressed="'+(type===k)+'"'+(locked?' aria-disabled="true"':'')+'><b>'+t+(locked?'<span class="soon-tag">בקרוב</span>':'')+'</b><small>'+s+'</small></button>';
-    sheet('<h3>'+(p?'חידוש כרטיסייה':'מתרגל חדש')+'</h3>'+(p?'<p class="lead">'+esc(p.name)+'</p>':'<div class="field"><label for="nn">שם מלא</label><input id="nn" autocomplete="off" placeholder="לדוגמה: אורית כהן"></div><div class="field"><label for="np">טלפון</label><input id="np" inputmode="tel" dir="ltr" style="text-align:right" placeholder="050-0000000"></div>')+
+    sheet('<h3>'+(p?'חידוש כרטיסייה':'מתרגל חדש')+'</h3>'+(p?'<p class="lead">'+esc(p.name)+'</p>':'<div class="field"><label for="nn">שם מלא</label><input id="nn" autocomplete="off" placeholder="לדוגמה: אורית כהן"></div><div class="field"><label for="np">טלפון</label><input id="np" inputmode="tel" dir="ltr" style="text-align:right" placeholder="050-0000000"></div>'+'<div class="field"><label>פנייה בהודעות ובאפליקציה</label><div class="chips">'+[['f','בלשון נקבה'],['m','בלשון זכר']].map(x=>'<button class="chip" data-gender="'+x[0]+'" aria-pressed="'+(gender===x[0])+'">'+x[1]+'</button>').join('')+'</div></div>')+
      '<div class="field"><label>סוג כרטיסייה</label><div class="opts">'+opt('punch','כרטיסיית שיעורים','תוקף 3 חודשים')+opt('monthly','מנוי חודשי','ללא הגבלת שיעורים',!S.studio.monthly)+'</div></div>'+
-     (type==='punch'?'<div class="field"><label for="nt">מספר שיעורים</label><select id="nt">'+[5,10,20].map(n=>'<option'+(n==total?' selected':'')+'>'+n+'</option>').join('')+'</select></div><p class="lead" style="font-size:.88rem;margin-top:8px">בתוקף עד '+fmt(addMonths(today(),3))+'</p>':'<p class="lead" style="font-size:.88rem;margin-top:8px">בתוקף עד '+fmt(addMonths(today(),1))+'</p>')+
+     (type==='punch'?'<div class="field"><label for="nt">מספר שיעורים</label><input id="nt" type="number" inputmode="numeric" min="1" max="100" value="'+total+'"></div>':'')+'<div class="field"><label for="nexp">בתוקף עד</label><input id="nexp" type="date" value="'+exp+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">ברירת המחדל: '+(type==='punch'?'3 חודשים':'חודש')+' מהיום. אפשר לשנות.</p>'+
      '<p id="err" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="'+(p?'saverenew':'saveadd')+'">'+(p?'פתיחת כרטיסייה חדשה':'הוספה ופתיחת כרטיסייה')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
-    const nt=bg.querySelector('#nt');if(nt)nt.onchange=e=>total=+e.target.value;
+    const nt=bg.querySelector('#nt');if(nt)nt.oninput=e=>total=+e.target.value||total;bg.querySelector('#nexp').onchange=e=>{if(e.target.value)exp=e.target.value};bg.querySelectorAll('[data-gender]').forEach(b=>b.onclick=e=>{e.stopPropagation();gender=b.dataset.gender;bg.querySelectorAll('[data-gender]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     bg.querySelectorAll('[data-type]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.dataset.type==='monthly'&&!S.studio.monthly){toast('מנוי חודשי עוד לא הופעל. אפשר להפעיל בהגדרות.');return}
-      const nn=bg.querySelector('#nn'),keep=nn?[nn.value,bg.querySelector('#np').value]:null;type=b.dataset.type;draw();if(keep){bg.querySelector('#nn').value=keep[0];bg.querySelector('#np').value=keep[1]}});
+      const nn=bg.querySelector('#nn'),keep=nn?[nn.value,bg.querySelector('#np').value]:null;type=b.dataset.type;exp=iso(addMonths(today(),type==='punch'?3:1));draw();if(keep){bg.querySelector('#nn').value=keep[0];bg.querySelector('#np').value=keep[1]}});
   };
   draw();
-  addSheet.make=pid=>({person_id:pid,type,total:type==='monthly'?0:total,start_date:iso(today()),expires:iso(addMonths(today(),type==='monthly'?1:3))});
+  addSheet.make=pid=>({person_id:pid,type,total:type==='monthly'?0:Math.max(1,Math.min(100,total)),start_date:iso(today()),expires:exp});addSheet.gender=()=>gender;
 }
 function tmplSheet(id){
   const c=id?S.classes.find(x=>x.id===id):{name:'יוגה',day:0,time:'18:00',dur:60,cap:12,place:S.places[0]||''};
@@ -421,31 +422,31 @@ function waSheet(){
   else if(s==='done')body='ניצלת את כל '+c.total+' השיעורים בכרטיסייה. נשמח לחדש לך!';
   else if(s==='expired')body='תוקף הכרטיסייה הסתיים ב־'+fmt(c.expires)+'. נשמח לחדש לך!';
   else body='נותרו לך '+left(c)+' שיעורים מתוך '+c.total+', בתוקף עד '+fmt(effExpires(c))+'.';
-  const text='היי '+first(p)+' 🌿\n'+body+'\nהכרטיסייה והלו״ז שלך (אפשר להירשם לשיעורים ולהתקין כאפליקציה):\n'+personalLink(p)+'\n\n'+S.studio.name;
+  const text='היי '+first(p)+',\n'+body+'\nהכרטיסייה והלו״ז שלך (אפשר להירשם לשיעורים ולהתקין כאפליקציה):\n'+personalLink(p)+'\n\n'+S.studio.name;
   const phone='972'+p.phone.replace(/\D/g,'').replace(/^0/,'');
-  sheet('<h3>שליחה ב־WhatsApp</h3><p class="lead">ההודעה מוכנה ל'+esc(p.name)+', כולל הקישור האישי שלה.</p>'+waText('https://wa.me/'+phone+'?text='+encodeURIComponent(text),text));
+  sheet('<h3>שליחה ב־WhatsApp</h3><p class="lead">ההודעה מוכנה ל'+esc(p.name)+', כולל הקישור האישי '+G(p,'שלה','שלו')+'.</p>'+waText('https://wa.me/'+phone+'?text='+encodeURIComponent(text),text));
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(text,bg.querySelector('.msg'))};
 }
 function editSheet(){
   const p=findP(sel),c=cur(p);
   sheet('<h3>עריכת '+esc(first(p))+'</h3><p class="lead">פרטי המתרגלת והכרטיסייה הנוכחית.</p>'+
    '<div class="field"><label for="en">שם מלא</label><input id="en" value="'+esc(p.name)+'"></div>'+
-   '<div class="field"><label for="ep">טלפון</label><input id="ep" inputmode="tel" dir="ltr" style="text-align:right" value="'+esc(p.phone)+'"></div>'+
+   '<div class="field"><label for="ep">טלפון</label><input id="ep" inputmode="tel" dir="ltr" style="text-align:right" value="'+esc(p.phone)+'"></div>'+'<div class="field"><label for="eg">פנייה בהודעות ובאפליקציה</label><select id="eg"><option value="f"'+(p.gender!=='m'?' selected':'')+'>בלשון נקבה</option><option value="m"'+(p.gender==='m'?' selected':'')+'>בלשון זכר</option></select></div>'+
    (c.type==='punch'?'<div class="field"><label for="et">מספר שיעורים בכרטיסייה</label><input id="et" type="number" inputmode="numeric" min="1" max="100" value="'+c.total+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">כבר נוצלו '+c.used.length+' שיעורים.</p>':'')+
    '<div class="field"><label for="ex">בתוקף עד</label><input id="ex" type="date" value="'+iso(c.expires)+'"></div>'+
    '<p id="eerr" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="saveedit">שמירה</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
 }
 function linkSheet(){
   const p=findP(sel),l=personalLink(p);
-  sheet('<h3>הקישור האישי של '+esc(first(p))+'</h3><p class="lead">דרך הקישור הזה '+esc(first(p))+' רואה את הכרטיסייה שלה ונרשמת לשיעורים, בלי סיסמה. אל תשתפי אותו עם אחרים.</p><div class="msg" dir="ltr" style="word-break:break-all">'+esc(l)+'</div><div class="sheet-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="'+esc(l)+'">פתיחה בחלון חדש</a><button class="btn btn-soft" id="cp">העתקה</button></div>');
+  sheet('<h3>הקישור האישי של '+esc(first(p))+'</h3><p class="lead">דרך הקישור הזה '+esc(first(p))+' '+G(p,'רואה את הכרטיסייה שלה ונרשמת','רואה את הכרטיסייה שלו ונרשם')+' לשיעורים, בלי סיסמה. אל תשתפי אותו עם אחרים.</p><div class="msg" dir="ltr" style="word-break:break-all">'+esc(l)+'</div><div class="sheet-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="'+esc(l)+'">פתיחה בחלון חדש</a><button class="btn btn-soft" id="cp">העתקה</button></div>');
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(l,bg.querySelector('.msg'))};
 }
 function weekSheet(){
   const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
   let lines='',last=-1;
   list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳) · '+i.c.place+'\n';last=d});
-  const text='שבוע טוב 🌿\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה: פותחים את YoGi או את הקישור האישי שקיבלתן ממני.\n\nביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.\n'+S.studio.name;
-  sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. כל מתרגלת נרשמת דרך האפליקציה או הקישור האישי שלה.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text));
+  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+appUrl()+'\n\nביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.\n'+S.studio.name;
+  sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. מי שכבר פתח פעם אחת את הקישור האישי שלו, נכנס מהקישור הזה ישר לכרטיסייה ולהרשמה.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text));
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(text,bg.querySelector('.msg'))};
   bg.querySelector('a.btn').addEventListener('click',()=>{sb.from('studio').update({last_sent:new Date().toISOString()}).eq('id',1).then(()=>{})});
 }
@@ -463,7 +464,7 @@ async function pTap(k){
     return;
   }
   if(mine.status==='pending'){
-    sheet('<h3>הבקשה ממתינה</h3><p class="lead">שלחת ל'+esc(S.studio.teacher)+' בקשה לבטל את '+esc(inst.c.name)+' ('+dayTime(inst.t)+') בלי ניקוב.</p><div class="msg">'+esc(mine.reason||'')+'</div><div class="stack"><button class="btn btn-soft" data-act="withdraw" data-k="'+k+'">משיכת הבקשה. אני מגיעה</button><button class="btn btn-soft" data-act="close">סגירה</button></div>');
+    sheet('<h3>הבקשה ממתינה</h3><p class="lead">שלחת ל'+esc(S.studio.teacher)+' בקשה לבטל את '+esc(inst.c.name)+' ('+dayTime(inst.t)+') בלי ניקוב.</p><div class="msg">'+esc(mine.reason||'')+'</div><div class="stack"><button class="btn btn-soft" data-act="withdraw" data-k="'+k+'">'+G(p,'משיכת הבקשה. אני מגיעה','משיכת הבקשה. אני מגיע')+'</button><button class="btn btn-soft" data-act="close">סגירה</button></div>');
     return;
   }
   if(ms>=S.studio.cutoff*H){
@@ -473,14 +474,14 @@ async function pTap(k){
   sheet('<h3>ביטול מאוחר</h3><p class="lead">'+esc(inst.c.name)+' מתחיל בעוד '+inTxt(ms)+'. ביטול בפחות מ־'+S.studio.cutoff+' שעות לפני השיעור מנקב שיעור מהכרטיסייה.</p>'+
    '<div class="stack"><button class="btn btn-clay" data-act="latecancel" data-k="'+k+'">ביטול וניקוב שיעור</button>'+
    '<button class="btn btn-soft" data-act="showreq">בקשה מ'+esc(S.studio.teacher)+' לבטל בלי ניקוב</button>'+
-   '<div id="reqbox" hidden><div class="field"><label for="rr">הסבר קצר ל'+esc(S.studio.teacher)+'</label><textarea id="rr" rows="3" placeholder="לדוגמה: חליתי הבוקר"></textarea></div><p id="rerr" style="color:var(--bad);margin:6px 0 0" hidden>כתבי כמה מילים כדי ש'+esc(S.studio.teacher)+' תוכל להחליט.</p><button class="btn btn-primary full" style="margin-top:10px" data-act="sendreq" data-k="'+k+'">שליחת הבקשה</button></div>'+
+   '<div id="reqbox" hidden><div class="field"><label for="rr">הסבר קצר ל'+esc(S.studio.teacher)+'</label><textarea id="rr" rows="3" placeholder="לדוגמה: חליתי הבוקר"></textarea></div><p id="rerr" style="color:var(--bad);margin:6px 0 0" hidden>'+G(p,'כתבי','כתוב')+' כמה מילים כדי ש'+esc(S.studio.teacher)+' תוכל להחליט.</p><button class="btn btn-primary full" style="margin-top:10px" data-act="sendreq" data-k="'+k+'">שליחת הבקשה</button></div>'+
    '<button class="btn btn-soft" data-act="close">השארת ההרשמה</button></div>');
 }
 function notesSheet(){
   const p=S.people[0],list=myNotes(p);
   if(list.some(n=>!n.read)){list.forEach(n=>n.read=true);sb.rpc('p_read_notes',{p_token:token}).then(()=>{});render()}
   const perm=('Notification' in window)?Notification.permission:'none';
-  const permTxt=perm==='granted'?'התראות בטלפון פעילות כשהאפליקציה פתוחה או ברקע.':perm==='denied'?'ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון עבור YoGi.':perm==='none'?'בדפדפן הזה אין התראות. ב־iPhone צריך קודם להתקין את YoGi למסך הבית.':'כדי לקבל תזכורת שעה לפני כל שיעור גם בטלפון, הפעילי התראות.';
+  const permTxt=perm==='granted'?'התראות בטלפון פעילות כשהאפליקציה פתוחה או ברקע.':perm==='denied'?'ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון עבור YoGis.':perm==='none'?'בדפדפן הזה אין התראות. ב־iPhone צריך קודם להתקין את YoGis למסך הבית.':'כדי לקבל תזכורת שעה לפני כל שיעור גם בטלפון, '+G(p,'הפעילי','הפעל')+' התראות.';
   sheet('<h3>התראות</h3>'+(list.length?'<div>'+list.map(n=>'<div class="noteitem"><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small><small>'+fmt(n.t)+' · '+hm(n.t)+'</small></div>').join('')+'</div>':'<p class="lead">אין התראות עדיין. תזכורת תגיע שעה לפני כל שיעור שנרשמת אליו.</p>')+
    '<div class="note">'+permTxt+'</div><div class="sheet-actions">'+(perm==='default'?'<button class="btn btn-primary" data-act="perm">הפעלת התראות בטלפון</button>':'')+(perm==='granted'?'<button class="btn btn-soft" data-act="testnote">התראת בדיקה</button>':'')+'<button class="btn btn-soft" data-act="close">סגירה</button></div>');
 }
@@ -522,7 +523,7 @@ async function doAct(a,t,d){
       if(!n){err.textContent='צריך להזין שם.';err.hidden=false;return}
       if(ph.replace(/\D/g,'').length<9){err.textContent='מספר הטלפון קצר מדי. הזיני 10 ספרות.';err.hidden=false;return}
       const card=addSheet.make(null);
-      const np=await act(async()=>{const pr=await q(sb.from('people').insert({name:n,phone:ph}).select().single());await q(sb.from('cards').insert(Object.assign(card,{person_id:pr.id})));return pr},'נוספה כרטיסייה ל'+esc(n.split(' ')[0]));
+      const np=await act(async()=>{const pr=await q(sb.from('people').insert({name:n,phone:ph,gender:addSheet.gender()}).select().single());await q(sb.from('cards').insert(Object.assign(card,{person_id:pr.id})));return pr},'נוספה כרטיסייה ל'+esc(n.split(' ')[0]));
       sel=np.id;view='person';render();break}
     case'saverenew':await act(()=>q(sb.from('cards').insert(addSheet.make(p.id))),'כרטיסייה חדשה נפתחה');break;
     case'freeze':freezeSheet();break;
@@ -536,7 +537,7 @@ async function doAct(a,t,d){
       if(!ex){err.textContent='צריך לבחור תאריך תוקף.';err.hidden=false;return}
       const tot=et?Math.max(1,+et.value||c.total):c.total;
       if(et&&tot<c.used.length){err.textContent='כבר נוצלו '+c.used.length+' שיעורים, אי אפשר להגדיר פחות.';err.hidden=false;return}
-      await act(async()=>{await q(sb.from('people').update({name:n,phone:ph}).eq('id',p.id));await q(sb.from('cards').update({total:tot,expires:ex}).eq('id',c.id))},'הפרטים נשמרו');break}
+      await act(async()=>{await q(sb.from('people').update({name:n,phone:ph,gender:g('#eg').value}).eq('id',p.id));await q(sb.from('cards').update({total:tot,expires:ex}).eq('id',c.id))},'הפרטים נשמרו');break}
     case'sendwk':weekSheet();break;
     case'addtmpl':tmplSheet();break;
     case'savetmpl':{const g=x=>bg.querySelector(x),err=g('#terr');let place=g('#tpl').value,newPlaces=null;
