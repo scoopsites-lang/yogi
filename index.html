@@ -205,6 +205,19 @@ h2 span{font-weight:500;color:var(--muted);font-size:.85rem}
 .tmpl:last-child{border-bottom:0}
 .tmpl .d{width:34px;height:34px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;font-weight:700;flex:none}
 .x{background:none;border:1px solid var(--line);border-radius:10px;width:34px;height:34px;color:var(--muted);flex:none}
+.bell{position:relative}
+.bell em{position:absolute;top:-7px;inset-inline-start:-7px;background:var(--clay);color:var(--surface);border-radius:999px;font-size:.7rem;font-style:normal;min-width:18px;height:18px;display:grid;place-items:center;padding:0 4px;font-weight:700}
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--clay-soft);border-radius:16px;padding:12px 14px;margin-top:12px}
+.banner>div{flex:1;min-width:0}
+.banner b{display:block}
+.banner small{color:var(--muted);display:block}
+.banner .x{border:0;width:28px;height:28px}
+.noteitem{padding:12px 2px;border-bottom:1px solid var(--line)}
+.noteitem:last-child{border-bottom:0}
+.noteitem small{color:var(--muted);display:block}
+.noteitem.unread b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--clay);margin-inline-end:6px;vertical-align:2px}
+.check{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.92rem}
+.check input{width:20px;height:20px;accent-color:var(--sage-deep)}
 .foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:28px}
 </style>
 </head>
@@ -261,8 +274,11 @@ function weekInst(off){
 }
 const EMPTY={regs:[],late:[],waived:[],done:false,cancelled:false};
 const getS=k=>S.sessions[k]||EMPTY;
-const ensure=inst=>S.sessions[inst.k]||(S.sessions[inst.k]={t:inst.t,name:inst.c.name,cap:inst.c.cap,regs:[],late:[],waived:[],done:false,cancelled:false});
+const ensure=inst=>S.sessions[inst.k]||(S.sessions[inst.k]={t:inst.t,name:inst.c.name,cap:inst.c.cap,regs:[],late:[],waived:[],done:false,cancelled:false,place:inst.c.place});
 const findP=id=>S.people.find(x=>x.id===id);
+const isFull=(n,c)=>c.cap>0&&n>=c.cap;
+const capTxt=c=>c.cap>0?c.cap:'∞';
+const tmplOf=k=>S.classes.find(c=>k.startsWith(c.id+'_'));
 
 function seed(){
   const t=today(), mk=(daysAgo,total,usedDays,extra)=>{const start=t-daysAgo*DAY;return Object.assign({id:uid(),type:'punch',total,start,expires:addMonths(start,3),used:usedDays.map(d=>({t:t-d*DAY,why:'שיעור'})),freezes:[],frozen:null},extra||{})};
@@ -289,11 +305,13 @@ function seed(){
     {id:'c6',day:4,time:'19:00',name:'יוגה ערב',dur:75,cap:12},
     {id:'c7',day:5,time:'09:00',name:'יוגה של שישי',dur:90,cap:14}
   ];
-  return {studio:{name:'הילה רותם · יוגה',teacher:'הילה',monthly:false,defaultTotal:10,sent:null},people,classes,sessions:{},seeded:false};
+  classes.forEach(c=>c.place=c.id==='c7'?'גינת הוורדים':'הסטודיו');
+  return {places:['הסטודיו','גינת הוורדים'],notes:[],studio:{name:'הילה רותם · יוגה',teacher:'הילה',monthly:false,defaultTotal:10,sent:null},people,classes,sessions:{},seeded:false};
 }
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.people)S=seed();
+if(!S.places)S.places=['הסטודיו','גינת הוורדים'];if(!S.notes)S.notes=[];S.classes.forEach(c=>{if(!c.place)c.place=S.places[0];if(c.cap==null)c.cap=12});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
 /* card logic */
@@ -319,7 +337,7 @@ function seedRegs(){
   if(S.seeded)return;S.seeded=true;
   const noa=S.people[0],michal=S.people[1];
   const w0=weekInst(0),w1=weekInst(1);
-  const reg=(inst,p,extra)=>{const s=ensure(inst);if(s.regs.length<s.cap&&!s.regs.some(r=>r.pid===p.id))s.regs.push(Object.assign({pid:p.id,at:now(),status:'in'},extra||{}))};
+  const reg=(inst,p,extra)=>{const s=ensure(inst);if((!s.cap||s.regs.length<s.cap)&&!s.regs.some(r=>r.pid===p.id))s.regs.push(Object.assign({pid:p.id,at:now(),status:'in'},extra||{}))};
   const eve=w0.find(i=>i.c.id==='c2'),soft=w0.find(i=>i.c.id==='c4');
   if(eve&&eve.t>now()){reg(eve,noa);reg(eve,michal,{status:'pending',reason:'הבת שלי חולה היום ואין לי עם מי להשאיר אותה.',reqAt:now()})}
   if(soft)reg(soft,noa);
@@ -334,6 +352,28 @@ function autoPunch(){
     s.done=true;ch=true}
   if(ch)save();
 }
+
+/* notifications: in-app list + phone notification when allowed */
+function notify(pid,title,body,kind){S.notes.unshift({id:uid(),pid,t:now(),title,body,kind,read:false});if(S.notes.length>200)S.notes.length=200;if(mode==='p'&&pid===pvId)sysNotify(title,body)}
+function sysNotify(title,body){try{if(!('Notification' in window)||Notification.permission!=='granted')return;
+  if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon-192.png',badge:'icon-192.png',lang:'he',dir:'rtl'}));else new Notification(title,{body,lang:'he',dir:'rtl'})}catch(e){}}
+function reminders(){let ch=false;
+  for(const k in S.sessions){const s=S.sessions[k];if(s.done||s.cancelled)continue;const ms=s.t-now();if(ms<=0||ms>H)continue;
+    const place=s.place||((tmplOf(k)||{}).place)||'';
+    s.regs.forEach(r=>{if(r.reminded)return;r.reminded=true;ch=true;
+      notify(r.pid,ms>50*6e4?'התרגול מתחיל בעוד שעה':'התרגול מתחיל בעוד '+inTxt(ms),s.name+' ב־'+hm(s.t)+(place?' · '+place:'')+'. נתראה על המזרן 🌿','remind')})}
+  if(ch)save();return ch}
+const myNotes=p=>S.notes.filter(n=>n.pid===p.id);
+function pBanner(p){const n=myNotes(p).find(x=>!x.read);if(!n)return'';
+  return '<div class="banner" role="status"><div><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small></div><button class="x" data-readnote="'+n.id+'" aria-label="סגירת ההתראה">×</button></div>'}
+function notesSheet(p){
+  const list=myNotes(p);list.forEach(n=>n.read=true);save();render();
+  const perm=('Notification' in window)?Notification.permission:'none';
+  const permTxt=perm==='granted'?'התראות בטלפון פעילות.':perm==='denied'?'ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון עבור YoGi.':perm==='none'?'בדפדפן הזה אין התראות. ב־iPhone צריך קודם להתקין את YoGi למסך הבית.':'כדי לקבל תזכורת שעה לפני כל שיעור, הפעילי התראות.';
+  sheet('<h3>התראות</h3>'+(list.length?'<div>'+list.map(n=>'<div class="noteitem"><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small><small>'+fmt(n.t)+' · '+hm(n.t)+'</small></div>').join('')+'</div>':'<p class="lead">אין התראות עדיין. תזכורת תגיע שעה לפני כל שיעור שנרשמת אליו.</p>')+
+   '<div class="note">'+permTxt+'</div><div class="sheet-actions">'+(perm==='default'?'<button class="btn btn-primary" data-act="perm">הפעלת התראות בטלפון</button>':'')+'<button class="btn btn-soft" data-act="testnote">שליחת התראת בדיקה</button><button class="btn btn-soft" data-act="close">סגירה</button></div>');
+}
+setInterval(()=>{if(reminders())render()},30000);
 
 /* state */
 let mode='admin',view='home',sel=null,pvId=null,q='',filter='all',wkOff=0,pwkOff=0,INST={};
@@ -367,7 +407,7 @@ function vHome(){
   const reqs=pendingReqs();
   const nxt=[...weekInst(0),...weekInst(1)].find(i=>i.t>now()&&!getS(i.k).cancelled);
   let next='';
-  if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים מתוך '+nxt.c.cap+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc(findP(r.pid).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
+  if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים'+(nxt.c.cap?' מתוך '+nxt.c.cap:'')+' · '+esc(nxt.c.place)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc(findP(r.pid).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
   return header()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+
    '<div class="stats"><div class="stat sage"><b>'+act+'</b><span>כרטיסיות פעילות</span></div><div class="stat"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></div><div class="stat"><b>'+punches+'</b><span>ניקובים החודש</span></div><div class="stat lav"><b>'+frozen+'</b><span>מוקפאות כרגע</span></div></div>'+
    (reqs.length?'<h2>בקשות ביטול <span>'+reqs.length+' ממתינות</span></h2><div class="list">'+reqs.map(reqCard).join('')+'</div>':'')+
@@ -387,8 +427,8 @@ function groupDays(list,rowFn){
 function adminCls(inst){
   INST[inst.k]=inst;const s=getS(inst.k),n=s.regs.length,past=inst.t<=now(),pend=s.regs.filter(r=>r.status==='pending').length;
   const cls=s.cancelled?'off':past?'past':pend?'pending':'';
-  const st=s.cancelled?'בוטל':past?(s.done?'נוקב':'עבר'):pend?pend+' בקשות':n>=inst.c.cap?'מלא':(inst.c.cap-n)+' פנויים';
-  return '<button class="cls '+cls+'" data-ses="'+inst.k+'"><span class="tm">'+inst.c.time+'<small>'+inst.c.dur+' דק׳</small></span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+n+' / '+inst.c.cap+' רשומים</small><span class="cap"><i style="width:'+Math.min(100,n/inst.c.cap*100)+'%"></i></span></span><span class="st">'+st+'</span></button>';
+  const st=s.cancelled?'בוטל':past?(s.done?'נוקב':'עבר'):pend?pend+' בקשות':isFull(n,inst.c)?'מלא':inst.c.cap?(inst.c.cap-n)+' פנויים':'פתוח';
+  return '<button class="cls '+cls+'" data-ses="'+inst.k+'"><span class="tm">'+inst.c.time+'<small>'+inst.c.dur+' דק׳</small></span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+n+' / '+capTxt(inst.c)+' רשומים · '+esc(inst.c.place)+'</small>'+(inst.c.cap?'<span class="cap"><i style="width:'+Math.min(100,n/inst.c.cap*100)+'%"></i></span>':'')+'</span><span class="st">'+st+'</span></button>';
 }
 function vSched(){
   const list=weekInst(wkOff);
@@ -397,8 +437,8 @@ function vSched(){
    '<button class="btn btn-primary full" style="margin-top:12px" data-act="sendwk">'+I.msg+'שליחת הלו״ז ב־WhatsApp</button>'+
    (S.studio.sent?'<p class="lead" style="font-size:.82rem;margin-top:6px;text-align:center">נשלח לאחרונה ב־'+fmt(S.studio.sent)+'</p>':'')+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,adminCls):'<div class="empty">אין שיעורים קבועים. הוסיפי שיעור למטה.</div>')+'</div>'+
-   '<h2>שיעורים קבועים <span>חוזרים כל שבוע</span></h2><div class="card" style="padding:6px 14px;box-shadow:none;border:1px solid var(--line)">'+
-   S.classes.slice().sort((a,b)=>a.day-b.day||a.time.localeCompare(b.time)).map(c=>'<div class="tmpl"><span class="d">'+DL[c.day]+'</span><span class="who"><b>'+esc(c.name)+' · '+c.time+'</b><small>'+c.dur+' דקות · עד '+c.cap+' משתתפות</small></span><button class="x" data-deltmpl="'+c.id+'" aria-label="הסרת השיעור הקבוע">×</button></div>').join('')+
+   '<h2>שיעורים קבועים <span>הקישי לעריכה</span></h2><div class="card" style="padding:6px 14px;box-shadow:none;border:1px solid var(--line)">'+
+   S.classes.slice().sort((a,b)=>a.day-b.day||a.time.localeCompare(b.time)).map(c=>'<div class="tmpl"><button class="rowmain" data-edittmpl="'+c.id+'"><span class="d">'+DL[c.day]+'</span><span class="who"><b>'+esc(c.name)+' · '+c.time+'</b><small>'+c.dur+' דקות · '+(c.cap?'עד '+c.cap+' משתתפות':'ללא הגבלה')+' · '+esc(c.place)+'</small></span><span class="lead" style="font-size:.85rem">עריכה</span></button><button class="x" data-deltmpl="'+c.id+'" aria-label="הסרת השיעור הקבוע">×</button></div>').join('')+
    '</div><button class="btn btn-soft full" style="margin-top:10px" data-act="addtmpl">'+I.plus+'שיעור קבוע חדש</button>';
 }
 
@@ -456,14 +496,14 @@ function vPerson(){
 
 /* practitioner side */
 function pCls(p){return inst=>{
-  INST[inst.k]=inst;const s=getS(inst.k),mine=s.regs.find(r=>r.pid===p.id),past=inst.t<=now(),n=s.regs.length,full=n>=inst.c.cap;
+  INST[inst.k]=inst;const s=getS(inst.k),mine=s.regs.find(r=>r.pid===p.id),past=inst.t<=now(),n=s.regs.length,full=isFull(n,inst.c);
   let cls='',st='הרשמה';
   if(s.cancelled){cls='off';st='בוטל'}
   else if(past){cls='past';st=mine?'השתתפת':'עבר'}
   else if(mine&&mine.status==='pending'){cls='pending';st='ממתין לאישור'}
   else if(mine){cls='in';st=I.ck+'נרשמת'}
   else if(full){cls='full';st='מלא'}
-  const sub=inst.c.dur+' דק׳ · '+(s.cancelled?'השיעור בוטל':full&&!mine?'אין מקומות':(inst.c.cap-n)+' מקומות פנויים');
+  const sub=inst.c.dur+' דק׳ · '+esc(inst.c.place)+(s.cancelled?' · השיעור בוטל':full&&!mine?' · אין מקומות':inst.c.cap?' · '+(inst.c.cap-n)+' פנויים':'');
   return '<button class="cls '+cls+'" data-ptap="'+inst.k+'"'+(past||s.cancelled?' aria-disabled="true"':'')+'><span class="tm">'+inst.c.time+'</span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+sub+'</small></span><span class="st">'+st+'</span></button>';
 }}
 function demoBar(){
@@ -472,8 +512,8 @@ function demoBar(){
 function vP(){
   const p=findP(pvId)||S.people[0];pvId=p.id;
   const c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p);
-  return demoBar()+'<div class="top" style="position:static"><div class="brand">'+logo(40)+'<div><b>YoGi</b><small>'+esc(S.studio.name)+'</small></div></div></div>'+
-   '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+
+  return demoBar()+'<div class="top" style="position:static"><div class="brand">'+logo(40)+'<div><b>YoGi</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn bell" data-act="notes" aria-label="התראות"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></svg>'+((u=>u?'<em>'+u+'</em>':'')(myNotes(p).filter(n=>!n.read).length))+'</button></div>'+
+   '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
    '<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>'+
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
    (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
@@ -503,6 +543,7 @@ function vSettings(){
   return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, סוגי כרטיסיות ומדיניות ביטול.</p>'+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
+  '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
   '<h2>מדיניות ביטול</h2><div class="switch"><div><b>ביטול חופשי עד '+CUTOFF+' שעות לפני השיעור</b><small>אחרי זה ביטול מנקב שיעור, או שהמתרגלת שולחת אלייך בקשה עם הסבר ואת מחליטה.</small></div></div>'+
   '<h2>סוגי כרטיסיות</h2>'+
   '<div class="switch"><div><b>כרטיסיית שיעורים</b><small>מספר שיעורים קבוע, תוקף של 3 חודשים מיום הפתיחה. ניתן להקפאה.</small></div><input type="checkbox" class="tog" checked disabled aria-label="כרטיסיית שיעורים פעילה"></div>'+
@@ -511,7 +552,7 @@ function vSettings(){
 }
 
 function render(){
-  seedRegs();autoPunch();INST={};
+  seedRegs();autoPunch();reminders();INST={};
   let html;
   if(mode==='p')html=view==='install'?vInstall():vP();
   else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings}[view]||vHome)();
@@ -557,8 +598,13 @@ function pTap(k){
     if(st==='done'||st==='expired'){toast('הכרטיסייה הסתיימה. צריך לחדש אותה כדי להירשם');return}
     if(inst.t>effExpires(c)+DAY){toast('השיעור אחרי תום תוקף הכרטיסייה');return}
     if(avail(p)<=0){toast('כל השיעורים בכרטיסייה כבר שמורים לשיעורים אחרים');return}
-    if(s.regs.length>=inst.c.cap){toast('השיעור מלא');return}
-    const ss=ensure(inst);ss.regs.push({pid:p.id,at:now(),status:'in'});save();render();
+    if(isFull(s.regs.length,inst.c)){toast('השיעור מלא');return}
+    const ss=ensure(inst);ss.regs.push({pid:p.id,at:now(),status:'in'});
+    if(c.type==='punch'&&avail(p)===0){
+      notify(p.id,'זה השיעור האחרון בכרטיסייה','נרשמת ל'+inst.c.name+' ('+dayTime(inst.t)+'). זה השיעור האחרון שנשאר בכרטיסייה. לחידוש אפשר לפנות ל'+S.studio.teacher+'.','last');save();render();
+      sheet('<h3>השיעור האחרון בכרטיסייה</h3><p class="lead">נרשמת ל'+esc(inst.c.name)+', '+dayTime(inst.t)+' · '+esc(inst.c.place)+'.</p><div class="banner"><div><b>זה השיעור האחרון שנשאר בכרטיסייה שלך.</b><small>כדי להמשיך להירשם אחריו צריך לחדש את הכרטיסייה אצל '+esc(S.studio.teacher)+'.</small></div></div><div class="sheet-actions"><button class="btn btn-primary" data-act="close">הבנתי</button></div>');
+      return}
+    save();render();
     toast('נרשמת ל'+esc(inst.c.name)+', '+dayTime(inst.t),()=>{ss.regs=ss.regs.filter(r=>r.pid!==p.id);save();render()});
     return;
   }
@@ -585,14 +631,14 @@ function sesSheet(k){
   let body='';
   if(s.cancelled)body='<div class="note">השיעור בוטל. ההרשמות הוסרו בלי ניקוב.</div>';
   else{
-    body+='<h2>'+(past?'השתתפו ונוקבו':'רשומות')+' <span>'+s.regs.length+' / '+inst.c.cap+'</span></h2>';
+    body+='<h2>'+(past?'השתתפו ונוקבו':'רשומות')+' <span>'+s.regs.length+' / '+capTxt(inst.c)+'</span></h2>';
     body+=s.regs.length?'<div class="hist">'+s.regs.map(r=>'<div><span style="color:var(--ink)">'+nm(r.pid)+(r.status==='pending'?' · <b style="color:var(--warn)">בקשת ביטול</b>':'')+(r.refunded?' · הניקוב הוחזר':'')+'</span>'+(past&&r.punched&&!r.refunded?'<button class="btn btn-soft btn-sm" data-refund="'+k+'|'+r.pid+'">החזרת ניקוב</button>':'')+'</div>').join('')+'</div>':'<p class="lead">אין נרשמות עדיין.</p>';
     const reqs=s.regs.filter(r=>r.status==='pending');
     if(reqs.length)body+='<h2>בקשות ביטול</h2><div class="list">'+reqs.map(r=>reqCard({k,s,r,p:findP(r.pid)})).join('')+'</div>';
     if(s.late.length)body+='<h2>ביטולים מאוחרים (נוקבו)</h2><div class="names">'+s.late.map(pid=>'<span>'+nm(pid)+'</span>').join('')+'</div>';
     if(s.waived.length)body+='<h2>בוטלו בלי ניקוב</h2><div class="names">'+s.waived.map(pid=>'<span>'+nm(pid)+'</span>').join('')+'</div>';
   }
-  sheet('<h3>'+esc(inst.c.name)+'</h3><p class="lead">יום '+DAYS[new Date(inst.t).getDay()]+' '+dm(inst.t)+' · '+inst.c.time+' · '+inst.c.dur+' דקות</p>'+(past?'':'<p class="lead" style="font-size:.88rem">הרשומות ינוקבו אוטומטית כשהשיעור יתחיל.</p>')+body+
+  sheet('<h3>'+esc(inst.c.name)+'</h3><p class="lead">יום '+DAYS[new Date(inst.t).getDay()]+' '+dm(inst.t)+' · '+inst.c.time+' · '+inst.c.dur+' דקות · '+esc(inst.c.place)+'</p>'+(past?'':'<p class="lead" style="font-size:.88rem">הרשומות ינוקבו אוטומטית כשהשיעור יתחיל.</p>')+body+
    '<div class="sheet-actions">'+(!past&&!s.cancelled?'<button class="btn btn-clay" data-act="cancelses" data-k="'+k+'">ביטול השיעור הזה</button>':'')+'<button class="btn btn-soft" data-act="close">סגירה</button></div>');
 }
 function resolveReq(k,pid,approve){
@@ -620,12 +666,28 @@ function addSheet(renewFor){
   draw();
   addSheet.make=()=>{const s=today();return type==='monthly'?{id:uid(),type,total:0,start:s,expires:addMonths(s,1),used:[],freezes:[],frozen:null}:{id:uid(),type,total,start:s,expires:addMonths(s,3),used:[],freezes:[],frozen:null}};
 }
-function tmplSheet(){
-  sheet('<h3>שיעור קבוע חדש</h3><p class="lead">השיעור יופיע בלו״ז בכל שבוע.</p>'+
-   '<div class="field"><label for="tnm">שם השיעור</label><input id="tnm" value="יוגה"></div>'+
-   '<div class="grid2"><div class="field"><label for="tdy">יום</label><select id="tdy">'+DAYS.map((d,i)=>'<option value="'+i+'">'+d+'</option>').join('')+'</select></div><div class="field"><label for="ttm">שעה</label><input id="ttm" type="time" value="18:00"></div></div>'+
-   '<div class="grid2"><div class="field"><label for="tdu">משך</label><select id="tdu">'+[45,60,75,90].map(n=>'<option value="'+n+'"'+(n===60?' selected':'')+'>'+n+' דקות</option>').join('')+'</select></div><div class="field"><label for="tcp">מקסימום משתתפות</label><input id="tcp" type="number" min="1" max="60" value="12"></div></div>'+
-   '<div class="sheet-actions"><button class="btn btn-primary" data-act="savetmpl">הוספה ללו״ז</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+function tmplSheet(id){
+  const c=id?S.classes.find(x=>x.id===id):{name:'יוגה',day:0,time:'18:00',dur:60,cap:12,place:S.places[0]};
+  sheet('<h3>'+(id?'עריכת שיעור קבוע':'שיעור קבוע חדש')+'</h3><p class="lead">'+(id?'השינוי חל מהשיעור הבא. מתרגלות שכבר רשומות יקבלו הודעה על שינוי שעה או מקום.':'השיעור יופיע בלו״ז בכל שבוע.')+'</p>'+
+   '<div class="field"><label for="tnm">שם השיעור</label><input id="tnm" value="'+esc(c.name)+'"></div>'+
+   '<div class="field"><label for="tpl">מקום התרגול</label><select id="tpl">'+S.places.map(pl=>'<option'+(pl===c.place?' selected':'')+'>'+esc(pl)+'</option>').join('')+'<option value="__new">מקום חדש…</option></select><input id="tpn" placeholder="לדוגמה: חוף הים בהרצליה" hidden></div>'+
+   '<div class="grid2"><div class="field"><label for="tdy">יום</label><select id="tdy">'+DAYS.map((d,i)=>'<option value="'+i+'"'+(i===c.day?' selected':'')+'>'+d+'</option>').join('')+'</select></div><div class="field"><label for="ttm">שעה</label><input id="ttm" type="time" value="'+c.time+'"></div></div>'+
+   '<div class="grid2"><div class="field"><label for="tdu">משך (דקות)</label><input id="tdu" type="number" inputmode="numeric" min="15" max="240" step="5" value="'+c.dur+'"></div><div class="field"><label for="tcp">מקסימום משתתפות</label><input id="tcp" type="number" inputmode="numeric" min="1" max="200" value="'+(c.cap||12)+'"'+(c.cap?'':' disabled')+'></div></div>'+
+   '<label class="check"><input type="checkbox" id="tun"'+(c.cap?'':' checked')+'>ללא הגבלת משתתפות</label>'+
+   '<p id="terr" style="color:var(--bad);margin:8px 0 0" hidden></p>'+
+   '<div class="sheet-actions"><button class="btn btn-primary" data-act="savetmpl"'+(id?' data-id="'+id+'"':'')+'>'+(id?'שמירת השינויים':'הוספה ללו״ז')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+  const tpl=bg.querySelector('#tpl'),tpn=bg.querySelector('#tpn');tpl.onchange=()=>{tpn.hidden=tpl.value!=='__new';if(!tpn.hidden)tpn.focus()};
+  const tun=bg.querySelector('#tun'),tcp=bg.querySelector('#tcp');tun.onchange=()=>{tcp.disabled=tun.checked};
+}
+/* apply template edits to this week's and next week's upcoming sessions, and tell registrants */
+function retime(c,vals){
+  const olds=[0,1].map(o=>weekInst(o).find(i=>i.c.id===c.id));
+  const moved=vals.day!==c.day||vals.time!==c.time,placed=vals.place!==c.place;
+  Object.assign(c,vals);let n=0;
+  [0,1].forEach(o=>{const old=olds[o];if(!old)return;const s=S.sessions[old.k];if(!s||s.done||s.cancelled||old.t<=now())return;
+    const ni=weekInst(o).find(i=>i.c.id===c.id);delete S.sessions[old.k];s.t=ni.t;s.name=c.name;s.cap=c.cap;s.place=c.place;s.regs.forEach(r=>{r.reminded=false});S.sessions[ni.k]=s;
+    if((moved||placed)&&s.regs.length)s.regs.forEach(r=>{n++;notify(r.pid,'שינוי בשיעור',c.name+' עבר ל'+dayTime(ni.t)+' · '+c.place+'. ההרשמה שלך נשמרה.','change')})});
+  return n;
 }
 function freezeSheet(){
   let reason='חופשה';const reasons=['חופשה','היריון','פציעה','מחלה','אחר'];
@@ -653,7 +715,7 @@ function waSheet(){
 function weekSheet(){
   const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
   let lines='',last=-1;
-  list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳)\n';last=d});
+  list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳) · '+i.c.place+'\n';last=d});
   const text='שבוע טוב 🌿\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה בלחיצה:\nhttps://yogi.co.il/s/hila\n\nביטול חופשי עד '+CUTOFF+' שעות לפני השיעור.\n'+S.studio.name;
   sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. כל מתרגלת נכנסת עם הקישור האישי שלה ונרשמת.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text,'בגרסה המלאה אפשר לתזמן שליחה אוטומטית בכל יום ראשון בבוקר.'));
   bindCopy(text);
@@ -661,7 +723,7 @@ function weekSheet(){
 }
 
 function onClick(e){
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();mode='admin';go(d.go)}
   else if(d.open){go('person',d.open)}
@@ -675,6 +737,9 @@ function onClick(e){
   else if(d.approve){const a=d.approve.split('|');resolveReq(a[0],a[1],true)}
   else if(d.decline){const a=d.decline.split('|');resolveReq(a[0],a[1],false)}
   else if(d.refund){const a=d.refund.split('|'),s=S.sessions[a[0]],r=s.regs.find(x=>x.pid===a[1]),c=cur(findP(a[1]));const i=c.used.findIndex(u=>u.sk===a[0]);if(i>-1)c.used.splice(i,1);r.refunded=true;save();render();sesSheet(a[0]);toast('הניקוב הוחזר')}
+  else if(d.edittmpl){tmplSheet(d.edittmpl)}
+  else if(d.readnote){const n=S.notes.find(x=>x.id===d.readnote);if(n)n.read=true;save();render()}
+  else if(d.delplace){if(S.classes.some(c=>c.place===d.delplace)){toast('יש שיעורים קבועים במקום הזה. שני להם מקום קודם');return}if(S.places.length<2){toast('צריך להשאיר לפחות מקום אחד');return}S.places=S.places.filter(x=>x!==d.delplace);save();render()}
   else if(d.deltmpl){
     if(t.dataset.armed){S.classes=S.classes.filter(c=>c.id!==d.deltmpl);save();render();toast('השיעור הוסר מהלו״ז הקבוע')}
     else{t.dataset.armed='1';t.textContent='הסרה?';t.style.width='auto';t.style.padding='0 10px';t.style.color='var(--bad)';setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='×';t.removeAttribute('style')}},3000)}
@@ -696,8 +761,12 @@ function onClick(e){
       case'wa':waSheet();break;
       case'sendwk':weekSheet();break;
       case'addtmpl':tmplSheet();break;
-      case'savetmpl':{const nm=bg.querySelector('#tnm').value.trim()||'יוגה',cap=Math.max(1,+bg.querySelector('#tcp').value||12);
-        S.classes.push({id:'c'+uid(),day:+bg.querySelector('#tdy').value,time:bg.querySelector('#ttm').value||'18:00',name:nm,dur:+bg.querySelector('#tdu').value,cap});save();close();render();toast('השיעור נוסף ללו״ז');break}
+      case'savetmpl':{const g=x=>bg.querySelector(x),err=g('#terr');let place=g('#tpl').value;
+        if(place==='__new'){place=g('#tpn').value.trim();if(!place){err.textContent='כתבי את שם המקום החדש.';err.hidden=false;return}if(!S.places.includes(place))S.places.push(place)}
+        const unl=g('#tun').checked,vals={name:g('#tnm').value.trim()||'יוגה',place,day:+g('#tdy').value,time:g('#ttm').value||'18:00',dur:Math.min(240,Math.max(15,+g('#tdu').value||60)),cap:unl?0:Math.max(1,+g('#tcp').value||12)};
+        if(d.id){const n=retime(S.classes.find(x=>x.id===d.id),vals);save();close();render();toast('השיעור עודכן'+(n?'. '+n+' רשומות קיבלו הודעה':''))}
+        else{S.classes.push(Object.assign({id:'c'+uid()},vals));save();close();render();toast('השיעור נוסף ללו״ז')}
+        break}
       case'cancelses':{
         if(!t.dataset.armed){t.dataset.armed='1';t.textContent='לבטל? ההרשמות יוסרו בלי ניקוב';return}
         const inst=INST[d.k],s=ensure(inst);s.cancelled=true;s.regs=[];save();close();render();toast('השיעור בוטל');break}
@@ -711,6 +780,10 @@ function onClick(e){
         const r=getS(d.k).regs.find(x=>x.pid===pvId);r.status='pending';r.reason=txt;r.reqAt=now();save();close();render();toast('הבקשה נשלחה ל'+esc(S.studio.teacher));break}
       case'latecancel':{const inst=INST[d.k],s=ensure(inst),pp=findP(pvId);s.regs=s.regs.filter(r=>r.pid!==pvId);s.late.push(pvId);cur(pp).used.push({t:now(),why:'ביטול מאוחר · '+inst.c.name+' '+dayTime(inst.t),sk:d.k});save();close();render();toast('ההרשמה בוטלה ונוקב שיעור');break}
       case'withdraw':{const r=getS(d.k).regs.find(x=>x.pid===pvId);r.status='in';delete r.reason;save();close();render();toast('הבקשה נמשכה. נתראה בשיעור');break}
+      case'notes':notesSheet(findP(pvId));break;
+      case'perm':try{Notification.requestPermission().then(r=>{toast(r==='granted'?'התראות הופעלו':'ההתראות לא הופעלו');close()})}catch(e){toast('הדפדפן הזה לא תומך בהתראות')}break;
+      case'testnote':notify(pvId,'בדיקת התראה','כך תיראה התזכורת שעה לפני השיעור.','test');save();close();render();break;
+      case'addplace':{const el=document.getElementById('newplace'),v=el.value.trim();if(!v){el.focus();return}if(!S.places.includes(v))S.places.push(v);save();render();toast('המקום נוסף');break}
       case'reset':S=seed();save();q='';filter='all';wkOff=0;pwkOff=0;pvId=null;render();toast('נתוני ההדגמה אופסו');break;
     }
   }
