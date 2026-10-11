@@ -489,7 +489,8 @@ function vPerson(){
     (ended?'<button class="btn btn-primary wide" data-act="renew">'+I.renew+'חידוש כרטיסייה</button>':'<button class="btn btn-primary wide" data-punch="'+p.id+'"'+(can?'':' disabled')+'>'+I.ck+(c.type==='monthly'?'רישום כניסה':'ניקוב ידני')+'</button>')+
     '<button class="btn btn-soft" data-act="wa">'+I.msg+'שליחה ב־WhatsApp</button>'+
     (s==='frozen'?'<button class="btn btn-lav" data-act="unfreeze">'+I.snow+'הפשרה</button>':'<button class="btn btn-lav" data-act="freeze"'+(ended?' disabled':'')+'>'+I.snow+'הקפאה</button>')+
-    '<button class="btn btn-soft wide" data-act="plink">'+I.link+'הקישור האישי של '+esc(first(p))+'</button>'+
+    '<button class="btn btn-soft" data-act="editp">'+I.renew.replace('M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7','M4 20h4L19 9l-4-4L4 16zM14 6l4 4')+'עריכת פרטים</button>'+
+    '<button class="btn btn-soft" data-act="plink">'+I.link+'הקישור האישי של '+esc(first(p))+'</button>'+
    '</div><h2>שיעורים קרובים <span>'+mr.length+'</span></h2>'+
    (mr.length?'<div class="hist">'+mr.map(x=>'<div>'+esc(x.s.name)+(x.r.status==='pending'?' · בקשת ביטול ממתינה':'')+'<span>'+dayTime(x.s.t)+' · '+dm(x.s.t)+'</span></div>').join('')+'</div>':'<p class="lead">לא רשומה לשיעורים כרגע.</p>')+
    '<h2>היסטוריה</h2>'+history(c);
@@ -661,6 +662,15 @@ function waSheet(){
   sheet('<h3>שליחה ב־WhatsApp</h3><p class="lead">ההודעה מוכנה ל'+esc(p.name)+', כולל הקישור האישי שלה.</p>'+waText('https://wa.me/'+phone+'?text='+encodeURIComponent(text),text));
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(text,bg.querySelector('.msg'))};
 }
+function editSheet(){
+  const p=findP(sel),c=cur(p);
+  sheet('<h3>עריכת '+esc(first(p))+'</h3><p class="lead">פרטי המתרגלת והכרטיסייה הנוכחית.</p>'+
+   '<div class="field"><label for="en">שם מלא</label><input id="en" value="'+esc(p.name)+'"></div>'+
+   '<div class="field"><label for="ep">טלפון</label><input id="ep" inputmode="tel" dir="ltr" style="text-align:right" value="'+esc(p.phone)+'"></div>'+
+   (c.type==='punch'?'<div class="field"><label for="et">מספר שיעורים בכרטיסייה</label><input id="et" type="number" inputmode="numeric" min="1" max="100" value="'+c.total+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">כבר נוצלו '+c.used.length+' שיעורים.</p>':'')+
+   '<div class="field"><label for="ex">בתוקף עד</label><input id="ex" type="date" value="'+iso(c.expires)+'"></div>'+
+   '<p id="eerr" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="saveedit">שמירה</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+}
 function linkSheet(){
   const p=findP(sel),l=personalLink(p);
   sheet('<h3>הקישור האישי של '+esc(first(p))+'</h3><p class="lead">דרך הקישור הזה '+esc(first(p))+' רואה את הכרטיסייה שלה ונרשמת לשיעורים, בלי סיסמה. אל תשתפי אותו עם אחרים.</p><div class="msg" dir="ltr" style="word-break:break-all">'+esc(l)+'</div><div class="sheet-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="'+esc(l)+'">פתיחה בחלון חדש</a><button class="btn btn-soft" id="cp">העתקה</button></div>');
@@ -756,6 +766,13 @@ async function doAct(a,t,d){
     case'unfreeze':await act(()=>q(sb.rpc('a_unfreeze',{p_card:c.id})),n=>'הופשרה. התוקף הוארך ב־'+n+' ימים');break;
     case'wa':waSheet();break;
     case'plink':linkSheet();break;
+    case'editp':editSheet();break;
+    case'saveedit':{const g=x=>bg.querySelector(x),err=g('#eerr'),n=g('#en').value.trim(),ph=g('#ep').value.trim(),ex=g('#ex').value,et=g('#et');
+      if(!n){err.textContent='צריך להזין שם.';err.hidden=false;return}
+      if(!ex){err.textContent='צריך לבחור תאריך תוקף.';err.hidden=false;return}
+      const tot=et?Math.max(1,+et.value||c.total):c.total;
+      if(et&&tot<c.used.length){err.textContent='כבר נוצלו '+c.used.length+' שיעורים, אי אפשר להגדיר פחות.';err.hidden=false;return}
+      await act(async()=>{await q(sb.from('people').update({name:n,phone:ph}).eq('id',p.id));await q(sb.from('cards').update({total:tot,expires:ex}).eq('id',c.id))},'הפרטים נשמרו');break}
     case'sendwk':weekSheet();break;
     case'addtmpl':tmplSheet();break;
     case'savetmpl':{const g=x=>bg.querySelector(x),err=g('#terr');let place=g('#tpl').value,newPlaces=null;
