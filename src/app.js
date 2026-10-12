@@ -38,7 +38,7 @@ const initials=n=>n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('');
 const first=p=>p.name.split(' ')[0];
 const G=(p,f,m)=>p&&p.gender==='m'?m:f;
 const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
-const appUrl=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+const appUrl=()=>'https://yogis.co.il/';
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
 async function q(p){const r=await p;if(r.error)throw r.error;return r.data}
 const errMsg=e=>{const m=(e&&e.message)||'';if(/fetch|network/i.test(m))return 'אין חיבור לאינטרנט. נסי שוב.';return m||'משהו השתבש. נסי שוב.'};
