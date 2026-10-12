@@ -275,6 +275,16 @@ const first=p=>p.name.split(' ')[0];
 const G=(p,f,m)=>p&&p.gender==='m'?m:f;
 const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
 const appUrl=()=>'https://yogis.co.il/';
+const isStandalone=()=>{try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p')render()});
+/* personal manifest: the installed app opens straight to this practitioner's card */
+function personalManifest(tok){try{
+  const base=location.origin+'/';
+  const m={name:'YoGis',short_name:'YoGis',lang:'he',dir:'rtl',start_url:base+'?t='+encodeURIComponent(tok),scope:base,display:'standalone',background_color:'#F7F3EC',theme_color:'#F7F3EC',
+    icons:[{src:base+'icon-192.png',sizes:'192x192',type:'image/png'},{src:base+'icon-512.png',sizes:'512x512',type:'image/png'},{src:base+'icon-maskable.png',sizes:'512x512',type:'image/png',purpose:'maskable'}]};
+  const l=document.querySelector('link[rel=manifest]');if(l)l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));
+  if(!new URLSearchParams(location.search).get('t'))history.replaceState(null,'',location.pathname+'?t='+encodeURIComponent(tok));
+}catch(e){}}
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
 async function q(p){const r=await p;if(r.error)throw r.error;return r.data}
 const errMsg=e=>{const m=(e&&e.message)||'';if(/fetch|network/i.test(m))return 'אין חיבור לאינטרנט. נסי שוב.';return m||'משהו השתבש. נסי שוב.'};
@@ -424,7 +434,7 @@ function history(c){
 /* ---------- manager views ---------- */
 function vLogin(){
   return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>כניסת מורה</small></div></div></div>'+
-   '<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח פעם אחת את הקישור האישי שקיבלתם מהמורה ב־WhatsApp. מאותו רגע האפליקציה זוכרת אתכם.</small></div></div><h1>כניסה לניהול הסטודיו</h1><p class="lead">כניסה למורה בלבד.</p>'+
+   '<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם מהמורה ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div><h1>כניסה לניהול הסטודיו</h1><p class="lead">כניסה למורה בלבד.</p>'+
    '<form id="loginf" class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="em">אימייל</label><input id="em" type="email" autocomplete="username" dir="ltr" required></div>'+
    '<div class="field"><label for="pw">סיסמה</label><input id="pw" type="password" autocomplete="current-password" dir="ltr" required></div>'+
    '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">כניסה</button></form>';
@@ -510,12 +520,12 @@ function vSettings(){
 function vInstall(){
   return (mode==='p'?'<button class="back" data-act="pback">'+I.back+'חזרה</button>':header())+'<h1>התקנה על מסך הבית</h1><p class="lead">YoGis נפתחת כמו אפליקציה, במסך מלא ובלי חנות אפליקציות.'+(mode==='p'?' חשוב להתקין מתוך הקישור האישי, כדי שהאפליקציה תיפתח ישר לכרטיסייה שלך.':'')+'</p>'+
   '<div class="platform"><header><span class="ic" style="background:var(--clay-soft);color:var(--clay)">'+I.apple+'</span><div><b>iPhone ו־iPad</b><small>בדפדפן Safari · כדקה</small></div></header><ol class="steps">'+
-   '<li><div><b>פותחים את YoGis ב־Safari</b><small>חשוב להשתמש ב־Safari ולא בדפדפן אחר.</small></div></li>'+
+   '<li><div><b>פותחים את הקישור ב־Safari</b><small>אם הקישור נפתח בתוך WhatsApp, מקישים על סמל המצפן או על "פתיחה ב־Safari" בתחתית המסך.</small></div></li>'+
    '<li><div><b>מקישים על כפתור השיתוף</b><small>הריבוע עם החץ למעלה, בתחתית המסך או ליד שורת הכתובת.</small></div></li>'+
    '<li><div><b>בוחרים "הוספה למסך הבית"</b><small>אם האפשרות לא מופיעה, גוללים מעט למטה ברשימה.</small></div></li>'+
    '<li><div><b>מקישים "הוסף"</b><small>האייקון של YoGis מופיע על מסך הבית.</small></div></li></ol></div>'+
   '<div class="platform"><header><span class="ic" style="background:var(--sage-soft);color:var(--sage-deep)">'+I.android+'</span><div><b>Android</b><small>בדפדפן Chrome · כחצי דקה</small></div></header><ol class="steps">'+
-   '<li><div><b>פותחים את YoGis ב־Chrome</b><small>מהקישור שקיבלת.</small></div></li>'+
+   '<li><div><b>פותחים את הקישור ב־Chrome</b><small>אם הקישור נפתח בתוך WhatsApp, מקישים על שלוש הנקודות ובוחרים "פתיחה ב־Chrome".</small></div></li>'+
    '<li><div><b>מקישים "התקנת האפליקציה"</b><small>החלון קופץ בדרך כלל לבד. אם לא, בתפריט שלוש הנקודות בוחרים "התקנת אפליקציה".</small></div></li>'+
    '<li><div><b>מאשרים את ההתקנה</b><small>מקישים "התקנה" בחלון שנפתח.</small></div></li>'+
    '<li><div><b>פותחים מהמסך הראשי</b><small>YoGis נפתחת במסך מלא.</small></div></li></ol></div>';
@@ -539,6 +549,7 @@ function pCls(p){return inst=>{
 function vP(){
   const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read).length;
   return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
+   (!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
    (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
@@ -789,11 +800,14 @@ async function doAct(a,t,d){
       const inst=INST[d.k];await act(()=>q(sb.rpc('a_cancel_session',{p_class:inst.c.id,p_date:inst.on})),'השיעור בוטל');break}
     case'addplace':{const el=document.getElementById('newplace'),v=el.value.trim();if(!v){el.focus();return}if(S.places.includes(v)){toast('המקום כבר קיים');return}
       await act(()=>q(sb.from('studio').update({places:S.places.concat(v)}).eq('id',1)),'המקום נוסף');break}
+    case'usepl':{const v=(document.getElementById('plinkin').value||'').trim();const m=v.match(/[?&]t=([A-Za-z0-9]+)/)||v.match(/^([a-f0-9]{24,})$/);
+      if(!m){toast('זה לא נראה כמו קישור אישי. העתיקו את כל הקישור מההודעה.');return}location.href=appUrl()+'?t='+m[1];break}
     case'logout':await sb.auth.signOut();mode='login';view='home';render();break;
     /* practitioner */
     case'notes':notesSheet();break;
     case'perm':try{const r=await Notification.requestPermission();toast(r==='granted'?'התראות הופעלו':'ההתראות לא הופעלו');close()}catch(e){toast('הדפדפן הזה לא תומך בהתראות')}break;
     case'testnote':sysNotify('בדיקת התראה','כך תיראה התזכורת שעה לפני השיעור.');close();break;
+    case'doinstall':if(installEvt){installEvt.prompt();const r=await installEvt.userChoice;installEvt=null;render();if(r.outcome==='accepted')toast('YoGis הותקנה על מסך הבית')}break;
     case'pinstall':view='install';render();window.scrollTo(0,0);break;
     case'pback':view='p';render();break;
     case'forget':store.set(TOKEN_KEY,null);token=null;location.href=appUrl();break;
@@ -821,7 +835,7 @@ async function startAdmin(){
   if(u.get('t')){token=u.get('t');store.set(TOKEN_KEY,token)}
   else if(!u.has('admin'))token=store.get(TOKEN_KEY);
   render();
-  if(token){mode='p';view='p';await reload();setInterval(()=>{if(!bg&&document.visibilityState==='visible')reload()},60000)}
+  if(token){personalManifest(token);mode='p';view='p';await reload();setInterval(()=>{if(!bg&&document.visibilityState==='visible')reload()},60000)}
   else await startAdmin();
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!bg&&(mode==='p'||mode==='admin'))reload()});
 })();
