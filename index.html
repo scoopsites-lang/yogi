@@ -366,7 +366,7 @@ async function loadP(){
   const card=v.card?mapCard(v.card,(v.card.used||[]).map(u=>({t:Date.parse(u.t),why:u.why})),v.card.freezes||[]):null;
   S={studio:{name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff},places:[],classes:(v.classes||[]).map(mapClass),sessions,
     people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
-    notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),title:n.title,body:n.body,kind:n.kind,read:n.read}))};
+    notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),ref:n.ref?Date.parse(n.ref):null,title:n.title,body:n.body,kind:n.kind,read:n.read}))};
   phoneNotify();
 }
 async function reload(){
@@ -383,8 +383,8 @@ async function act(fn,okMsg,undo){
 /* phone notification for new unread notes, while the app is open */
 function phoneNotify(){
   let seen;try{seen=JSON.parse(store.get(SEEN_KEY)||'[]')}catch(e){seen=[]}
-  const fresh=S.notes.filter(n=>!n.read&&!seen.includes(n.id)&&now()-n.t<6*H);
-  fresh.slice(0,3).forEach(n=>sysNotify(n.title,n.body));
+  const fresh=S.notes.filter(n=>!n.read&&!expired(n)&&!seen.includes(n.id)&&now()-n.t<6*H);
+  fresh.slice(0,3).forEach(n=>sysNotify(noteTitle(n),n.body));
   store.set(SEEN_KEY,JSON.stringify(S.notes.slice(0,60).map(n=>n.id)));
 }
 function sysNotify(title,body){try{if(!('Notification' in window)||Notification.permission!=='granted')return;
@@ -533,8 +533,10 @@ function vInstall(){
 
 /* ---------- practitioner view ---------- */
 const myNotes=p=>S.notes.filter(n=>n.pid===p.id);
-function pBanner(p){const n=myNotes(p).find(x=>!x.read);if(!n)return'';
-  return '<div class="banner" role="status"><div><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small></div><button class="x" data-readnote="'+n.id+'" aria-label="סגירת ההתראה">×</button></div>'}
+const expired=n=>n.kind==='remind'&&n.ref&&n.ref<=now();
+function noteTitle(n){if(n.kind==='remind'&&n.ref){const ms=n.ref-now();if(ms>0)return 'התרגול מתחיל בעוד '+inTxt(ms);return 'תזכורת לשיעור ב־'+hm(n.ref)}return n.title}
+function pBanner(p){const n=myNotes(p).find(x=>!x.read&&!expired(x));if(!n)return'';
+  return '<div class="banner" role="status"><div><b>'+esc(noteTitle(n))+'</b><small>'+esc(n.body)+'</small></div><button class="x" data-readnote="'+n.id+'" aria-label="סגירת ההתראה">×</button></div>'}
 function pCls(p){return inst=>{
   INST[inst.k]=inst;const s=getS(inst.k),mine=s.regs.find(r=>r.pid===p.id),past=inst.t<=now(),n=s.regs.length,full=isFull(n,inst.c);
   let cls='',st='הרשמה';
@@ -547,7 +549,7 @@ function pCls(p){return inst=>{
   return '<button class="cls '+cls+'" data-ptap="'+inst.k+'"'+(past||s.cancelled?' aria-disabled="true"':'')+'><span class="tm">'+inst.c.time+'</span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+sub+'</small></span><span class="st">'+st+'</span></button>';
 }}
 function vP(){
-  const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read).length;
+  const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read&&!expired(n)).length;
   return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div><button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
    (!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
@@ -729,7 +731,7 @@ function notesSheet(){
   if(list.some(n=>!n.read)){list.forEach(n=>n.read=true);sb.rpc('p_read_notes',{p_token:token}).then(()=>{});render()}
   const perm=('Notification' in window)?Notification.permission:'none';
   const permTxt=perm==='granted'?'התראות בטלפון פעילות כשהאפליקציה פתוחה או ברקע.':perm==='denied'?'ההתראות חסומות. אפשר להפעיל אותן בהגדרות הטלפון עבור YoGis.':perm==='none'?'בדפדפן הזה אין התראות. ב־iPhone צריך קודם להתקין את YoGis למסך הבית.':'כדי לקבל תזכורת שעה לפני כל שיעור גם בטלפון, '+G(p,'הפעילי','הפעל')+' התראות.';
-  sheet('<h3>התראות</h3>'+(list.length?'<div>'+list.map(n=>'<div class="noteitem"><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small><small>'+fmt(n.t)+' · '+hm(n.t)+'</small></div>').join('')+'</div>':'<p class="lead">אין התראות עדיין. תזכורת תגיע שעה לפני כל שיעור שנרשמת אליו.</p>')+
+  sheet('<h3>התראות</h3>'+(list.length?'<div>'+list.map(n=>'<div class="noteitem"><b>'+esc(noteTitle(n))+'</b><small>'+esc(n.body)+'</small><small>'+fmt(n.t)+' · '+hm(n.t)+'</small></div>').join('')+'</div>':'<p class="lead">אין התראות עדיין. תזכורת תגיע שעה לפני כל שיעור שנרשמת אליו.</p>')+
    '<div class="note">'+permTxt+'</div><div class="sheet-actions">'+(perm==='default'?'<button class="btn btn-primary" data-act="perm">הפעלת התראות בטלפון</button>':'')+(perm==='granted'?'<button class="btn btn-soft" data-act="testnote">התראת בדיקה</button>':'')+'<button class="btn btn-soft" data-act="close">סגירה</button></div>');
 }
 
