@@ -325,7 +325,7 @@ function vP(){
    '<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
-   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGis על מסך הבית</button></div>';
+   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGis על מסך הבית</button>'+(adminSess?'':'<br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="toadmin">כניסת מנהל</button>')+'</div>';
 }
 
 /* ---------- render ---------- */
