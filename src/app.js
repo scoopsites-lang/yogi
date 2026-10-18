@@ -132,7 +132,7 @@ async function loadAdmin(){
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
-      cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
+      cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,kind:x.kind||'manual',sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
   try{let seen=JSON.parse(store.get('yogis-aseen')||'[]');S.anotes.filter(n=>!n.read&&!seen.includes(n.id)&&now()-n.t<6*H).slice(0,3).forEach(n=>sysNotify(n.title,n.body));store.set('yogis-aseen',JSON.stringify(S.anotes.slice(0,60).map(n=>n.id)))}catch(e){}
@@ -226,7 +226,7 @@ function vHome(){
   const all=S.people.map(p=>[p,cur(p),status(cur(p))]);
   const act_=all.filter(x=>x[2]==='active'||x[2]==='soon').length;
   const month=new Date(today());month.setDate(1);
-  const punches=all.reduce((n,x)=>n+x[1].used.filter(u=>u.t>=month.getTime()).length,0);
+  const punches=all.reduce((n,x)=>n+x[1].used.filter(u=>u.t>=month.getTime()&&u.kind!=='opening').length,0);
   const regsWeek=weekInst(0).filter(i=>i.t>now()).reduce((n,i)=>n+getS(i.k).regs.length,0);
   const frozen=all.filter(x=>x[2]==='frozen').length;
   const attn=all.filter(x=>['soon','done','expired'].includes(x[2]));
@@ -304,7 +304,7 @@ function vRegs(){
 }
 function vMoney(){
   const price=S.studio.price,all=[];
-  S.people.forEach(p=>p.cards.forEach(c=>c.used.forEach(u=>all.push({t:u.t,p}))));
+  S.people.forEach(p=>p.cards.forEach(c=>c.used.forEach(u=>{if(u.kind!=='opening')all.push({t:u.t,p,kind:u.kind})})));
   const d=new Date(today());d.setDate(1);const mStart=d.getTime();
   const pm=new Date(mStart);pm.setMonth(pm.getMonth()-1);const pmStart=pm.getTime();
   const wStart=wkStart(now());
@@ -325,7 +325,8 @@ function vMoney(){
    '<h2>השבוע <span>'+thisWeek+' ניקובים · '+shekel(thisWeek*price)+'</span></h2>'+
    '<h2>6 חודשים אחרונים</h2>'+bars+
    (top.length?'<h2>מתרגלים פעילים החודש</h2><div class="hist">'+top.map(x=>'<div>'+esc(x.p.name)+'<span>'+x.n+' שיעורים · '+shekel(x.n*price)+'</span></div>').join('')+'</div>':'')+
-   '<p class="foot">החישוב כולל ניקובים מכרטיסיות שיעורים, כולל ביטולים מאוחרים, ולא כולל ניקובים שהוחזרו.</p>';
+   (()=>{const m=all.filter(x=>x.t>=mStart),k=t=>m.filter(x=>x.kind===t).length;return '<h2>פירוט החודש</h2><div class="hist"><div>שיעורים מהלו״ז (ניקוב אוטומטי)<span>'+k('class')+'</span></div><div>ניקוב ידני<span>'+k('manual')+'</span></div><div>ביטול מאוחר<span>'+k('late')+'</span></div></div>'})()+
+   '<p class="foot">החישוב כולל רק שיעורים שנוקבו בפועל: ניקוב אוטומטי בשיעור, ניקוב ידני וביטול מאוחר. לא כולל שיעורים שנוצלו לפני המעבר לאפליקציה וניקובים שהוחזרו.</p>';
 }
 function vSettings(){
   return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+
@@ -454,14 +455,14 @@ function addSheet(renewFor){
     const opt=(k,t,s,locked)=>'<button class="opt'+(locked?' locked':'')+'" data-type="'+k+'" aria-pressed="'+(type===k)+'"'+(locked?' aria-disabled="true"':'')+'><b>'+t+(locked?'<span class="soon-tag">בקרוב</span>':'')+'</b><small>'+s+'</small></button>';
     sheet('<h3>'+(p?'חידוש כרטיסייה':'מתרגל חדש')+'</h3>'+(p?'<p class="lead">'+esc(p.name)+'</p>':'<div class="field"><label for="nn">שם מלא</label><input id="nn" autocomplete="off" placeholder="לדוגמה: אורית כהן"></div><div class="field"><label for="np">טלפון</label><input id="np" inputmode="tel" dir="ltr" style="text-align:right" placeholder="050-0000000"></div>'+'<div class="field"><label>פנייה בהודעות ובאפליקציה</label><div class="chips">'+[['f','בלשון נקבה'],['m','בלשון זכר']].map(x=>'<button class="chip" data-gender="'+x[0]+'" aria-pressed="'+(gender===x[0])+'">'+x[1]+'</button>').join('')+'</div></div>')+
      '<div class="field"><label>סוג כרטיסייה</label><div class="opts">'+opt('punch','כרטיסיית שיעורים','תוקף 3 חודשים')+opt('monthly','מנוי חודשי','ללא הגבלת שיעורים',!S.studio.monthly)+'</div></div>'+
-     (type==='punch'?'<div class="field"><label for="nt">מספר שיעורים</label><input id="nt" type="number" inputmode="numeric" min="1" max="100" value="'+total+'"></div>':'')+'<div class="field"><label for="nexp">בתוקף עד</label><input id="nexp" type="date" value="'+exp+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">ברירת המחדל: '+(type==='punch'?'3 חודשים':'חודש')+' מהיום. אפשר לשנות.</p>'+
+     (type==='punch'?'<div class="grid2"><div class="field"><label for="nt">מספר שיעורים</label><input id="nt" type="number" inputmode="numeric" min="1" max="100" value="'+total+'"></div><div class="field"><label for="nused">כבר נוצלו</label><input id="nused" type="number" inputmode="numeric" min="0" max="100" value="0"></div></div><p class="lead" style="font-size:.82rem;margin-top:4px">"כבר נוצלו": לכרטיסייה שהתחילה לפני האפליקציה. לא נספר בהכנסות.</p>':'')+'<div class="field"><label for="nexp">בתוקף עד</label><input id="nexp" type="date" value="'+exp+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">ברירת המחדל: '+(type==='punch'?'3 חודשים':'חודש')+' מהיום. אפשר לשנות.</p>'+
      '<p id="err" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="'+(p?'saverenew':'saveadd')+'">'+(p?'פתיחת כרטיסייה חדשה':'הוספה ופתיחת כרטיסייה')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
     const nt=bg.querySelector('#nt');if(nt)nt.oninput=e=>total=+e.target.value||total;bg.querySelector('#nexp').onchange=e=>{if(e.target.value)exp=e.target.value};bg.querySelectorAll('[data-gender]').forEach(b=>b.onclick=e=>{e.stopPropagation();gender=b.dataset.gender;bg.querySelectorAll('[data-gender]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     bg.querySelectorAll('[data-type]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.dataset.type==='monthly'&&!S.studio.monthly){toast('מנוי חודשי עוד לא הופעל. אפשר להפעיל בהגדרות.');return}
       const nn=bg.querySelector('#nn'),keep=nn?[nn.value,bg.querySelector('#np').value]:null;type=b.dataset.type;exp=iso(addMonths(today(),type==='punch'?3:1));draw();if(keep){bg.querySelector('#nn').value=keep[0];bg.querySelector('#np').value=keep[1]}});
   };
   draw();
-  addSheet.make=pid=>({person_id:pid,type,total:type==='monthly'?0:Math.max(1,Math.min(100,total)),start_date:iso(today()),expires:exp});addSheet.gender=()=>gender;
+  addSheet.make=pid=>({person_id:pid,type,total:type==='monthly'?0:Math.max(1,Math.min(100,total)),start_date:iso(today()),expires:exp});addSheet.gender=()=>gender;addSheet.used=()=>{const e=bg&&bg.querySelector('#nused');return e?Math.max(0,Math.min(total,+e.value||0)):0};
 }
 function tmplSheet(id){
   const c=id?S.classes.find(x=>x.id===id):{name:'יוגה',day:0,time:'18:00',dur:60,cap:12,place:S.places[0]||''};
@@ -553,6 +554,7 @@ async function pTap(k){
    '<div id="reqbox" hidden><div class="field"><label for="rr">הסבר קצר ל'+esc(S.studio.teacher)+'</label><textarea id="rr" rows="3" placeholder="לדוגמה: חליתי הבוקר"></textarea></div><p id="rerr" style="color:var(--bad);margin:6px 0 0" hidden>'+G(p,'כתבי','כתוב')+' כמה מילים כדי ש'+esc(S.studio.teacher)+' תוכל להחליט.</p><button class="btn btn-primary full" style="margin-top:10px" data-act="sendreq" data-k="'+k+'">שליחת הבקשה</button></div>'+
    '<button class="btn btn-soft" data-act="close">השארת ההרשמה</button></div>');
 }
+async function addOpening(cardId,n){if(!n)return;const rows=[];for(let i=0;i<n;i++)rows.push({card_id:cardId,why:'ניצול קודם (לפני המעבר לאפליקציה)',kind:'opening'});await q(sb.from('punches').insert(rows))}
 function aNotesSheet(){
   const list=S.anotes||[];
   if(list.some(n=>!n.read)){list.forEach(n=>n.read=true);sb.rpc('a_read_admin_notes').then(()=>{});render()}
@@ -612,10 +614,10 @@ async function doAct(a,t,d){
     case'saveadd':{const n=bg.querySelector('#nn').value.trim(),ph=bg.querySelector('#np').value.trim(),err=bg.querySelector('#err');
       if(!n){err.textContent='צריך להזין שם.';err.hidden=false;return}
       if(ph.replace(/\D/g,'').length<9){err.textContent='מספר הטלפון קצר מדי. הזיני 10 ספרות.';err.hidden=false;return}
-      const card=addSheet.make(null);
-      const np=await act(async()=>{const pr=await q(sb.from('people').insert({name:n,phone:ph,gender:addSheet.gender()}).select().single());await q(sb.from('cards').insert(Object.assign(card,{person_id:pr.id})));return pr},'נוספה כרטיסייה ל'+esc(n.split(' ')[0]));
+      const card=addSheet.make(null),nused=addSheet.used();
+      const np=await act(async()=>{const pr=await q(sb.from('people').insert({name:n,phone:ph,gender:addSheet.gender()}).select().single());const cr=await q(sb.from('cards').insert(Object.assign(card,{person_id:pr.id})).select().single());await addOpening(cr.id,nused);return pr},'נוספה כרטיסייה ל'+esc(n.split(' ')[0]));
       sel=np.id;view='person';render();break}
-    case'saverenew':await act(()=>q(sb.from('cards').insert(addSheet.make(p.id))),'כרטיסייה חדשה נפתחה');break;
+    case'saverenew':{const nused=addSheet.used();await act(async()=>{const cr=await q(sb.from('cards').insert(addSheet.make(p.id)).select().single());await addOpening(cr.id,nused)},'כרטיסייה חדשה נפתחה');break}
     case'freeze':freezeSheet();break;
     case'dofreeze':{const nd=freezeSheet.days();if(!(nd>=1&&nd<=14)){const er=bg.querySelector('#ferr');er.textContent='אפשר להקפיא בין יום אחד ל־14 ימים.';er.hidden=false;return}
       await act(()=>q(sb.rpc('a_freeze',{p_card:c.id,p_reason:freezeSheet.reason(),p_days:nd,p_again:!!freezeSheet.again})),n=>'הכרטיסייה הוקפאה'+(n?' ו־'+n+' הרשמות בוטלו':''));break}
