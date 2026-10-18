@@ -124,7 +124,7 @@ async function loadAdmin(){
     q(sb.from('admin_notes').select('*').order('created_at',{ascending:false}).limit(50))]);
   const {data:ses_}=await sb.auth.getSession();myUid=(ses_&&ses_.session&&ses_.session.user)?ses_.session.user.id:null;
   const sesById={};const sessions={};
-  se.forEach(s=>{const o={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.starts_at),name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs:[],late:[],waived:[]};sesById[s.id]=o;sessions[s.class_id+'_'+s.on_date]=o});
+  se.forEach(s=>{const o={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.starts_at),dur:s.dur||60,name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs:[],late:[],waived:[]};sesById[s.id]=o;sessions[s.class_id+'_'+s.on_date]=o});
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
   cn.forEach(x=>{const s=sesById[x.session_id];if(s)(x.kind==='late'?s.late:s.waived).push(x.person_id)});
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
@@ -302,9 +302,25 @@ function vRegs(){
     return '<button class="nextcls" style="width:100%;text-align:start" data-ses="'+inst.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>'+inst.c.time+' · '+esc(inst.c.name)+'</b><span class="lead" style="font-size:.85rem">'+s.regs.length+(inst.c.cap?' / '+inst.c.cap:'')+' רשומים</span></div><div class="lead" style="font-size:.85rem">'+esc(inst.c.place)+' · צפי '+shekel(s.regs.length*S.studio.price)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'});
   return header()+'<button class="back" data-go="home">'+I.back+'חזרה</button><h1>הרשמות לשאר השבוע</h1><p class="lead">'+total+' הרשמות ב־'+list.length+' שיעורים · צפי הכנסה '+shekel(total*S.studio.price)+' לפי '+shekel(S.studio.price)+' לשיעור.</p><div class="list" style="gap:8px">'+html+'</div>';
 }
+function expectedTable(price){
+  const end=now()+7*DAY,rows=[...weekInst(0),...weekInst(1)].filter(i=>i.t>now()&&i.t<end&&!getS(i.k).cancelled);
+  let tot=0;const tr=rows.map(i=>{INST[i.k]=i;const s=getS(i.k),n=s.regs.length;tot+=n;
+    return '<tr data-ses="'+i.k+'"><td>'+DL[new Date(i.t).getDay()]+' '+dm(i.t)+'<small>'+i.c.time+'</small></td><td>'+esc(i.c.name)+'<small>'+esc(i.c.place)+'</small></td><td class="nm">'+(n?s.regs.map(r=>esc((findP(r.pid)||{name:'?'}).name)+(r.status==='pending'?' <em>(בקשת ביטול)</em>':'')).join(', '):'<span class="mut">אין נרשמים</span>')+'</td><td class="num">'+n+'</td><td class="num">'+shekel(n*price)+'</td></tr>'}).join('');
+  return '<h2>הכנסה צפויה ל־7 הימים הקרובים <span>'+tot+' הרשמות · '+shekel(tot*price)+'</span></h2>'+
+   (rows.length?'<div class="tblw"><table class="tbl"><thead><tr><th>מועד</th><th>שיעור</th><th>מתרגלים רשומים</th><th>רשומים</th><th>צפי</th></tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="3">סה״כ</td><td class="num">'+tot+'</td><td class="num">'+shekel(tot*price)+'</td></tr></tfoot></table></div>':'<div class="empty">אין שיעורים ב־7 הימים הקרובים.</div>');
+}
+function actualTable(all,mStart,price){
+  const m=all.filter(x=>x.t>=mStart),groups={};
+  m.forEach(x=>{const key=x.sk&&x.kind!=='manual'?x.sk:'manual_'+iso(x.t);(groups[key]=groups[key]||{key,t:x.t,list:[],sk:x.sk&&x.kind!=='manual'?x.sk:null}).list.push(x);if(x.t<groups[key].t)groups[key].t=x.t});
+  const gs=Object.values(groups).sort((a,b)=>b.t-a.t);
+  const tr=gs.map(g=>{const s=g.sk?S.sessions[g.sk]:null,st=s?s.t:g.t;
+    return '<tr><td>'+DL[new Date(st).getDay()]+' '+dm(st)+(s?'<small>'+hm(s.t)+'</small>':'')+'</td><td>'+(s?esc(s.name)+'<small>'+esc(s.place)+'</small>':'ניקוב ידני')+'</td><td class="nm">'+g.list.map(x=>esc(x.p.name)+(x.kind==='late'?' <em>(ביטול מאוחר)</em>':'')).join(', ')+'</td><td class="num">'+g.list.length+'</td><td class="num">'+shekel(g.list.length*price)+'</td></tr>'}).join('');
+  return '<h2>בפועל החודש <span>'+m.length+' ניקובים · '+shekel(m.length*price)+'</span></h2>'+
+   (gs.length?'<div class="tblw"><table class="tbl"><thead><tr><th>מועד</th><th>שיעור</th><th>מי נוקב</th><th>ניקובים</th><th>הכנסה</th></tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="3">סה״כ</td><td class="num">'+m.length+'</td><td class="num">'+shekel(m.length*price)+'</td></tr></tfoot></table></div>':'<div class="empty">עדיין אין ניקובים החודש.</div>');
+}
 function vMoney(){
   const price=S.studio.price,all=[];
-  S.people.forEach(p=>p.cards.forEach(c=>c.used.forEach(u=>{if(u.kind!=='opening')all.push({t:u.t,p,kind:u.kind})})));
+  S.people.forEach(p=>p.cards.forEach(c=>c.used.forEach(u=>{if(u.kind!=='opening')all.push({t:u.t,p,kind:u.kind,sk:u.sk})})));
   const d=new Date(today());d.setDate(1);const mStart=d.getTime();
   const pm=new Date(mStart);pm.setMonth(pm.getMonth()-1);const pmStart=pm.getTime();
   const wStart=wkStart(now());
@@ -322,7 +338,7 @@ function vMoney(){
   return header()+'<h1>הכנסות</h1><p class="lead">לפי '+shekel(price)+' לכל שיעור שנוקב. אפשר לשנות את המחיר בהגדרות.</p>'+
    '<div class="stats"><div class="stat sage"><b>'+shekel(thisMonth*price)+'</b><span>החודש עד היום · '+thisMonth+' ניקובים</span></div><div class="stat"><b>'+shekel(proj*price)+'</b><span>צפי לסוף החודש</span></div>'+
    '<div class="stat"><b>'+shekel(lastMonth*price)+'</b><span>חודש קודם · '+lastMonth+' ניקובים</span></div><button class="stat lav" data-go="regs"><b>'+shekel(upWeek*price)+'</b><span>צפי מהרשמות לשאר השבוע · '+upWeek+'</span></button></div>'+
-   '<h2>השבוע <span>'+thisWeek+' ניקובים · '+shekel(thisWeek*price)+'</span></h2>'+
+   '<h2>השבוע <span>'+thisWeek+' ניקובים · '+shekel(thisWeek*price)+'</span></h2>'+expectedTable(price)+actualTable(all,mStart,price)+
    '<h2>6 חודשים אחרונים</h2>'+bars+
    (top.length?'<h2>מתרגלים פעילים החודש</h2><div class="hist">'+top.map(x=>'<div>'+esc(x.p.name)+'<span>'+x.n+' שיעורים · '+shekel(x.n*price)+'</span></div>').join('')+'</div>':'')+
    (()=>{const m=all.filter(x=>x.t>=mStart),k=t=>m.filter(x=>x.kind===t).length;return '<h2>פירוט החודש</h2><div class="hist"><div>שיעורים מהלו״ז (ניקוב אוטומטי)<span>'+k('class')+'</span></div><div>ניקוב ידני<span>'+k('manual')+'</span></div><div>ביטול מאוחר<span>'+k('late')+'</span></div></div>'})()+
