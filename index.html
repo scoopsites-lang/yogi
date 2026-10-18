@@ -402,8 +402,9 @@ function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<1
 function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(myTok?'<button class="iconbtn" data-act="tome">'+I.eye+'הצד שלי כמתרגל</button>':'')+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
-  const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
-  return '<div class="row"><button class="rowmain" data-open="'+p.id+'"><span class="av">'+esc(initials(p.name))+'</span><span class="who"><b>'+esc(p.name)+'</b><small>'+sub+'</small></span>'+
+  const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
+  const fz=s==='frozen';
+  return '<div class="row'+(fz?' frozen-row':'')+'"><button class="rowmain" data-open="'+p.id+'"><span class="av"'+(fz?' style="background:var(--lav-soft);color:var(--ink)" title="מוקפא"':'')+'>'+(fz?I.snow:esc(initials(p.name)))+'</span><span class="who"><b>'+esc(p.name)+'</b><small>'+sub+'</small></span>'+
    (c.type==='monthly'?'<span class="count">∞<small>חודשי</small></span>':'<span class="count">'+left(c)+'/'+c.total+'<small>נותרו</small></span>')+'</button>'+
    (withPunch?(canPunch?'<button class="punch" data-punch="'+p.id+'">'+(c.type==='monthly'?'כניסה':'ניקוב')+'</button>':pill(s)):'')+'</div>';
 }
@@ -456,7 +457,7 @@ function vHome(){
   const regsWeek=weekInst(0).filter(i=>i.t>now()).reduce((n,i)=>n+getS(i.k).regs.length,0);
   const frozen=all.filter(x=>x[2]==='frozen').length;
   const attn=all.filter(x=>['soon','done','expired'].includes(x[2]));
-  const ready=all.filter(x=>x[2]==='active'||x[2]==='soon').map(x=>x[0]);
+  const ready=all.filter(x=>x[2]==='active'||x[2]==='soon').map(x=>x[0]).concat(all.filter(x=>x[2]==='frozen').map(x=>x[0]));
   const reqs=pendingReqs();
   const nxt=[...weekInst(0),...weekInst(1)].find(i=>i.t>now()&&!getS(i.k).cancelled);
   let next='';
@@ -492,6 +493,7 @@ function vPeople(){
     if(filter==='frozen')return s==='frozen';
     if(filter==='ended')return s==='done'||s==='expired';
     return true});
+  f.sort((a,b)=>(status(cur(a))==='frozen')-(status(cur(b))==='frozen'));
   const chip=(k,t)=>'<button class="chip" data-filter="'+k+'" aria-pressed="'+(filter===k)+'">'+t+'</button>';
   return header()+'<h1>מתרגלים</h1><p class="lead">'+S.people.length+' מתרגלים בסטודיו</p>'+
    '<label class="search">'+I.search+'<input id="q" type="search" placeholder="חיפוש לפי שם או טלפון" value="'+esc(q_)+'"></label>'+
@@ -880,6 +882,6 @@ async function startP(tok){token=tok;store.set(TOKEN_KEY,tok);personalManifest(t
 
 </script>
 
-<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));</script>
+<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));let had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!done){done=true;location.reload()}})}</script>
 </body>
 </html>
