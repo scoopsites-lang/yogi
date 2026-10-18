@@ -239,7 +239,7 @@ const SB_URL='https://zyleeqmcixyhvuapneeo.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5bGVlcW1jaXh5aHZ1YXBuZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MzAwMzIsImV4cCI6MjEwNzMwNjAzMn0.WDYGqmy9cnp8nRYyr5ZkVxWcR-pI8o8TqDq-V1cJRlA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 const DAY=864e5,H=36e5,TOKEN_KEY='yogis-token',SEEN_KEY='yogis-seen',MODE_KEY='yogis-mode';
-let myTok=null,adminSess=false;
+let myTok=null,adminSess=false,myUid=null;
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 const I={
  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -338,7 +338,7 @@ const mapClass=c=>({id:c.id,day:c.day,time:(c.start_time||c.time).slice(0,5),nam
 async function loadAdmin(){
   try{await q(sb.rpc('a_process'))}catch(e){}
   const since=iso(today()-21*DAY);
-  const [st,pe,ca,fr,cl,se,rg,pu,cn]=await Promise.all([
+  const [st,pe,ca,fr,cl,se,rg,pu,cn,an]=await Promise.all([
     q(sb.from('studio').select('*').eq('id',1).single()),
     q(sb.from('people').select('*').order('created_at')),
     q(sb.from('cards').select('*').order('created_at')),
@@ -347,7 +347,9 @@ async function loadAdmin(){
     q(sb.from('sessions').select('*').gte('on_date',since)),
     q(sb.from('regs').select('*').eq('removed',false).order('created_at')),
     q(sb.from('punches').select('*').eq('void',false).order('at')),
-    q(sb.from('cancellations').select('*'))]);
+    q(sb.from('cancellations').select('*')),
+    q(sb.from('admin_notes').select('*').order('created_at',{ascending:false}).limit(50))]);
+  const {data:ses_}=await sb.auth.getSession();myUid=(ses_&&ses_.session&&ses_.session.user)?ses_.session.user.id:null;
   const sesById={};const sessions={};
   se.forEach(s=>{const o={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.starts_at),name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs:[],late:[],waived:[]};sesById[s.id]=o;sessions[s.class_id+'_'+s.on_date]=o});
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
@@ -355,10 +357,12 @@ async function loadAdmin(){
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
   S={studio:{name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,sent:st.last_sent?Date.parse(st.last_sent):null},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
+    anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
       cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
+  try{let seen=JSON.parse(store.get('yogis-aseen')||'[]');S.anotes.filter(n=>!n.read&&!seen.includes(n.id)&&now()-n.t<6*H).slice(0,3).forEach(n=>sysNotify(n.title,n.body));store.set('yogis-aseen',JSON.stringify(S.anotes.slice(0,60).map(n=>n.id)))}catch(e){}
 }
 async function loadP(){
   const v=await q(sb.rpc('p_view',{p_token:token}));
@@ -395,7 +399,7 @@ function sysNotify(title,body){try{if(!('Notification' in window)||Notification.
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
-function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(myTok?'<button class="iconbtn" data-act="tome">'+I.eye+'הצד שלי כמתרגל</button>':'')+'<button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
+function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(myTok?'<button class="iconbtn" data-act="tome">'+I.eye+'הצד שלי כמתרגל</button>':'')+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
   const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
@@ -423,7 +427,7 @@ function cardBody(c,p,forP){
   return '<div class="big"><b>'+Math.max(0,left(c))+'</b><span>שיעורים נותרו מתוך '+c.total+'</span></div><div class="dots" style="grid-template-columns:repeat('+Math.min(5,c.total)+',1fr)">'+dots+'</div>'+
    '<div class="legend"><span><i style="background:var(--sage)"></i>נוצלו</span>'+(res?'<span><i style="background:var(--lav)"></i>שמורים לשיעורים שנרשמת אליהם</span>':'')+'<span><i style="border:1.5px dashed var(--sage)"></i>פנויים</span></div>'+
    '<div class="meta"><div><small>'+(s==='frozen'?'תוקף נוכחי (מתארך)':'בתוקף עד')+'</small><b>'+fmt(effExpires(c))+'</b></div><div><small>'+(s==='expired'?'פג תוקף לפני':'ימים לתום התוקף')+'</small><b>'+(s==='expired'?Math.ceil((today()-c.expires)/DAY)+' ימים':daysTo(c))+'</b></div></div>'+
-   (s==='frozen'?'<div class="note">'+(forP?'הכרטיסייה מוקפאת ':'מוקפאת ')+'מ־'+fmt(c.frozen.since)+' עד '+fmt(c.frozen.until)+' ('+esc(c.frozen.reason)+'). ההפשרה אוטומטית בסוף התקופה, והתוקף יוארך במספר ימי ההקפאה.</div>':'');
+   (s==='frozen'?'<div class="note">'+(forP?'הכרטיסייה מוקפאת ':'מוקפאת ')+'מ־'+fmt(c.frozen.since)+' עד '+fmt(c.frozen.until)+' ('+esc(c.frozen.reason)+'). ההפשרה אוטומטית בסוף התקופה, והתוקף יוארך במספר ימי ההקפאה.'+(forP?'<button class="btn btn-lav full" style="margin-top:10px" data-act="punfreeze">'+I.snow+'הפשרת הכרטיסייה עכשיו</button>':'')+'</div>':'');
 }
 function history(c){
   const ev=c.used.map((u,i)=>({t:u.t,txt:(i+1)+'. '+u.why}));
@@ -442,6 +446,8 @@ function vLogin(){
    '<div class="field"><label for="pw">סיסמה</label><input id="pw" type="password" autocomplete="current-password" dir="ltr" required></div>'+
    '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">כניסה</button></form>';
 }
+function aBanner(){const u=(S.anotes||[]).filter(n=>!n.read);if(!u.length)return'';const n=u[0];
+  return '<div class="banner" role="status"><div><b>'+esc(n.title)+'</b><small>'+esc(n.body)+(u.length>1?' · ועוד '+(u.length-1)+' התראות':'')+'</small></div><button class="btn btn-soft btn-sm" data-act="anotes">לכל ההתראות</button></div>'}
 function vHome(){
   const all=S.people.map(p=>[p,cur(p),status(cur(p))]);
   const act_=all.filter(x=>x[2]==='active'||x[2]==='soon').length;
@@ -456,7 +462,7 @@ function vHome(){
   let next='';
   if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים'+(nxt.c.cap?' מתוך '+nxt.c.cap:'')+' · '+esc(nxt.c.place)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
   const empty=!S.people.length?'<div class="note">עוד אין מתרגלות במערכת. הוסיפי מתרגלת בלשונית "מתרגלים", ושלחי לה את הקישור האישי ב־WhatsApp.</div>':'';
-  return header()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+empty+
+  return header()+aBanner()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+empty+
    '<div class="stats"><div class="stat sage"><b>'+act_+'</b><span>כרטיסיות פעילות</span></div><div class="stat"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></div><div class="stat"><b>'+punches+'</b><span>ניקובים החודש</span></div><div class="stat lav"><b>'+frozen+'</b><span>מוקפאות כרגע</span></div></div>'+
    (reqs.length?'<h2>בקשות ביטול <span>'+reqs.length+' ממתינות</span></h2><div class="list">'+reqs.map(reqCard).join('')+'</div>':'')+next+
    (attn.length?'<h2>דורשות תשומת לב <span>'+attn.length+'</span></h2><div class="list">'+attn.map(x=>row(x[0],true)).join('')+'</div>':'')+
@@ -732,6 +738,18 @@ async function pTap(k){
    '<div id="reqbox" hidden><div class="field"><label for="rr">הסבר קצר ל'+esc(S.studio.teacher)+'</label><textarea id="rr" rows="3" placeholder="לדוגמה: חליתי הבוקר"></textarea></div><p id="rerr" style="color:var(--bad);margin:6px 0 0" hidden>'+G(p,'כתבי','כתוב')+' כמה מילים כדי ש'+esc(S.studio.teacher)+' תוכל להחליט.</p><button class="btn btn-primary full" style="margin-top:10px" data-act="sendreq" data-k="'+k+'">שליחת הבקשה</button></div>'+
    '<button class="btn btn-soft" data-act="close">השארת ההרשמה</button></div>');
 }
+function aNotesSheet(){
+  const list=S.anotes||[];
+  if(list.some(n=>!n.read)){list.forEach(n=>n.read=true);sb.rpc('a_read_admin_notes').then(()=>{});render()}
+  sheet('<h3>התראות ניהול</h3>'+(list.length?'<div>'+list.map(n=>'<div class="noteitem"><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small><small>'+fmt(n.t)+' · '+hm(n.t)+'</small></div>').join('')+'</div>':'<p class="lead">אין התראות כרגע. כאן יופיעו עדכונים כמו הפשרת כרטיסייה על ידי מתרגל.</p>')+
+   '<div class="sheet-actions"><button class="btn btn-soft" data-act="close">סגירה</button></div>');
+}
+function pUnfreezeSheet(){
+  const p=S.people[0],c=cur(p),d=frozenDays(c);
+  sheet('<h3>הפשרת הכרטיסייה</h3><p class="lead">'+G(p,'בטוחה','בטוח')+' '+G(p,'שאת רוצה','שאתה רוצה')+' להפשיר את הכרטיסייה עכשיו?</p>'+
+   '<div class="note" style="margin-top:8px">התוקף יוארך ב־'+d+' ימים (ימי ההקפאה שעברו). אחרי ההפשרה '+G(p,'תוכלי','תוכל')+' שוב להירשם לשיעורים.<br><b>אי אפשר להקפיא שוב את הכרטיסייה הזו.</b> '+esc(S.studio.teacher)+' '+G({gender:'f'},'תקבל','יקבל')+' הודעה על ההפשרה.</div>'+
+   '<div class="sheet-actions"><button class="btn btn-primary" data-act="dopunfreeze">כן, להפשיר עכשיו</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+}
 function notesSheet(){
   const p=S.people[0],list=myNotes(p);
   if(list.some(n=>!n.read)){list.forEach(n=>n.read=true);sb.rpc('p_read_notes',{p_token:token}).then(()=>{});render()}
@@ -817,6 +835,9 @@ async function doAct(a,t,d){
     case'logout':await sb.auth.signOut();adminSess=false;myTok=null;store.set(MODE_KEY,null);mode='login';view='home';render();break;
     /* practitioner */
     case'notes':notesSheet();break;
+    case'anotes':aNotesSheet();break;
+    case'punfreeze':pUnfreezeSheet();break;
+    case'dopunfreeze':await act(()=>q(sb.rpc('p_unfreeze',{p_token:token})),n=>'הכרטיסייה הופשרה. התוקף הוארך ב־'+n+' ימים');break;
     case'perm':try{const r=await Notification.requestPermission();toast(r==='granted'?'התראות הופעלו':'ההתראות לא הופעלו');close()}catch(e){toast('הדפדפן הזה לא תומך בהתראות')}break;
     case'testnote':sysNotify('בדיקת התראה','כך תיראה התזכורת שעה לפני השיעור.');close();break;
     case'doinstall':if(installEvt){installEvt.prompt();const r=await installEvt.userChoice;installEvt=null;render();if(r.outcome==='accepted')toast('YoGis הותקנה על מסך הבית')}break;
