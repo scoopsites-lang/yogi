@@ -507,10 +507,11 @@ function vPerson(){
   return header()+'<button class="back" data-go="people">'+I.back+'כל המתרגלים</button>'+
    '<div style="display:flex;align-items:center;gap:12px;margin-top:4px"><span class="av" style="width:52px;height:52px;font-size:1.1rem">'+esc(initials(p.name))+'</span><div style="min-width:0"><h1 style="margin:0">'+esc(p.name)+'</h1><span class="lead" dir="ltr">'+esc(p.phone)+'</span></div></div>'+
    '<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</b><small>נפתחה ב־'+fmt(c.start)+(c.type==='punch'?' · תקפה 3 חודשים':'')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p)+'</div>'+
+   (c.freezes.length&&s!=='frozen'?'<div class="note" style="background:var(--lav-soft);border-color:transparent;color:var(--ink)">'+I.snow+' הכרטיסייה הוקפאה בעבר: '+c.freezes.map(f=>fmt(f.from)+'–'+fmt(f.to)+' ('+Math.round((f.to-f.from)/DAY)+' ימים)').join(', ')+'</div>':'')+
    '<div class="actions">'+
     (ended?'<button class="btn btn-primary wide" data-act="renew">'+I.renew+'חידוש כרטיסייה</button>':'<button class="btn btn-primary wide" data-punch="'+p.id+'"'+(can?'':' disabled')+'>'+I.ck+(c.type==='monthly'?'רישום כניסה':'ניקוב ידני')+'</button>')+
     '<button class="btn btn-soft" data-act="wa">'+I.msg+'שליחה ב־WhatsApp</button>'+
-    (s==='frozen'?'<button class="btn btn-lav" data-act="unfreeze">'+I.snow+'הפשרה</button>':(freezeUsed(c)?'<button class="btn btn-lav" disabled title="ההקפאה בכרטיסייה הזו כבר נוצלה">'+I.snow+'ההקפאה נוצלה</button>':'<button class="btn btn-lav" data-act="freeze"'+(ended?' disabled':'')+'>'+I.snow+'הקפאה</button>'))+
+    (s==='frozen'?'<button class="btn btn-lav" data-act="unfreeze">'+I.snow+'הפשרה</button>':(freezeUsed(c)?'<button class="btn btn-lav" data-act="freeze"'+(ended?' disabled':'')+'>'+I.snow+'הקפאה נוספת</button>':'<button class="btn btn-lav" data-act="freeze"'+(ended?' disabled':'')+'>'+I.snow+'הקפאה</button>'))+
     '<button class="btn btn-soft" data-act="editp">'+I.renew.replace('M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7','M4 20h4L19 9l-4-4L4 16zM14 6l4 4')+'עריכת פרטים</button>'+
     '<button class="btn btn-soft" data-act="plink">'+I.link+'הקישור האישי של '+esc(first(p))+'</button>'+
    '</div><h2>שיעורים קרובים <span>'+mr.length+'</span></h2>'+
@@ -665,9 +666,10 @@ function tmplSheet(id){
   const tun=bg.querySelector('#tun'),tcp=bg.querySelector('#tcp');tun.onchange=()=>{tcp.disabled=tun.checked};
 }
 function freezeSheet(){
+  const pc=cur(findP(sel)),again=pc&&pc.freezes.length>0;freezeSheet.again=again;
   let reason='חופשה';const reasons=['חופשה','היריון','פציעה','מחלה','אחר'];
   const endTxt=n=>fmt(today()+n*DAY);
-  sheet('<h3>הקפאת כרטיסייה</h3><p class="lead">אפשר להקפיא <b>פעם אחת בכל כרטיסייה</b>, ל־14 ימים לכל היותר. בזמן ההקפאה אי אפשר לנקב או להירשם. בסוף התקופה הכרטיסייה מופשרת אוטומטית, והתוקף מתארך במספר ימי ההקפאה. הרשמות בתקופה הזו יבוטלו בלי ניקוב.</p><div class="field"><label>סיבה</label><div class="chips">'+reasons.map(r=>'<button class="chip" data-r="'+r+'" aria-pressed="'+(r===reason)+'">'+r+'</button>').join('')+'</div></div>'+
+  sheet('<h3>'+(again?'הקפאה נוספת':'הקפאת כרטיסייה')+'</h3>'+(again?'<div class="banner" style="margin-top:0"><div><b>הכרטיסייה כבר הוקפאה בעבר</b><small>'+pc.freezes.map(f=>fmt(f.from)+'–'+fmt(f.to)+' ('+Math.round((f.to-f.from)/DAY)+' ימים, '+esc(f.reason)+')').join(' · ')+'. ההקפאה הנוספת היא חריגה באישור מנהל.</small></div></div>':'')+'<p class="lead">אפשר להקפיא <b>פעם אחת בכל כרטיסייה</b>, ל־14 ימים לכל היותר. בזמן ההקפאה אי אפשר לנקב או להירשם. בסוף התקופה הכרטיסייה מופשרת אוטומטית, והתוקף מתארך במספר ימי ההקפאה. הרשמות בתקופה הזו יבוטלו בלי ניקוב.</p><div class="field"><label>סיבה</label><div class="chips">'+reasons.map(r=>'<button class="chip" data-r="'+r+'" aria-pressed="'+(r===reason)+'">'+r+'</button>').join('')+'</div></div>'+
    '<div class="field"><label for="fdays">מספר ימים (עד 14)</label><input id="fdays" type="number" inputmode="numeric" min="1" max="14" value="14"></div><p class="lead" id="fend" style="font-size:.88rem;margin-top:6px">הפשרה אוטומטית ב־'+endTxt(14)+'</p><p id="ferr" style="color:var(--bad);margin:6px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="dofreeze">הקפאה מהיום</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
   bg.querySelectorAll('[data-r]').forEach(b=>b.onclick=e=>{e.stopPropagation();reason=b.dataset.r;bg.querySelectorAll('[data-r]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
   const fd=bg.querySelector('#fdays');fd.oninput=()=>{const n=+fd.value;bg.querySelector('#fend').textContent=n>=1&&n<=14?'הפשרה אוטומטית ב־'+endTxt(n):'אפשר לבחור בין יום אחד ל־14 ימים'};
@@ -749,7 +751,7 @@ function aNotesSheet(){
 function pUnfreezeSheet(){
   const p=S.people[0],c=cur(p),d=frozenDays(c);
   sheet('<h3>הפשרת הכרטיסייה</h3><p class="lead">'+G(p,'בטוחה','בטוח')+' '+G(p,'שאת רוצה','שאתה רוצה')+' להפשיר את הכרטיסייה עכשיו?</p>'+
-   '<div class="note" style="margin-top:8px">התוקף יוארך ב־'+d+' ימים (ימי ההקפאה שעברו). אחרי ההפשרה '+G(p,'תוכלי','תוכל')+' שוב להירשם לשיעורים.<br><b>אי אפשר להקפיא שוב את הכרטיסייה הזו.</b> '+esc(S.studio.teacher)+' '+G({gender:'f'},'תקבל','יקבל')+' הודעה על ההפשרה.</div>'+
+   '<div class="note" style="margin-top:8px">התוקף יוארך ב־'+d+' ימים (ימי ההקפאה שעברו). אחרי ההפשרה '+G(p,'תוכלי','תוכל')+' שוב להירשם לשיעורים.<br><b>הקפאה נוספת אפשרית רק באישור '+esc(S.studio.teacher)+'.</b> '+esc(S.studio.teacher)+' '+G({gender:'f'},'תקבל','יקבל')+' הודעה על ההפשרה.</div>'+
    '<div class="sheet-actions"><button class="btn btn-primary" data-act="dopunfreeze">כן, להפשיר עכשיו</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
 }
 function notesSheet(){
@@ -803,7 +805,7 @@ async function doAct(a,t,d){
     case'saverenew':await act(()=>q(sb.from('cards').insert(addSheet.make(p.id))),'כרטיסייה חדשה נפתחה');break;
     case'freeze':freezeSheet();break;
     case'dofreeze':{const nd=freezeSheet.days();if(!(nd>=1&&nd<=14)){const er=bg.querySelector('#ferr');er.textContent='אפשר להקפיא בין יום אחד ל־14 ימים.';er.hidden=false;return}
-      await act(()=>q(sb.rpc('a_freeze',{p_card:c.id,p_reason:freezeSheet.reason(),p_days:nd})),n=>'הכרטיסייה הוקפאה'+(n?' ו־'+n+' הרשמות בוטלו':''));break}
+      await act(()=>q(sb.rpc('a_freeze',{p_card:c.id,p_reason:freezeSheet.reason(),p_days:nd,p_again:!!freezeSheet.again})),n=>'הכרטיסייה הוקפאה'+(n?' ו־'+n+' הרשמות בוטלו':''));break}
     case'unfreeze':await act(()=>q(sb.rpc('a_unfreeze',{p_card:c.id})),n=>'הופשרה. התוקף הוארך ב־'+n+' ימים');break;
     case'wa':waSheet();break;
     case'plink':linkSheet();break;
