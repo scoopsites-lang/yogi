@@ -473,7 +473,7 @@ function vSched(){
    (S.studio.sent?'<p class="lead" style="font-size:.82rem;margin-top:6px;text-align:center">נשלח לאחרונה ב־'+fmt(S.studio.sent)+'</p>':'')+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,adminCls):'<div class="empty">אין שיעורים קבועים. הוסיפי שיעור למטה.</div>')+'</div>'+
    '<h2>שיעורים קבועים <span>הקישי לעריכה</span></h2><div class="card" style="padding:6px 14px;box-shadow:none;border:1px solid var(--line)">'+
-   S.classes.slice().sort((a,b)=>a.day-b.day||a.time.localeCompare(b.time)).map(c=>'<div class="tmpl"><button class="rowmain" data-edittmpl="'+c.id+'"><span class="d">'+DL[c.day]+'</span><span class="who"><b>'+esc(c.name)+' · '+c.time+'</b><small>'+c.dur+' דקות · '+(c.cap?'עד '+c.cap+' משתתפות':'ללא הגבלה')+' · '+esc(c.place)+'</small></span><span class="lead" style="font-size:.85rem">עריכה</span></button><button class="x" data-deltmpl="'+c.id+'" aria-label="הסרת השיעור הקבוע">×</button></div>').join('')+
+   S.classes.slice().sort((a,b)=>a.day-b.day||a.time.localeCompare(b.time)).map(c=>'<div class="tmpl"><button class="rowmain" data-edittmpl="'+c.id+'"><span class="d">'+DL[c.day]+'</span><span class="who"><b>'+esc(c.name)+' · '+c.time+'</b><small>'+c.dur+' דקות · '+(c.cap?'עד '+c.cap+' משתתפים':'ללא הגבלה')+' · '+esc(c.place)+'</small></span><span class="lead" style="font-size:.85rem">עריכה</span></button><button class="x" data-deltmpl="'+c.id+'" aria-label="הסרת השיעור הקבוע">×</button></div>').join('')+
    '</div><button class="btn btn-soft full" style="margin-top:10px" data-act="addtmpl">'+I.plus+'שיעור קבוע חדש</button>';
 }
 function vPeople(){
@@ -646,8 +646,8 @@ function tmplSheet(id){
    '<div class="field"><label for="tnm">שם השיעור</label><input id="tnm" value="'+esc(c.name)+'"></div>'+
    '<div class="field"><label for="tpl">מקום התרגול</label><select id="tpl">'+S.places.map(pl=>'<option'+(pl===c.place?' selected':'')+'>'+esc(pl)+'</option>').join('')+'<option value="__new">מקום חדש…</option></select><input id="tpn" placeholder="לדוגמה: חוף הים בהרצליה" hidden></div>'+
    '<div class="grid2"><div class="field"><label for="tdy">יום</label><select id="tdy">'+DAYS.map((d,i)=>'<option value="'+i+'"'+(i===c.day?' selected':'')+'>'+d+'</option>').join('')+'</select></div><div class="field"><label for="ttm">שעה</label><input id="ttm" type="time" value="'+c.time+'"></div></div>'+
-   '<div class="grid2"><div class="field"><label for="tdu">משך (דקות)</label><input id="tdu" type="number" inputmode="numeric" min="15" max="240" step="5" value="'+c.dur+'"></div><div class="field"><label for="tcp">מקסימום משתתפות</label><input id="tcp" type="number" inputmode="numeric" min="1" max="200" value="'+(c.cap||12)+'"'+(c.cap?'':' disabled')+'></div></div>'+
-   '<label class="check"><input type="checkbox" id="tun"'+(c.cap?'':' checked')+'>ללא הגבלת משתתפות</label>'+
+   '<div class="grid2"><div class="field"><label for="tdu">משך (דקות)</label><input id="tdu" type="number" inputmode="numeric" min="15" max="240" step="5" value="'+c.dur+'"></div><div class="field"><label for="tcp">מקסימום משתתפים</label><input id="tcp" type="number" inputmode="numeric" min="1" max="200" value="'+(c.cap||12)+'"'+(c.cap?'':' disabled')+'></div></div>'+
+   '<label class="check"><input type="checkbox" id="tun"'+(c.cap?'':' checked')+'>ללא הגבלת משתתפים</label>'+
    '<p id="terr" style="color:var(--bad);margin:8px 0 0" hidden></p>'+
    '<div class="sheet-actions"><button class="btn btn-primary" data-act="savetmpl"'+(id?' data-id="'+id+'"':'')+'>'+(id?'שמירת השינויים':'הוספה ללו״ז')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
   const tpl=bg.querySelector('#tpl'),tpn=bg.querySelector('#tpn');if(!S.places.length){tpl.value='__new';tpn.hidden=false}tpl.onchange=()=>{tpn.hidden=tpl.value!=='__new';if(!tpn.hidden)tpn.focus()};
