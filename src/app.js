@@ -199,7 +199,7 @@ function history(c){
 /* ---------- manager views ---------- */
 function vLogin(){
   return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>כניסת מורה</small></div></div></div>'+
-   '<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם מהמורה ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div><h1>כניסה לניהול הסטודיו</h1><p class="lead">כניסה למורה בלבד.</p>'+
+   '<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם מהמורה ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div><h1>כניסה לניהול הסטודיו</h1><p class="lead">כניסה למורה בלבד.</p>'+(store.get(TOKEN_KEY)?'<button class="btn btn-soft full" style="margin-top:10px" data-act="backme">'+I.back+'חזרה לכרטיסייה שלי</button>':'')+''+
    '<form id="loginf" class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="em">אימייל</label><input id="em" type="email" autocomplete="username" dir="ltr" required></div>'+
    '<div class="field"><label for="pw">סיסמה</label><input id="pw" type="password" autocomplete="current-password" dir="ltr" required></div>'+
    '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">כניסה</button></form>';
@@ -569,6 +569,7 @@ async function doAct(a,t,d){
       await act(()=>q(sb.from('studio').update({places:S.places.concat(v)}).eq('id',1)),'המקום נוסף');break}
     case'usepl':{const v=(document.getElementById('plinkin').value||'').trim();const m=v.match(/[?&]t=([A-Za-z0-9]+)/)||v.match(/^([a-f0-9]{24,})$/);
       if(!m){toast('זה לא נראה כמו קישור אישי. העתיקו את כל הקישור מההודעה.');return}location.href=appUrl()+'?t='+m[1];break}
+    case'backme':{const t=store.get(TOKEN_KEY);if(t){store.set(MODE_KEY,'p');await startP(t)}break}
     case'tome':if(myTok){store.set(MODE_KEY,'p');await startP(myTok)}break;
     case'toadmin':await startAdmin();break;
     case'logout':await sb.auth.signOut();adminSess=false;myTok=null;store.set(MODE_KEY,null);mode='login';view='home';render();break;
