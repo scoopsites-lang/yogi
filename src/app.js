@@ -305,7 +305,7 @@ function vRegs(){
 function expectedTable(price){
   const end=now()+7*DAY,rows=[...weekInst(0),...weekInst(1)].filter(i=>i.t>now()&&i.t<end&&!getS(i.k).cancelled);
   let tot=0;const tr=rows.map(i=>{INST[i.k]=i;const s=getS(i.k),n=s.regs.length;tot+=n;
-    return '<tr data-ses="'+i.k+'"><td>'+DL[new Date(i.t).getDay()]+' '+dm(i.t)+'<small>'+i.c.time+'</small></td><td>'+esc(i.c.name)+'<small>'+esc(i.c.place)+'</small></td><td class="nm">'+(n?s.regs.map(r=>esc((findP(r.pid)||{name:'?'}).name)+(r.status==='pending'?' <em>(בקשת ביטול)</em>':'')).join(', '):'<span class="mut">אין נרשמים</span>')+'</td><td class="num">'+n+'</td><td class="num">'+shekel(n*price)+'</td></tr>'}).join('');
+    return '<tr data-ses="'+i.k+'"><td class="when">'+DL[new Date(i.t).getDay()]+' '+dm(i.t)+'<small>'+i.c.time+'</small></td><td class="cl">'+esc(i.c.name)+'<small>'+esc(i.c.place)+'</small></td><td class="nm">'+(n?s.regs.map(r=>esc((findP(r.pid)||{name:'?'}).name)+(r.status==='pending'?' <em>(בקשת ביטול)</em>':'')).join(', '):'<span class="mut">אין נרשמים</span>')+'</td><td class="num cnt" data-u="רשומים">'+n+'</td><td class="num amt">'+shekel(n*price)+'</td></tr>'}).join('');
   return '<h2>הכנסה צפויה ל־7 הימים הקרובים <span>'+tot+' הרשמות · '+shekel(tot*price)+'</span></h2>'+
    (rows.length?'<div class="tblw"><table class="tbl"><thead><tr><th>מועד</th><th>שיעור</th><th>מתרגלים רשומים</th><th>רשומים</th><th>צפי</th></tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="3">סה״כ</td><td class="num">'+tot+'</td><td class="num">'+shekel(tot*price)+'</td></tr></tfoot></table></div>':'<div class="empty">אין שיעורים ב־7 הימים הקרובים.</div>');
 }
@@ -314,7 +314,7 @@ function actualTable(all,mStart,price){
   m.forEach(x=>{const key=x.sk&&x.kind!=='manual'?x.sk:'manual_'+iso(x.t);(groups[key]=groups[key]||{key,t:x.t,list:[],sk:x.sk&&x.kind!=='manual'?x.sk:null}).list.push(x);if(x.t<groups[key].t)groups[key].t=x.t});
   const gs=Object.values(groups).sort((a,b)=>b.t-a.t);
   const tr=gs.map(g=>{const s=g.sk?S.sessions[g.sk]:null,st=s?s.t:g.t;
-    return '<tr><td>'+DL[new Date(st).getDay()]+' '+dm(st)+(s?'<small>'+hm(s.t)+'</small>':'')+'</td><td>'+(s?esc(s.name)+'<small>'+esc(s.place)+'</small>':'ניקוב ידני')+'</td><td class="nm">'+g.list.map(x=>esc(x.p.name)+(x.kind==='late'?' <em>(ביטול מאוחר)</em>':'')).join(', ')+'</td><td class="num">'+g.list.length+'</td><td class="num">'+shekel(g.list.length*price)+'</td></tr>'}).join('');
+    return '<tr><td class="when">'+DL[new Date(st).getDay()]+' '+dm(st)+(s?'<small>'+hm(s.t)+'</small>':'')+'</td><td class="cl">'+(s?esc(s.name)+'<small>'+esc(s.place)+'</small>':'ניקוב ידני')+'</td><td class="nm">'+g.list.map(x=>esc(x.p.name)+(x.kind==='late'?' <em>(ביטול מאוחר)</em>':'')).join(', ')+'</td><td class="num cnt" data-u="ניקובים">'+g.list.length+'</td><td class="num amt">'+shekel(g.list.length*price)+'</td></tr>'}).join('');
   return '<h2>בפועל החודש <span>'+m.length+' ניקובים · '+shekel(m.length*price)+'</span></h2>'+
    (gs.length?'<div class="tblw"><table class="tbl"><thead><tr><th>מועד</th><th>שיעור</th><th>מי נוקב</th><th>ניקובים</th><th>הכנסה</th></tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="3">סה״כ</td><td class="num">'+m.length+'</td><td class="num">'+shekel(m.length*price)+'</td></tr></tfoot></table></div>':'<div class="empty">עדיין אין ניקובים החודש.</div>');
 }
