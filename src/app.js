@@ -18,6 +18,9 @@ const I={
  apple:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 7c-1-2.5 1-4.5 3-4.5M16.5 8c-2 0-3 1-4.5 1S9.5 8 7.5 8C5 8 3.5 10.5 3.5 13c0 4 3 8.5 5 8.5 1.3 0 2-.8 3.5-.8s2.2.8 3.5.8c2 0 5-4.5 5-8.5 0-2.5-1.5-5-4-5z"/></svg>',
  android:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="9" width="14" height="11" rx="2"/><path d="M5 13a7 7 0 0 1 14 0M8 5l1.5 2.5M16 5l-1.5 2.5"/></svg>',
  bell:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></svg>',
+ eye:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+ moon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
  refresh:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>'
 };
 const logo=s=>'<svg class="logo" width="'+s+'" height="'+s+'" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="50" cy="15" rx="9" ry="8"/><path d="M50 40C45 31 30 28 26 39c-4 12 9 23 24 37 15-14 28-25 24-37-4-11-19-8-24 1z"/><path d="M45 52c-3-5 1-10 5-7 4-3 8 2 5 7-1 2-3 4-5 6"/><path d="M62 82C48 72 22 68 18 79c-3 9 20 11 44 1"/><path d="M38 82c14-10 40-14 44-3 3 9-20 11-44 1"/></svg>';
@@ -51,6 +54,12 @@ function personalManifest(tok){try{
   if(!new URLSearchParams(location.search).get('t'))history.replaceState(null,'',location.pathname+'?t='+encodeURIComponent(tok));
 }catch(e){}}
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+const THEME_KEY='yogis-theme';
+function isDark(){const t=document.documentElement.dataset.theme;if(t)return t==='dark';try{return matchMedia('(prefers-color-scheme: dark)').matches}catch(e){return false}}
+function applyTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme;
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=isDark()?'#1C1B19':'#F7F3EC'}
+applyTheme(store.get(THEME_KEY));
+const themeBtn=()=>'<button class="iconbtn" data-act="theme" aria-label="'+(isDark()?'מעבר לתצוגה בהירה':'מעבר לתצוגה כהה')+'">'+(isDark()?I.sun:I.moon)+'</button>';
 async function q(p){const r=await p;if(r.error)throw r.error;return r.data}
 const errMsg=e=>{const m=(e&&e.message)||'';if(/fetch|network/i.test(m))return 'אין חיבור לאינטרנט. נסי שוב.';return m||'משהו השתבש. נסי שוב.'};
 
@@ -119,7 +128,7 @@ async function loadAdmin(){
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
   cn.forEach(x=>{const s=sesById[x.session_id];if(s)(x.kind==='late'?s.late:s.waived).push(x.person_id)});
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
-  S={studio:{name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,sent:st.last_sent?Date.parse(st.last_sent):null},
+  S={studio:{name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
@@ -163,7 +172,7 @@ function sysNotify(title,body){try{if(!('Notification' in window)||Notification.
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
-function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(myTok?'<button class="iconbtn" data-act="tome">'+I.eye+'הצד שלי כמתרגל</button>':'')+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
+function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(myTok?'<button class="iconbtn" data-act="tome">'+I.eye+'הצד שלי</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
   const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
@@ -228,7 +237,7 @@ function vHome(){
   if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים'+(nxt.c.cap?' מתוך '+nxt.c.cap:'')+' · '+esc(nxt.c.place)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
   const empty=!S.people.length?'<div class="note">עוד אין מתרגלות במערכת. הוסיפי מתרגלת בלשונית "מתרגלים", ושלחי לה את הקישור האישי ב־WhatsApp.</div>':'';
   return header()+aBanner()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+empty+
-   '<div class="stats"><div class="stat sage"><b>'+act_+'</b><span>כרטיסיות פעילות</span></div><div class="stat"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></div><div class="stat"><b>'+punches+'</b><span>ניקובים החודש</span></div><div class="stat lav"><b>'+frozen+'</b><span>מוקפאות כרגע</span></div></div>'+
+   '<div class="stats"><button class="stat sage" data-tile="active"><b>'+act_+'</b><span>כרטיסיות פעילות</span></button><button class="stat" data-tile="regs"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></button><button class="stat" data-tile="money"><b>'+punches+'</b><span>ניקובים החודש · '+shekel(punches*S.studio.price)+'</span></button><button class="stat lav" data-tile="frozen"><b>'+frozen+'</b><span>מוקפאות כרגע</span></button></div>'+
    (reqs.length?'<h2>בקשות ביטול <span>'+reqs.length+' ממתינות</span></h2><div class="list">'+reqs.map(reqCard).join('')+'</div>':'')+next+
    (attn.length?'<h2>דורשות תשומת לב <span>'+attn.length+'</span></h2><div class="list">'+attn.map(x=>row(x[0],true)).join('')+'</div>':'')+
    (ready.length?'<h2>ניקוב ידני <span>למי שהגיעה בלי הרשמה</span></h2><div class="list">'+ready.map(p=>row(p,true)).join('')+'</div>':'');
@@ -282,6 +291,42 @@ function vPerson(){
    (mr.length?'<div class="hist">'+mr.map(x=>'<div>'+esc(x.s.name)+(x.r.status==='pending'?' · בקשת ביטול ממתינה':'')+'<span>'+dayTime(x.s.t)+' · '+dm(x.s.t)+'</span></div>').join('')+'</div>':'<p class="lead">'+G(p,'לא רשומה','לא רשום')+' לשיעורים כרגע.</p>')+
    '<h2>היסטוריה</h2>'+history(c);
 }
+const shekel=n=>'₪'+Math.round(n).toLocaleString('he-IL');
+function upcomingRegs(){const out=[];[0,1].forEach(o=>weekInst(o).forEach(i=>{const s=getS(i.k);if(s.cancelled||i.t<=now())return;if(o===1&&i.t>wkStart(now())+14*DAY)return;s.regs.forEach(r=>out.push({inst:i,r,p:findP(r.pid)}))}));return out}
+function vRegs(){
+  const list=weekInst(0).filter(i=>i.t>now()&&!getS(i.k).cancelled);
+  const total=list.reduce((n,i)=>n+getS(i.k).regs.length,0);
+  let html='';
+  if(!list.length)html='<div class="empty">אין עוד שיעורים השבוע.</div>';
+  else html=groupDays(list,inst=>{INST[inst.k]=inst;const s=getS(inst.k);
+    return '<button class="nextcls" style="width:100%;text-align:start" data-ses="'+inst.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>'+inst.c.time+' · '+esc(inst.c.name)+'</b><span class="lead" style="font-size:.85rem">'+s.regs.length+(inst.c.cap?' / '+inst.c.cap:'')+' רשומים</span></div><div class="lead" style="font-size:.85rem">'+esc(inst.c.place)+' · צפי '+shekel(s.regs.length*S.studio.price)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'});
+  return header()+'<button class="back" data-go="home">'+I.back+'חזרה</button><h1>הרשמות לשאר השבוע</h1><p class="lead">'+total+' הרשמות ב־'+list.length+' שיעורים · צפי הכנסה '+shekel(total*S.studio.price)+' לפי '+shekel(S.studio.price)+' לשיעור.</p><div class="list" style="gap:8px">'+html+'</div>';
+}
+function vMoney(){
+  const price=S.studio.price,all=[];
+  S.people.forEach(p=>p.cards.forEach(c=>c.used.forEach(u=>all.push({t:u.t,p}))));
+  const d=new Date(today());d.setDate(1);const mStart=d.getTime();
+  const pm=new Date(mStart);pm.setMonth(pm.getMonth()-1);const pmStart=pm.getTime();
+  const wStart=wkStart(now());
+  const thisMonth=all.filter(x=>x.t>=mStart).length,lastMonth=all.filter(x=>x.t>=pmStart&&x.t<mStart).length,thisWeek=all.filter(x=>x.t>=wStart).length;
+  const up=upcomingRegs(),upWeek=up.filter(x=>x.inst.t<wStart+7*DAY).length;
+  const daysIn=new Date(new Date(mStart).getFullYear(),new Date(mStart).getMonth()+1,0).getDate(),dayN=new Date().getDate();
+  const proj=Math.round(thisMonth/dayN*daysIn);
+  // last 6 months bars
+  const months=[];for(let i=5;i>=0;i--){const a=new Date(mStart);a.setMonth(a.getMonth()-i);const b=new Date(a);b.setMonth(b.getMonth()+1);months.push({lbl:(a.getMonth()+1)+'/'+String(a.getFullYear()).slice(2),n:all.filter(x=>x.t>=a.getTime()&&x.t<b.getTime()).length,cur:i===0})}
+  const mx=Math.max(1,...months.map(m=>m.n));
+  const bars='<div class="bars" role="img" aria-label="ניקובים לפי חודש">'+months.map(m=>'<div class="bar'+(m.cur?' cur':'')+'"><span class="bv">'+shekel(m.n*price)+'</span><i style="height:'+Math.max(4,Math.round(m.n/mx*100))+'%"></i><span class="bl">'+m.lbl+'</span></div>').join('')+'</div>';
+  // top practitioners this month
+  const by={};all.filter(x=>x.t>=mStart).forEach(x=>{by[x.p.id]=(by[x.p.id]||{p:x.p,n:0});by[x.p.id].n++});
+  const top=Object.values(by).sort((a,b)=>b.n-a.n).slice(0,8);
+  return header()+'<h1>הכנסות</h1><p class="lead">לפי '+shekel(price)+' לכל שיעור שנוקב. אפשר לשנות את המחיר בהגדרות.</p>'+
+   '<div class="stats"><div class="stat sage"><b>'+shekel(thisMonth*price)+'</b><span>החודש עד היום · '+thisMonth+' ניקובים</span></div><div class="stat"><b>'+shekel(proj*price)+'</b><span>צפי לסוף החודש</span></div>'+
+   '<div class="stat"><b>'+shekel(lastMonth*price)+'</b><span>חודש קודם · '+lastMonth+' ניקובים</span></div><button class="stat lav" data-go="regs"><b>'+shekel(upWeek*price)+'</b><span>צפי מהרשמות לשאר השבוע · '+upWeek+'</span></button></div>'+
+   '<h2>השבוע <span>'+thisWeek+' ניקובים · '+shekel(thisWeek*price)+'</span></h2>'+
+   '<h2>6 חודשים אחרונים</h2>'+bars+
+   (top.length?'<h2>מתרגלים פעילים החודש</h2><div class="hist">'+top.map(x=>'<div>'+esc(x.p.name)+'<span>'+x.n+' שיעורים · '+shekel(x.n*price)+'</span></div>').join('')+'</div>':'')+
+   '<p class="foot">החישוב כולל ניקובים מכרטיסיות שיעורים, כולל ביטולים מאוחרים, ולא כולל ניקובים שהוחזרו.</p>';
+}
 function vSettings(){
   return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
@@ -291,6 +336,8 @@ function vSettings(){
   '<h2>סוגי כרטיסיות</h2>'+
   '<div class="switch"><div><b>כרטיסיית שיעורים</b><small>מספר שיעורים קבוע, תוקף של 3 חודשים מיום הפתיחה. ניתן להקפאה.</small></div><input type="checkbox" class="tog" checked disabled aria-label="כרטיסיית שיעורים פעילה"></div>'+
   '<div class="switch"><div><b>מנוי חודשי ללא הגבלה <span class="soon-tag">'+(S.studio.monthly?'פעיל':'כבוי')+'</span></b><small>כניסה חופשית לכל השיעורים למשך חודש. כשהאפשרות כבויה היא מוצגת אך לא ניתנת לבחירה.</small></div><input type="checkbox" class="tog" id="mon"'+(S.studio.monthly?' checked':'')+' aria-label="הפעלת מנוי חודשי"></div>'+
+  '<h2>מחיר לשיעור</h2><div class="field" style="margin-top:0"><label for="pr">משמש לחישוב בעמוד ההכנסות</label><input id="pr" type="number" inputmode="numeric" min="0" value="'+S.studio.price+'"></div>'+
+  '<h2>תצוגה</h2><div class="chips">'+[['','לפי הטלפון'],['light','בהירה'],['dark','כהה']].map(x=>'<button class="chip" data-themeset="'+x[0]+'" aria-pressed="'+((store.get(THEME_KEY)||'')===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
   '<h2>חשבון</h2><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה מהחשבון</button></div>';
 }
 function vInstall(){
@@ -326,7 +373,7 @@ function pCls(p){return inst=>{
 }}
 function vP(){
   const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read&&!expired(n)).length;
-  return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(adminSess?'<button class="iconbtn" data-act="toadmin">ניהול</button>':'')+'<button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
+  return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(adminSess?'<button class="iconbtn" data-act="toadmin">ניהול</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
    (!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
    (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
@@ -347,15 +394,15 @@ function render(){
   else if(mode==='login')html=vLogin();
   else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
-  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings}[view]||vHome)();
+  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs}[view]||vHome)();
   app.innerHTML=html;app.classList.toggle('pmode',mode!=='admin');
   document.getElementById('nav').hidden=mode!=='admin';
-  const tab=view==='person'?'people':view;
+  const tab=view==='person'?'people':view==='regs'?'money':view;
   document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
   const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',1)),'נשמר')})};
-  bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);
+  bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
   const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',1)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
   const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr');er.hidden=true;
     const {error}=await sb.auth.signInWithPassword({email:document.getElementById('em').value.trim(),password:document.getElementById('pw').value});
@@ -529,7 +576,7 @@ function notesSheet(){
 
 /* ---------- clicks ---------- */
 function onClick(e){
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();view=d.go;render();window.scrollTo(0,0)}
   else if(d.open){sel=d.open;view='person';render();window.scrollTo(0,0)}
@@ -543,6 +590,8 @@ function onClick(e){
   else if(d.approve){act(()=>q(sb.rpc('a_resolve',{p_reg:d.approve,p_approve:true})),'הבקשה אושרה. לא ינוקב שיעור').catch(()=>{})}
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
   else if(d.refund){act(()=>q(sb.rpc('a_refund',{p_reg:d.refund})),'הניקוב הוחזר').catch(()=>{})}
+  else if(d.tile){const m={active:['people','active'],frozen:['people','frozen'],money:['money'],regs:['regs']}[d.tile];view=m[0];if(m[1]){filter=m[1];q_=''}render();window.scrollTo(0,0)}
+  else if(d.themeset!=null){store.set(THEME_KEY,d.themeset||null);applyTheme(d.themeset||null);render()}
   else if(d.edittmpl){tmplSheet(d.edittmpl)}
   else if(d.readnote){const n=S.notes.find(x=>x.id===d.readnote);if(n)n.read=true;render();sb.rpc('p_read_notes',{p_token:token,p_note:d.readnote}).then(()=>{})}
   else if(d.delplace){if(S.classes.some(c=>c.place===d.delplace)){toast('יש שיעורים קבועים במקום הזה. שני להם מקום קודם');return}if(S.places.length<2){toast('צריך להשאיר לפחות מקום אחד');return}
@@ -598,6 +647,7 @@ async function doAct(a,t,d){
     case'usepl':{const v=(document.getElementById('plinkin').value||'').trim();const m=v.match(/[?&]t=([A-Za-z0-9]+)/)||v.match(/^([a-f0-9]{24,})$/);
       if(!m){toast('זה לא נראה כמו קישור אישי. העתיקו את כל הקישור מההודעה.');return}location.href=appUrl()+'?t='+m[1];break}
     case'backme':{const t=store.get(TOKEN_KEY);if(t){store.set(MODE_KEY,'p');await startP(t)}break}
+    case'theme':{const t=isDark()?'light':'dark';store.set(THEME_KEY,t);applyTheme(t);render();break}
     case'tome':if(myTok){store.set(MODE_KEY,'p');await startP(myTok)}break;
     case'toadmin':await startAdmin();break;
     case'logout':await sb.auth.signOut();adminSess=false;myTok=null;store.set(MODE_KEY,null);mode='login';view='home';render();break;
