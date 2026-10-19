@@ -4,8 +4,8 @@
  "description": "כרטיסיות ולו״ז שיעורי יוגה",
  "lang": "he",
  "dir": "rtl",
- "start_url": "./",
- "scope": "./",
+ "start_url": "/",
+ "scope": "/",
  "display": "standalone",
  "background_color": "#F7F3EC",
  "theme_color": "#F7F3EC",
@@ -26,5 +26,6 @@
    "type": "image/png",
    "purpose": "maskable"
   }
- ]
+ ],
+ "id": "/?app=yogis"
 }

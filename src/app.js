@@ -47,11 +47,9 @@ const isStandalone=()=>{try{return window.matchMedia('(display-mode: standalone)
 let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p')render()});
 /* personal manifest: the installed app opens straight to this practitioner's card */
 function personalManifest(tok){try{
-  const base=location.origin+'/';
-  const m={name:'YoGis',short_name:'YoGis',lang:'he',dir:'rtl',start_url:base+'?t='+encodeURIComponent(tok),scope:base,display:'standalone',background_color:'#F7F3EC',theme_color:'#F7F3EC',
-    icons:[{src:base+'icon-192.png',sizes:'192x192',type:'image/png'},{src:base+'icon-512.png',sizes:'512x512',type:'image/png'},{src:base+'icon-maskable.png',sizes:'512x512',type:'image/png',purpose:'maskable'}]};
-  const l=document.querySelector('link[rel=manifest]');if(l)l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));
   if(!new URLSearchParams(location.search).get('t'))history.replaceState(null,'',location.pathname+'?t='+encodeURIComponent(tok));
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios){const l=document.querySelector('link[rel=manifest]');if(l)l.remove()}
 }catch(e){}}
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
 const THEME_KEY='yogis-theme';
@@ -172,7 +170,7 @@ function sysNotify(title,body){try{if(!('Notification' in window)||Notification.
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
-function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+'<button class="iconbtn" data-act="tome">'+I.eye+(myTok?'הצד שלי':'צד מתרגל')+'</button>'+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
+function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+'<button class="iconbtn" data-act="tome" aria-label="'+(myTok?'הצד שלי':'צד מתרגל')+'">'+I.eye+'<span class="lbl">'+(myTok?'הצד שלי':'צד מתרגל')+'</span></button>'+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
   const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
