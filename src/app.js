@@ -3,7 +3,7 @@ const SB_URL='https://zyleeqmcixyhvuapneeo.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5bGVlcW1jaXh5aHZ1YXBuZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MzAwMzIsImV4cCI6MjEwNzMwNjAzMn0.WDYGqmy9cnp8nRYyr5ZkVxWcR-pI8o8TqDq-V1cJRlA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 const DAY=864e5,H=36e5,TOKEN_KEY='yogis-token',SEEN_KEY='yogis-seen',MODE_KEY='yogis-mode';
-let myTok=null,adminSess=false,myUid=null;
+let myTok=null,adminSess=false,myUid=null,previewName=null;
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 const I={
  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -172,7 +172,7 @@ function sysNotify(title,body){try{if(!('Notification' in window)||Notification.
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
-function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(myTok?'<button class="iconbtn" data-act="tome">'+I.eye+'הצד שלי</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
+function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+'<button class="iconbtn" data-act="tome">'+I.eye+(myTok?'הצד שלי':'צד מתרגל')+'</button>'+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
   const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
@@ -391,7 +391,8 @@ function pCls(p){return inst=>{
 function vP(){
   const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read&&!expired(n)).length;
   return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(adminSess?'<button class="iconbtn" data-act="toadmin">ניהול</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
-   (!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
+   (previewName?'<div class="banner" style="background:var(--lav-soft)"><div><b>צפייה כמתרגל: '+esc(previewName)+'</b><small>זו התצוגה של המתרגל. חזרה לניהול בכפתור "ניהול" למעלה.</small></div></div>':'')+
+   (!previewName&&!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
    (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
@@ -666,8 +667,9 @@ async function doAct(a,t,d){
       if(!m){toast('זה לא נראה כמו קישור אישי. העתיקו את כל הקישור מההודעה.');return}location.href=appUrl()+'?t='+m[1];break}
     case'backme':{const t=store.get(TOKEN_KEY);if(t){store.set(MODE_KEY,'p');await startP(t)}break}
     case'theme':{const t=isDark()?'light':'dark';store.set(THEME_KEY,t);applyTheme(t);render();break}
-    case'tome':if(myTok){store.set(MODE_KEY,'p');await startP(myTok)}break;
-    case'toadmin':await startAdmin();break;
+    case'tome':if(myTok){store.set(MODE_KEY,'p');await startP(myTok)}else pickSheet();break;
+    case'preview':{const pp=findP(d.pid);if(pp){close();previewName=pp.name;await startP(pp.token,true)}break}
+    case'toadmin':previewName=null;await startAdmin();break;
     case'logout':await sb.auth.signOut();adminSess=false;myTok=null;store.set(MODE_KEY,null);mode='login';view='home';render();break;
     /* practitioner */
     case'notes':notesSheet();break;
@@ -700,7 +702,13 @@ async function startAdmin(){
   adminSess=true;try{myTok=await q(sb.rpc('a_my_token'))}catch(e){}
   mode='admin';view='home';await reload();
 }
-async function startP(tok){token=tok;store.set(TOKEN_KEY,tok);personalManifest(tok);mode='p';view='p';window.scrollTo(0,0);await reload()}
+async function startP(tok,preview){token=tok;if(!preview){store.set(TOKEN_KEY,tok);personalManifest(tok);previewName=null}mode='p';view='p';window.scrollTo(0,0);await reload()}
+function pickSheet(){
+  const list=S.people.slice().sort((a,b)=>a.name.localeCompare(b.name,'he'));
+  sheet('<h3>צפייה בצד מתרגל</h3><p class="lead">בוחרים מתרגל כדי לראות את האפליקציה בדיוק כפי שהוא רואה אותה: כרטיסייה, לו״ז והרשמה. פעולות שתבצעו שם יירשמו על שמו.</p><label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="pq" placeholder="חיפוש לפי שם"></label><div class="list" id="plist" style="margin-top:10px;gap:6px">'+
+   list.map(p=>'<button class="row" style="padding:10px 12px" data-act="preview" data-pid="'+p.id+'"><span class="av" style="width:34px;height:34px;font-size:.85rem">'+esc(initials(p.name))+'</span><span class="who"><b>'+esc(p.name)+'</b></span></button>').join('')+'</div>');
+  const pq=bg.querySelector('#pq');pq.oninput=()=>{const v=pq.value.trim();bg.querySelectorAll('#plist [data-pid]').forEach(b=>{b.hidden=!!v&&!b.textContent.includes(v)})};
+}
 (async function boot(){
   const u=new URLSearchParams(location.search),ut=u.get('t'),saved=store.get(TOKEN_KEY),pref=store.get(MODE_KEY);
   render();
