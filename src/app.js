@@ -6,7 +6,7 @@ const DAY=864e5,H=36e5,TOKEN_KEY='yogis-token',SEEN_KEY='yogis-seen',MODE_KEY='y
 let myTok=null,adminSess=false,myUid=null,previewName=null,SID=null,MY=[],authMode='login';
 const STUDIO_KEY='yogis-studio';
 const SLUG_RE=/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
-const PLATFORM=(location.pathname.split('/')[1]||'').toLowerCase()==='platform';
+const PLATFORM=/^admin\./i.test(location.hostname)||(location.pathname.split('/')[1]||'').toLowerCase()==='platform';
 const pathSlug=(()=>{const x=(location.pathname.split('/')[1]||'').toLowerCase();return SLUG_RE.test(x)&&!/\./.test(x)&&x!=='platform'?x:null})();
 let pubStudio=null,isPA=false,PA=null;
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
