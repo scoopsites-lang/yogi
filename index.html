@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>YoGis</title>
 <meta name="theme-color" content="#F7F3EC">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="YoGis">
@@ -261,6 +261,8 @@ button.stat span::after{content:' ›';opacity:.5}
 .check{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.92rem}
 .check input{width:20px;height:20px;accent-color:var(--sage-deep)}
 .foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:28px}
+.pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
+.slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px}
 </style>
 </head>
 <body>
@@ -282,7 +284,11 @@ const SB_URL='https://zyleeqmcixyhvuapneeo.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5bGVlcW1jaXh5aHZ1YXBuZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MzAwMzIsImV4cCI6MjEwNzMwNjAzMn0.WDYGqmy9cnp8nRYyr5ZkVxWcR-pI8o8TqDq-V1cJRlA';
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 const DAY=864e5,H=36e5,TOKEN_KEY='yogis-token',SEEN_KEY='yogis-seen',MODE_KEY='yogis-mode';
-let myTok=null,adminSess=false,myUid=null,previewName=null;
+let myTok=null,adminSess=false,myUid=null,previewName=null,SID=null,MY=[],authMode='login';
+const STUDIO_KEY='yogis-studio';
+const SLUG_RE=/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
+const pathSlug=(()=>{const x=(location.pathname.split('/')[1]||'').toLowerCase();return SLUG_RE.test(x)&&!/\./.test(x)?x:null})();
+let pubStudio=null;
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 const I={
  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -322,6 +328,7 @@ const first=p=>p.name.split(' ')[0];
 const G=(p,f,m)=>p&&p.gender==='m'?m:f;
 const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
 const appUrl=()=>'https://yogis.co.il/';
+const studioUrl=()=>appUrl()+(S.studio.slug||'');
 const isStandalone=()=>{try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
 let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p')render()});
 /* personal manifest: the installed app opens straight to this practitioner's card */
@@ -389,23 +396,23 @@ async function loadAdmin(){
   try{await q(sb.rpc('a_process'))}catch(e){}
   const since=iso(today()-21*DAY);
   const [st,pe,ca,fr,cl,se,rg,pu,cn,an]=await Promise.all([
-    q(sb.from('studio').select('*').eq('id',1).single()),
-    q(sb.from('people').select('*').order('created_at')),
+    q(sb.from('studio').select('*').eq('id',SID).single()),
+    q(sb.from('people').select('*').eq('studio_id',SID).order('created_at')),
     q(sb.from('cards').select('*').order('created_at')),
     q(sb.from('freezes').select('*')),
-    q(sb.from('classes').select('*').eq('active',true)),
-    q(sb.from('sessions').select('*').gte('on_date',since)),
+    q(sb.from('classes').select('*').eq('studio_id',SID).eq('active',true)),
+    q(sb.from('sessions').select('*').eq('studio_id',SID).gte('on_date',since)),
     q(sb.from('regs').select('*').eq('removed',false).order('created_at')),
     q(sb.from('punches').select('*').eq('void',false).order('at')),
     q(sb.from('cancellations').select('*')),
-    q(sb.from('admin_notes').select('*').order('created_at',{ascending:false}).limit(50))]);
+    q(sb.from('admin_notes').select('*').eq('studio_id',SID).order('created_at',{ascending:false}).limit(50))]);
   const {data:ses_}=await sb.auth.getSession();myUid=(ses_&&ses_.session&&ses_.session.user)?ses_.session.user.id:null;
   const sesById={};const sessions={};
   se.forEach(s=>{const o={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.starts_at),dur:s.dur||60,name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs:[],late:[],waived:[]};sesById[s.id]=o;sessions[s.class_id+'_'+s.on_date]=o});
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
   cn.forEach(x=>{const s=sesById[x.session_id];if(s)(x.kind==='late'?s.late:s.waived).push(x.person_id)});
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
-  S={studio:{name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null},
+  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
@@ -421,7 +428,7 @@ async function loadP(){
   (v.sessions||[]).forEach(s=>{const regs=[];const mine=s.mine?{pid:me.id,status:s.mine.status,reason:s.mine.reason}:null;if(mine)regs.push(mine);for(let i=regs.length;i<s.count;i++)regs.push({pid:null});
     sessions[s.class_id+'_'+s.on_date]={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.t),name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs,late:[],waived:[]}});
   const card=v.card?mapCard(v.card,(v.card.used||[]).map(u=>({t:Date.parse(u.t),why:u.why})),v.card.freezes||[]):null;
-  S={studio:{name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff},places:[],classes:(v.classes||[]).map(mapClass),sessions,
+  S={studio:{id:v.studio.id,slug:v.studio.slug,name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff},places:[],classes:(v.classes||[]).map(mapClass),sessions,
     people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
     notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),ref:n.ref?Date.parse(n.ref):null,title:n.title,body:n.body,kind:n.kind,read:n.read}))};
   phoneNotify();
@@ -445,7 +452,7 @@ function phoneNotify(){
   store.set(SEEN_KEY,JSON.stringify(S.notes.slice(0,60).map(n=>n.id)));
 }
 function sysNotify(title,body){try{if(!('Notification' in window)||Notification.permission!=='granted')return;
-  if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icon-192.png',badge:'icon-192.png',lang:'he',dir:'rtl'}));else new Notification(title,{body,lang:'he',dir:'rtl'})}catch(e){}}
+  if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'/icon-192.png',badge:'/icon-192.png',lang:'he',dir:'rtl'}));else new Notification(title,{body,lang:'he',dir:'rtl'})}catch(e){}}
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
@@ -491,11 +498,33 @@ function history(c){
 
 /* ---------- manager views ---------- */
 function vLogin(){
-  return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>כניסת מורה</small></div></div></div>'+
-   '<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם מהמורה ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div><h1>כניסה לניהול הסטודיו</h1><p class="lead">כניסה למורה בלבד.</p>'+(store.get(TOKEN_KEY)?'<button class="btn btn-soft full" style="margin-top:10px" data-act="backme">'+I.back+'חזרה לכרטיסייה שלי</button>':'')+''+
+  const st=pubStudio,signup=authMode==='signup',forgot=authMode==='forgot';
+  const head='<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>'+(st?esc(st.name):'כרטיסיות ולו״ז לסטודיו יוגה')+'</small></div></div>'+themeBtn()+'</div>';
+  const pBox='<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם '+(st?'מ'+esc(st.teacher):'מהמורה')+' ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div>';
+  const back=store.get(TOKEN_KEY)?'<button class="btn btn-soft full" style="margin-top:10px" data-act="backme">'+I.back+'חזרה לכרטיסייה שלי</button>':'';
+  const pitch=!st&&signup?'<ul class="pitch"><li>כרטיסיות דיגיטליות עם ניקוב אוטומטי אחרי השיעור</li><li>לו״ז שבועי עם הרשמה וביטול מהטלפון</li><li>תזכורות, הקפאות ומעקב הכנסות</li><li>אפליקציה שמתקינים על מסך הבית, בלי חנות</li></ul>':'';
+  const title=forgot?'איפוס סיסמה':signup?'פתיחת סטודיו ב־YoGis':st?'כניסה לניהול '+esc(st.name):'כניסה לניהול הסטודיו';
+  const lead=forgot?'נשלח אלייך קישור לבחירת סיסמה חדשה.':signup?'יוצרים חשבון מורה, ואז מגדירים את הסטודיו. לוקח דקה.':'כניסה למורים ולצוות הסטודיו.';
+  return head+(signup?'':pBox)+'<h1>'+title+'</h1><p class="lead">'+lead+'</p>'+pitch+back+
    '<form id="loginf" class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="em">אימייל</label><input id="em" type="email" autocomplete="username" dir="ltr" required></div>'+
-   '<div class="field"><label for="pw">סיסמה</label><input id="pw" type="password" autocomplete="current-password" dir="ltr" required></div>'+
-   '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">כניסה</button></form>';
+   (forgot?'':'<div class="field"><label for="pw">סיסמה'+(signup?' (לפחות 8 תווים)':'')+'</label><input id="pw" type="password" autocomplete="'+(signup?'new-password':'current-password')+'" dir="ltr" minlength="'+(signup?8:1)+'" required></div>')+
+   '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><p id="lok" style="color:var(--good,#5E7D57);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">'+(forgot?'שליחת קישור':signup?'יצירת חשבון':'כניסה')+'</button></form>'+
+   '<div class="foot">'+(signup||forgot?'<button class="linkbtn" data-auth="login">כבר יש לי חשבון. כניסה</button>':'<button class="linkbtn" data-auth="signup">מורה חדשה? פתיחת סטודיו</button><br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-auth="forgot">שכחתי סיסמה</button>')+'</div>';
+}
+function vNewPw(){
+  return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>סיסמה חדשה</small></div></div></div><h1>בחירת סיסמה חדשה</h1>'+
+   '<form id="newpwf" class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="npw">סיסמה חדשה (לפחות 8 תווים)</label><input id="npw" type="password" autocomplete="new-password" dir="ltr" minlength="8" required></div><p id="nerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">שמירה</button></form>';
+}
+function vOnboard(){
+  const extra=MY.length>0;
+  return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>סטודיו חדש</small></div></div></div>'+
+   '<h1>'+(extra?'פתיחת סטודיו נוסף':'ברוכה הבאה ל־YoGis')+'</h1><p class="lead">כמה פרטים על הסטודיו, ואפשר להתחיל. הכול ניתן לשינוי אחר כך בהגדרות.</p>'+
+   '<form id="onbf" class="card" style="box-shadow:none;border:1px solid var(--line)">'+
+   '<div class="field" style="margin-top:0"><label for="osn">שם הסטודיו</label><input id="osn" maxlength="60" placeholder="לדוגמה: יוגה עם דנה" required></div>'+
+   '<div class="field"><label for="otn">השם שלך, כפי שהמתרגלים יראו אותו</label><input id="otn" maxlength="40" placeholder="לדוגמה: דנה" required></div>'+
+   '<div class="field"><label for="osl">כתובת הסטודיו</label><div class="slugin" dir="ltr"><span>yogis.co.il/</span><input id="osl" maxlength="30" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="dana-yoga" required></div><small id="oslm" class="lead" style="font-size:.82rem">אותיות באנגלית, מספרים ומקף. זו הכתובת שהמתרגלים יקבלו.</small></div>'+
+   '<p id="oerr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">יצירת הסטודיו</button></form>'+
+   '<div class="foot">'+(extra?'<button class="linkbtn" data-act="toadmin">חזרה לסטודיו שלי</button><br>':'')+'<button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="logout">יציאה מהחשבון</button></div>';
 }
 function aBanner(){const u=(S.anotes||[]).filter(n=>!n.read);if(!u.length)return'';const n=u[0];
   return '<div class="banner" role="status"><div><b>'+esc(n.title)+'</b><small>'+esc(n.body)+(u.length>1?' · ועוד '+(u.length-1)+' התראות':'')+'</small></div><button class="btn btn-soft btn-sm" data-act="anotes">לכל ההתראות</button></div>'}
@@ -632,7 +661,9 @@ function vSettings(){
   '<div class="switch"><div><b>מנוי חודשי ללא הגבלה <span class="soon-tag">'+(S.studio.monthly?'פעיל':'כבוי')+'</span></b><small>כניסה חופשית לכל השיעורים למשך חודש. כשהאפשרות כבויה היא מוצגת אך לא ניתנת לבחירה.</small></div><input type="checkbox" class="tog" id="mon"'+(S.studio.monthly?' checked':'')+' aria-label="הפעלת מנוי חודשי"></div>'+
   '<h2>מחיר לשיעור</h2><div class="field" style="margin-top:0"><label for="pr">משמש לחישוב בעמוד ההכנסות</label><input id="pr" type="number" inputmode="numeric" min="0" value="'+S.studio.price+'"></div>'+
   '<h2>תצוגה</h2><div class="chips">'+[['','לפי הטלפון'],['light','בהירה'],['dark','כהה']].map(x=>'<button class="chip" data-themeset="'+x[0]+'" aria-pressed="'+((store.get(THEME_KEY)||'')===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
-  '<h2>חשבון</h2><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה מהחשבון</button></div>';
+  '<h2>כתובת הסטודיו</h2><div class="field" style="margin-top:0"><div class="msg" dir="ltr" style="word-break:break-all">'+esc(studioUrl())+'</div><small class="lead" style="font-size:.82rem">הקישורים האישיים והלו״ז השבועי נשלחים עם הכתובת הזו.</small></div>'+
+  (MY.length>1?'<h2>הסטודיואים שלי</h2><div class="chips">'+MY.map(x=>'<button class="chip" data-studio="'+x.id+'" aria-pressed="'+(x.id===SID)+'">'+esc(x.name)+'</button>').join('')+'</div>':'')+
+  '<h2>חשבון</h2><div class="sheet-actions"><button class="btn btn-soft" data-act="newstudio">פתיחת סטודיו נוסף</button><button class="btn btn-soft" data-act="logout">יציאה מהחשבון</button></div>';
 }
 function vInstall(){
   return (mode==='p'?'<button class="back" data-act="pback">'+I.back+'חזרה</button>':header())+'<h1>התקנה על מסך הבית</h1><p class="lead">YoGis נפתחת כמו אפליקציה, במסך מלא ובלי חנות אפליקציות.'+(mode==='p'?' חשוב להתקין מתוך הקישור האישי, כדי שהאפליקציה תיפתח ישר לכרטיסייה שלך.':'')+'</p>'+
@@ -687,6 +718,8 @@ function render(){
   if(mode==='loading')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>טוען…</small></div></div></div><p class="lead" style="margin-top:40px;text-align:center">טוען את הנתונים…</p>';
   else if(loadErr&&(mode==='p'||mode==='admin')&&!S.classes.length)html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>לא הצלחנו לטעון</h1><p class="lead">'+esc(loadErr)+'</p><div class="sheet-actions"><button class="btn btn-primary" data-act="refresh">ניסיון נוסף</button>'+(mode==='p'?'<button class="btn btn-soft" data-act="forget">כניסת מורה</button>':'')+'</div>';
   else if(mode==='login')html=vLogin();
+  else if(mode==='onboard')html=vOnboard();
+  else if(mode==='newpw')html=vNewPw();
   else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
   else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs}[view]||vHome)();
@@ -696,13 +729,35 @@ function render(){
   document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
-  const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',1)),'נשמר')})};
+  const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',SID)),'נשמר')})};
   bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
-  const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',1)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
-  const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr');er.hidden=true;
-    const {error}=await sb.auth.signInWithPassword({email:document.getElementById('em').value.trim(),password:document.getElementById('pw').value});
-    if(error){er.textContent=/invalid/i.test(error.message)?'האימייל או הסיסמה לא נכונים.':errMsg(error);er.hidden=false;return}
-    await startAdmin()});
+  const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',SID)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
+  const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr'),ok=document.getElementById('lok');er.hidden=true;ok.hidden=true;
+    const email=document.getElementById('em').value.trim(),pwEl=document.getElementById('pw'),password=pwEl?pwEl.value:'';
+    const btn=lf.querySelector('button[type=submit]');btn.disabled=true;
+    try{
+      if(authMode==='forgot'){const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:appUrl()});if(error)throw error;ok.textContent='אם האימייל רשום, נשלח אליו קישור לאיפוס. כדאי לבדוק גם בספאם.';ok.hidden=false;return}
+      if(authMode==='signup'){
+        const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:appUrl()+'?admin'}});if(error)throw error;
+        if(data.session){await startAdmin();return}
+        ok.textContent='שלחנו אימייל לאישור החשבון. אחרי הלחיצה על הקישור באימייל נמשיך להגדרת הסטודיו.';ok.hidden=false;return}
+      const {error}=await sb.auth.signInWithPassword({email,password});
+      if(error){er.textContent=/invalid/i.test(error.message)?'האימייל או הסיסמה לא נכונים.':/confirm/i.test(error.message)?'צריך קודם לאשר את החשבון דרך הקישור שנשלח לאימייל.':errMsg(error);er.hidden=false;return}
+      await startAdmin();
+    }catch(x){er.textContent=/registered|exists/i.test(x.message||'')?'כבר יש חשבון עם האימייל הזה. אפשר להיכנס או לאפס סיסמה.':/password/i.test(x.message||'')?'הסיסמה חלשה מדי. צריך לפחות 8 תווים.':/rate|seconds/i.test(x.message||'')?'נשלחו יותר מדי בקשות. נסי שוב בעוד כמה דקות.':errMsg(x);er.hidden=false}
+    finally{btn.disabled=false}});
+  const nf=document.getElementById('newpwf');if(nf)nf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('nerr');er.hidden=true;
+    const {error}=await sb.auth.updateUser({password:document.getElementById('npw').value});
+    if(error){er.textContent=/password/i.test(error.message)?'הסיסמה חלשה מדי. צריך לפחות 8 תווים.':errMsg(error);er.hidden=false;return}
+    toast('הסיסמה עודכנה');await startAdmin()});
+  const of=document.getElementById('onbf');if(of){const sl=document.getElementById('osl'),msg=document.getElementById('oslm');let tmr=null;
+    sl.addEventListener('input',()=>{const v=sl.value.toLowerCase().replace(/[^a-z0-9-]/g,'');if(v!==sl.value)sl.value=v;clearTimeout(tmr);
+      if(!SLUG_RE.test(v)){msg.textContent='3 עד 30 תווים: אותיות באנגלית, מספרים ומקף.';msg.style.color='';return}
+      tmr=setTimeout(async()=>{try{const okk=await q(sb.rpc('slug_ok',{p_slug:v}));if(sl.value!==v)return;msg.textContent=okk?'yogis.co.il/'+v+' פנויה':'הכתובת הזו תפוסה. נסי אחרת.';msg.style.color=okk?'var(--good,#5E7D57)':'var(--bad)'}catch(x){}},350)});
+    of.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('oerr');er.hidden=true;const btn=of.querySelector('button[type=submit]');btn.disabled=true;
+      try{const r=await q(sb.rpc('create_studio',{p_name:document.getElementById('osn').value,p_teacher:document.getElementById('otn').value,p_slug:sl.value}));
+        store.set(STUDIO_KEY,String(r.id));await startAdmin(r.id);toast('הסטודיו נפתח. אפשר להתחיל להוסיף שיעורים ומתרגלים')}
+      catch(x){er.textContent=errMsg(x);er.hidden=false}finally{btn.disabled=false}})}
 }
 
 /* ---------- sheets & toast ---------- */
@@ -781,7 +836,7 @@ function freezeSheet(){
   const fd=bg.querySelector('#fdays');fd.oninput=()=>{const n=+fd.value;bg.querySelector('#fend').textContent=n>=1&&n<=14?'הפשרה אוטומטית ב־'+endTxt(n):'אפשר לבחור בין יום אחד ל־14 ימים'};
   freezeSheet.reason=()=>reason;freezeSheet.days=()=>+fd.value;
 }
-const personalLink=p=>appUrl()+'?t='+p.token;
+const personalLink=p=>studioUrl()+'?t='+p.token;
 function waText(href,text,note){
   return '<div class="msg">'+esc(text)+'</div><div class="sheet-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="'+href+'">פתיחה ב־WhatsApp</a><button class="btn btn-soft" id="cp">העתקת ההודעה</button></div>'+(note?'<p class="lead" style="font-size:.82rem;margin-top:10px">'+note+'</p>':'');
 }
@@ -816,10 +871,10 @@ function weekSheet(){
   const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
   let lines='',last=-1;
   list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳) · '+i.c.place+'\n';last=d});
-  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+appUrl()+'\n\nביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.\n'+S.studio.name;
+  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+studioUrl()+'\n\nביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.\n'+S.studio.name;
   sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. מי שכבר פתח פעם אחת את הקישור האישי שלו, נכנס מהקישור הזה ישר לכרטיסייה ולהרשמה.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text));
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(text,bg.querySelector('.msg'))};
-  bg.querySelector('a.btn').addEventListener('click',()=>{sb.from('studio').update({last_sent:new Date().toISOString()}).eq('id',1).then(()=>{})});
+  bg.querySelector('a.btn').addEventListener('click',()=>{sb.from('studio').update({last_sent:new Date().toISOString()}).eq('id',SID).then(()=>{})});
 }
 
 /* ---------- practitioner actions ---------- */
@@ -872,7 +927,7 @@ function notesSheet(){
 
 /* ---------- clicks ---------- */
 function onClick(e){
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();view=d.go;render();window.scrollTo(0,0)}
   else if(d.open){sel=d.open;view='person';render();window.scrollTo(0,0)}
@@ -887,11 +942,13 @@ function onClick(e){
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
   else if(d.refund){act(()=>q(sb.rpc('a_refund',{p_reg:d.refund})),'הניקוב הוחזר').catch(()=>{})}
   else if(d.tile){const m={active:['people','active'],frozen:['people','frozen'],money:['money'],regs:['regs']}[d.tile];view=m[0];if(m[1]){filter=m[1];q_=''}render();window.scrollTo(0,0)}
+  else if(d.auth){authMode=d.auth;render();window.scrollTo(0,0)}
+  else if(d.studio){store.set(STUDIO_KEY,d.studio);startAdmin(+d.studio)}
   else if(d.themeset!=null){store.set(THEME_KEY,d.themeset||null);applyTheme(d.themeset||null);render()}
   else if(d.edittmpl){tmplSheet(d.edittmpl)}
   else if(d.readnote){const n=S.notes.find(x=>x.id===d.readnote);if(n)n.read=true;render();sb.rpc('p_read_notes',{p_token:token,p_note:d.readnote}).then(()=>{})}
   else if(d.delplace){if(S.classes.some(c=>c.place===d.delplace)){toast('יש שיעורים קבועים במקום הזה. שני להם מקום קודם');return}if(S.places.length<2){toast('צריך להשאיר לפחות מקום אחד');return}
-    act(()=>q(sb.from('studio').update({places:S.places.filter(x=>x!==d.delplace)}).eq('id',1)),'המקום הוסר').catch(()=>{})}
+    act(()=>q(sb.from('studio').update({places:S.places.filter(x=>x!==d.delplace)}).eq('id',SID)),'המקום הוסר').catch(()=>{})}
   else if(d.deltmpl){
     if(t.dataset.armed){act(()=>q(sb.from('classes').update({active:false}).eq('id',d.deltmpl)),'השיעור הוסר מהלו״ז הקבוע').catch(()=>{})}
     else{t.dataset.armed='1';t.textContent='הסרה?';t.style.width='auto';t.style.padding='0 10px';t.style.color='var(--bad)';setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='×';t.removeAttribute('style')}},3000)}
@@ -909,7 +966,7 @@ async function doAct(a,t,d){
       if(!n){err.textContent='צריך להזין שם.';err.hidden=false;return}
       if(ph.replace(/\D/g,'').length<9){err.textContent='מספר הטלפון קצר מדי. הזיני 10 ספרות.';err.hidden=false;return}
       const card=addSheet.make(null),nused=addSheet.used();
-      const np=await act(async()=>{const pr=await q(sb.from('people').insert({name:n,phone:ph,gender:addSheet.gender()}).select().single());const cr=await q(sb.from('cards').insert(Object.assign(card,{person_id:pr.id})).select().single());await addOpening(cr.id,nused);return pr},'נוספה כרטיסייה ל'+esc(n.split(' ')[0]));
+      const np=await act(async()=>{const pr=await q(sb.from('people').insert({studio_id:SID,name:n,phone:ph,gender:addSheet.gender()}).select().single());const cr=await q(sb.from('cards').insert(Object.assign(card,{person_id:pr.id})).select().single());await addOpening(cr.id,nused);return pr},'נוספה כרטיסייה ל'+esc(n.split(' ')[0]));
       sel=np.id;view='person';render();break}
     case'saverenew':{const nused=addSheet.used();await act(async()=>{const cr=await q(sb.from('cards').insert(addSheet.make(p.id)).select().single());await addOpening(cr.id,nused)},'כרטיסייה חדשה נפתחה');break}
     case'freeze':freezeSheet();break;
@@ -931,15 +988,15 @@ async function doAct(a,t,d){
       if(place==='__new'){place=g('#tpn').value.trim();if(!place){err.textContent='כתבי את שם המקום החדש.';err.hidden=false;return}if(!S.places.includes(place))newPlaces=S.places.concat(place)}
       const unl=g('#tun').checked,v={name:g('#tnm').value.trim()||'יוגה',place,day:+g('#tdy').value,time:g('#ttm').value||'18:00',dur:Math.min(240,Math.max(15,+g('#tdu').value||60)),cap:unl?0:Math.max(1,+g('#tcp').value||12)};
       await act(async()=>{
-        if(newPlaces)await q(sb.from('studio').update({places:newPlaces}).eq('id',1));
+        if(newPlaces)await q(sb.from('studio').update({places:newPlaces}).eq('id',SID));
         if(d.id)return await q(sb.rpc('a_update_class',{p_id:d.id,p_day:v.day,p_time:v.time,p_name:v.name,p_dur:v.dur,p_cap:v.cap,p_place:v.place}));
-        await q(sb.from('classes').insert({day:v.day,start_time:v.time,name:v.name,dur:v.dur,cap:v.cap,place:v.place}));return -1;
+        await q(sb.from('classes').insert({studio_id:SID,day:v.day,start_time:v.time,name:v.name,dur:v.dur,cap:v.cap,place:v.place}));return -1;
       },n=>n<0?'השיעור נוסף ללו״ז':'השיעור עודכן'+(n?'. '+n+' רשומות קיבלו הודעה':''));break}
     case'cancelses':{
       if(!t.dataset.armed){t.dataset.armed='1';t.textContent='לבטל? הרשומות יקבלו הודעה';return}
       const inst=INST[d.k];await act(()=>q(sb.rpc('a_cancel_session',{p_class:inst.c.id,p_date:inst.on})),'השיעור בוטל');break}
     case'addplace':{const el=document.getElementById('newplace'),v=el.value.trim();if(!v){el.focus();return}if(S.places.includes(v)){toast('המקום כבר קיים');return}
-      await act(()=>q(sb.from('studio').update({places:S.places.concat(v)}).eq('id',1)),'המקום נוסף');break}
+      await act(()=>q(sb.from('studio').update({places:S.places.concat(v)}).eq('id',SID)),'המקום נוסף');break}
     case'usepl':{const v=(document.getElementById('plinkin').value||'').trim();const m=v.match(/[?&]t=([A-Za-z0-9]+)/)||v.match(/^([a-f0-9]{24,})$/);
       if(!m){toast('זה לא נראה כמו קישור אישי. העתיקו את כל הקישור מההודעה.');return}location.href=appUrl()+'?t='+m[1];break}
     case'backme':{const t=store.get(TOKEN_KEY);if(t){store.set(MODE_KEY,'p');await startP(t)}break}
@@ -947,7 +1004,8 @@ async function doAct(a,t,d){
     case'tome':if(myTok){store.set(MODE_KEY,'p');await startP(myTok)}else pickSheet();break;
     case'preview':{const pp=findP(d.pid);if(pp){close();previewName=pp.name;await startP(pp.token,true)}break}
     case'toadmin':previewName=null;await startAdmin();break;
-    case'logout':await sb.auth.signOut();adminSess=false;myTok=null;store.set(MODE_KEY,null);mode='login';view='home';render();break;
+    case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
+    case'logout':await sb.auth.signOut();adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
     /* practitioner */
     case'notes':notesSheet();break;
     case'anotes':aNotesSheet();break;
@@ -970,15 +1028,19 @@ document.addEventListener('click',e=>{if(e.target.closest('.sheet-bg'))return;on
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
 /* ---------- start ---------- */
-async function startAdmin(){
+async function startAdmin(want){
   mode='loading';store.set(MODE_KEY,'admin');render();
   const {data}=await sb.auth.getSession();
-  if(!data.session){mode='login';render();return}
-  let ok=false;try{ok=await q(sb.rpc('is_admin'))}catch(e){}
-  if(!ok){mode='noadmin';render();return}
-  adminSess=true;try{myTok=await q(sb.rpc('a_my_token'))}catch(e){}
+  if(!data.session){await loadPub();mode='login';render();return}
+  try{MY=await q(sb.rpc('my_studios'))||[]}catch(e){MY=[]}
+  if(!MY.length){mode='onboard';render();return}
+  const pick=x=>MY.find(s=>String(s.id)===String(x));
+  const chosen=pick(want)||(pathSlug&&MY.find(s=>s.slug===pathSlug))||pick(store.get(STUDIO_KEY))||MY[0];
+  SID=chosen.id;store.set(STUDIO_KEY,String(SID));
+  adminSess=true;myTok=null;try{myTok=await q(sb.rpc('a_my_token_for',{p_studio:SID}))}catch(e){}
   mode='admin';view='home';await reload();
 }
+async function loadPub(){if(pubStudio||!pathSlug)return;try{pubStudio=await q(sb.rpc('studio_public',{p_slug:pathSlug}))}catch(e){}}
 async function startP(tok,preview){token=tok;if(!preview){store.set(TOKEN_KEY,tok);personalManifest(tok);previewName=null}mode='p';view='p';window.scrollTo(0,0);await reload()}
 function pickSheet(){
   const list=S.people.slice().sort((a,b)=>a.name.localeCompare(b.name,'he'));
@@ -987,6 +1049,8 @@ function pickSheet(){
   const pq=bg.querySelector('#pq');pq.oninput=()=>{const v=pq.value.trim();bg.querySelectorAll('#plist [data-pid]').forEach(b=>{b.hidden=!!v&&!b.textContent.includes(v)})};
 }
 (async function boot(){
+  sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){mode='newpw';render()}});
+  if(/type=recovery/.test(location.hash)){mode='newpw';render();return}
   const u=new URLSearchParams(location.search),ut=u.get('t'),saved=store.get(TOKEN_KEY),pref=store.get(MODE_KEY);
   render();
   setInterval(()=>{if(!bg&&mode==='p'&&document.visibilityState==='visible')reload()},60000);
@@ -1001,6 +1065,6 @@ function pickSheet(){
 
 </script>
 
-<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));let had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!done){done=true;location.reload()}})}</script>
+<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));let had=!!navigator.serviceWorker.controller,done=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!done){done=true;location.reload()}})}</script>
 </body>
 </html>
