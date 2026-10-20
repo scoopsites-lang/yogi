@@ -33,6 +33,7 @@ const logo=s=>'<svg class="logo" width="'+s+'" height="'+s+'" viewBox="0 0 100 1
 /* ---------- studio branding (advanced plan) ---------- */
 let BR=null;
 const brandOf=st=>st&&st.plan==='pro'&&st.brand&&Object.keys(st.brand).length?st.brand:null;
+const cutTxt=()=>+S.studio.cutoff===0?'עד תחילת השיעור':'עד '+S.studio.cutoff+(S.studio.cutoff==1?' שעה':' שעות')+' לפני השיעור';
 const appName=()=>(BR&&BR.app_name)||'YoGis';
 const mark=sz=>BR&&BR.logo?'<img class="logo blogo" src="'+esc(BR.logo)+'" width="'+sz+'" height="'+sz+'" alt="">':logo(sz);
 function applyBrand(b){BR=b||null;const r=document.documentElement;
@@ -288,7 +289,7 @@ function adminCls(inst){
 }
 function vSched(){
   const list=weekInst(wkOff);
-  return header()+'<h1>לו״ז שיעורים</h1><p class="lead">המתרגלות נרשמות מהטלפון. ביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.</p>'+
+  return header()+'<h1>לו״ז שיעורים</h1><p class="lead">המתרגלות נרשמות מהטלפון. ביטול חופשי '+cutTxt()+'.</p>'+
    '<div class="seg"><button data-wk="0" aria-pressed="'+(wkOff===0)+'">השבוע · '+weekLabel(0)+'</button><button data-wk="1" aria-pressed="'+(wkOff===1)+'">שבוע הבא · '+weekLabel(1)+'</button></div>'+
    '<button class="btn btn-primary full" style="margin-top:12px" data-act="sendwk">'+I.msg+'שליחת הלו״ז ב־WhatsApp</button>'+
    (S.studio.sent?'<p class="lead" style="font-size:.82rem;margin-top:6px;text-align:center">נשלח לאחרונה ב־'+fmt(S.studio.sent)+'</p>':'')+
@@ -477,8 +478,7 @@ function vSettings(){
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
-  '<h2>מדיניות ביטול</h2><div class="switch"><div><b>ביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור</b><small>אחרי זה ביטול מנקב שיעור, או שהמתרגלת שולחת אלייך בקשה עם הסבר ואת מחליטה.</small></div></div>'+
-  '<h2>סוגי כרטיסיות</h2>'+
+  '<h2>מדיניות ביטול</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="cut">ביטול חופשי <b id="cutl">'+cutTxt()+'</b></label><input type="range" id="cut" min="0" max="72" step="1" value="'+S.studio.cutoff+'" style="width:100%;accent-color:var(--sage-deep)"><div class="cutscale"><span>0</span><span>24</span><span>48</span><span>72 שעות</span></div></div><small class="lead" style="font-size:.85rem">אחרי חלון הזמן הזה ביטול מנקב שיעור, או שהמתרגל שולח בקשה עם הסבר ואת מחליטה. השינוי חל מיד על כל השיעורים, כולל הרשמות קיימות.</small></div>'+'<h2>סוגי כרטיסיות</h2>'+
   '<div class="switch"><div><b>כרטיסיית שיעורים</b><small>מספר שיעורים קבוע, תוקף של 3 חודשים מיום הפתיחה. ניתן להקפאה.</small></div><input type="checkbox" class="tog" checked disabled aria-label="כרטיסיית שיעורים פעילה"></div>'+
   '<div class="switch"><div><b>מנוי חודשי ללא הגבלה <span class="soon-tag">'+(S.studio.monthly?'פעיל':'כבוי')+'</span></b><small>כניסה חופשית לכל השיעורים למשך חודש. כשהאפשרות כבויה היא מוצגת אך לא ניתנת לבחירה.</small></div><input type="checkbox" class="tog" id="mon"'+(S.studio.monthly?' checked':'')+' aria-label="הפעלת מנוי חודשי"></div>'+
   '<h2>מחיר לשיעור</h2><div class="field" style="margin-top:0"><label for="pr">משמש לחישוב בעמוד ההכנסות</label><input id="pr" type="number" inputmode="numeric" min="0" value="'+S.studio.price+'"></div>'+
@@ -527,7 +527,7 @@ function vP(){
    (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
    (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
-   '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה עד '+S.studio.cutoff+' שעות לפני השיעור.</p>'+
+   '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה '+cutTxt()+'.</p>'+
    (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
@@ -553,6 +553,8 @@ function render(){
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
   const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',SID)),'נשמר')})};
+  const cut=document.getElementById('cut');if(cut){cut.addEventListener('input',e=>{const v=+e.target.value;document.getElementById('cutl').textContent=v===0?'עד תחילת השיעור':'עד '+v+(v===1?' שעה':' שעות')+' לפני השיעור'});
+    cut.addEventListener('change',e=>{const v=Math.max(0,Math.min(72,+e.target.value));act(()=>q(sb.from('studio').update({cutoff_hours:v}).eq('id',SID)),'מדיניות הביטול עודכנה').catch(()=>{})})}
   bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
   const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',SID)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
   const bn=document.getElementById('bname');if(bn)bn.addEventListener('input',e=>{BD.app_name=e.target.value;bPreview();const pb=document.querySelector('.bpreview .brand b');if(pb)pb.textContent=BD.app_name||'YoGis';const hb=document.querySelector('.top .brand b');if(hb)hb.textContent=BD.app_name||'YoGis'});
@@ -706,7 +708,7 @@ function weekSheet(){
   const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
   let lines='',last=-1;
   list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳) · '+i.c.place+'\n';last=d});
-  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+studioUrl()+'\n\nביטול חופשי עד '+S.studio.cutoff+' שעות לפני השיעור.\n'+S.studio.name;
+  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+studioUrl()+'\n\nביטול חופשי '+cutTxt()+'.\n'+S.studio.name;
   sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. מי שכבר פתח פעם אחת את הקישור האישי שלו, נכנס מהקישור הזה ישר לכרטיסייה ולהרשמה.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text));
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(text,bg.querySelector('.msg'))};
   bg.querySelector('a.btn').addEventListener('click',()=>{sb.from('studio').update({last_sent:new Date().toISOString()}).eq('id',SID).then(()=>{})});
@@ -732,7 +734,7 @@ async function pTap(k){
     act(()=>q(sb.rpc('p_cancel',{p_token:token,p_session:s.id,p_mode:'free'})),'ההרשמה ל'+esc(inst.c.name)+' בוטלה').catch(()=>{});
     return;
   }
-  sheet('<h3>ביטול מאוחר</h3><p class="lead">'+esc(inst.c.name)+' מתחיל בעוד '+inTxt(ms)+'. ביטול בפחות מ־'+S.studio.cutoff+' שעות לפני השיעור מנקב שיעור מהכרטיסייה.</p>'+
+  sheet('<h3>ביטול מאוחר</h3><p class="lead">'+esc(inst.c.name)+' מתחיל בעוד '+inTxt(ms)+'. ביטול '+(S.studio.cutoff?'בפחות מ־'+S.studio.cutoff+' שעות לפני השיעור':'אחרי תחילת השיעור')+' מנקב שיעור מהכרטיסייה.</p>'+
    '<div class="stack"><button class="btn btn-clay" data-act="latecancel" data-k="'+k+'">ביטול וניקוב שיעור</button>'+
    '<button class="btn btn-soft" data-act="showreq">בקשה מ'+esc(S.studio.teacher)+' לבטל בלי ניקוב</button>'+
    '<div id="reqbox" hidden><div class="field"><label for="rr">הסבר קצר ל'+esc(S.studio.teacher)+'</label><textarea id="rr" rows="3" placeholder="לדוגמה: חליתי הבוקר"></textarea></div><p id="rerr" style="color:var(--bad);margin:6px 0 0" hidden>'+G(p,'כתבי','כתוב')+' כמה מילים כדי ש'+esc(S.studio.teacher)+' תוכל להחליט.</p><button class="btn btn-primary full" style="margin-top:10px" data-act="sendreq" data-k="'+k+'">שליחת הבקשה</button></div>'+
