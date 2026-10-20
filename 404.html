@@ -8,6 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="YoGis">
@@ -266,6 +267,7 @@ button.stat span::after{content:' ›';opacity:.5}
 .pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px;border-radius:0!important}.slugin input:focus,.slugin input:focus-visible{outline:none}.slugin:focus-within{outline:2px solid var(--sage-deep);outline-offset:2px}
 </style>
+<script>if(/^\/platform(\/|$)/i.test(location.pathname)){document.querySelector('link[rel=manifest]').href='/platform.webmanifest';document.querySelector('link[rel=apple-touch-icon]').href='/apple-touch-icon-admin.png';document.querySelector('link[rel=icon]').href='/icon-admin-192.png';document.title='YoGis ניהול';var a=document.querySelector('meta[name=apple-mobile-web-app-title]');if(a)a.content='YoGis ניהול'}</script>
 </head>
 <body>
 
@@ -333,7 +335,7 @@ const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate(
 const appUrl=()=>'https://yogis.co.il/';
 const studioUrl=()=>appUrl()+(S.studio.slug||'');
 const isStandalone=()=>{try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
-let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p')render()});
+let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p'||mode==='platform')render()});
 /* personal manifest: the installed app opens straight to this practitioner's card */
 function personalManifest(tok){try{
   if(!new URLSearchParams(location.search).get('t'))history.replaceState(null,'',location.pathname+'?t='+encodeURIComponent(tok));
@@ -671,7 +673,7 @@ function planSection(){const st=S.studio,am=activeMembers();
    (st.plan!=='pro'?'<button class="btn btn-primary full" style="margin-top:12px" data-act="upgrade">אני רוצה לשדרג</button>':'')+'</div>'}
 async function loadPA(){try{PA=await q(sb.rpc('pa_studios'))}catch(e){PA=[];toast(esc(errMsg(e)))}if(mode==='platform')render()}
 function vPlatform(){
-  const head='<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div><h1>ניהול הפלטפורמה</h1>';
+  const head='<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div>'+(isStandalone()?'':'<div class="banner" style="background:var(--sage-soft)"><div><b>אייקון ניהול על מסך הבית</b><small>'+(installEvt?'התקנה של "YoGis ניהול" כאפליקציה נפרדת, עם אייקון כהה.':'בתפריט הדפדפן בוחרים "הוספה למסך הבית" או "התקנת אפליקציה". האייקון ייפתח ישר לניהול הפלטפורמה.')+'</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'')+'</div>')+'<h1>ניהול הפלטפורמה</h1>';
   if(!isPA)return head+'<p class="lead">אין הרשאה.</p>';
   if(!PA)return head+'<p class="lead">טוען…</p>';
   const reqs=PA.reduce((n,x)=>n+x.requests.length,0);

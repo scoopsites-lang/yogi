@@ -50,7 +50,7 @@ const wkStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate(
 const appUrl=()=>'https://yogis.co.il/';
 const studioUrl=()=>appUrl()+(S.studio.slug||'');
 const isStandalone=()=>{try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
-let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p')render()});
+let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(mode==='p'||mode==='platform')render()});
 /* personal manifest: the installed app opens straight to this practitioner's card */
 function personalManifest(tok){try{
   if(!new URLSearchParams(location.search).get('t'))history.replaceState(null,'',location.pathname+'?t='+encodeURIComponent(tok));
@@ -388,7 +388,7 @@ function planSection(){const st=S.studio,am=activeMembers();
    (st.plan!=='pro'?'<button class="btn btn-primary full" style="margin-top:12px" data-act="upgrade">אני רוצה לשדרג</button>':'')+'</div>'}
 async function loadPA(){try{PA=await q(sb.rpc('pa_studios'))}catch(e){PA=[];toast(esc(errMsg(e)))}if(mode==='platform')render()}
 function vPlatform(){
-  const head='<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div><h1>ניהול הפלטפורמה</h1>';
+  const head='<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div>'+(isStandalone()?'':'<div class="banner" style="background:var(--sage-soft)"><div><b>אייקון ניהול על מסך הבית</b><small>'+(installEvt?'התקנה של "YoGis ניהול" כאפליקציה נפרדת, עם אייקון כהה.':'בתפריט הדפדפן בוחרים "הוספה למסך הבית" או "התקנת אפליקציה". האייקון ייפתח ישר לניהול הפלטפורמה.')+'</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'')+'</div>')+'<h1>ניהול הפלטפורמה</h1>';
   if(!isPA)return head+'<p class="lead">אין הרשאה.</p>';
   if(!PA)return head+'<p class="lead">טוען…</p>';
   const reqs=PA.reduce((n,x)=>n+x.requests.length,0);

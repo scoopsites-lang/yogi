@@ -1,0 +1,31 @@
+{
+ "name": "YoGis ניהול",
+ "short_name": "YoGis ניהול",
+ "description": "ניהול פלטפורמת YoGis",
+ "lang": "he",
+ "dir": "rtl",
+ "start_url": "/platform",
+ "scope": "/platform",
+ "display": "standalone",
+ "background_color": "#2F2B27",
+ "theme_color": "#2F2B27",
+ "icons": [
+  {
+   "src": "/icon-admin-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "/icon-admin-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "/icon-admin-maskable.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "id": "/platform?app=yogis-admin"
+}
