@@ -289,10 +289,11 @@ button.stat span::after{content:' ›';opacity:.5}
 .cutscale{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:2px}
 .prodrow.off b{color:var(--muted)}.prodrow{margin-top:8px}
 .pricein{display:flex;width:fit-content;align-items:center;gap:6px;margin-top:6px;font-size:.85rem;color:var(--muted)}.pricein input{width:84px;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:5px 8px;font:inherit;color:var(--ink)}
+.homeicon{display:inline-flex;flex-direction:column;align-items:center;gap:2px;font-size:.7rem;color:var(--muted)}.homeicon img{border-radius:11px;box-shadow:var(--shadow)}
 .pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px;border-radius:0!important}.slugin input:focus,.slugin input:focus-visible{outline:none}.slugin:focus-within{outline:2px solid var(--sage-deep);outline-offset:2px}
 </style>
-<script>if(/^admin\./i.test(location.hostname)||/^\/platform(\/|$)/i.test(location.pathname)){document.querySelector('link[rel=manifest]').href='/platform.webmanifest';document.querySelector('link[rel=apple-touch-icon]').href='/apple-touch-icon-admin.png';document.querySelector('link[rel=icon]').href='/icon-admin-192.png';document.title='YoGis ניהול';var a=document.querySelector('meta[name=apple-mobile-web-app-title]');if(a)a.content='YoGis ניהול'}</script>
+<script>(function(){var s=(location.pathname.split('/')[1]||'').toLowerCase();if(!/^admin\./i.test(location.hostname)&&s!=='platform'&&/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(s)){var l=document.querySelector('link[rel=manifest]');if(l)l.href='/m/'+s}})();if(/^admin\./i.test(location.hostname)||/^\/platform(\/|$)/i.test(location.pathname)){document.querySelector('link[rel=manifest]').href='/platform.webmanifest';document.querySelector('link[rel=apple-touch-icon]').href='/apple-touch-icon-admin.png';document.querySelector('link[rel=icon]').href='/icon-admin-192.png';document.title='YoGis ניהול';var a=document.querySelector('meta[name=apple-mobile-web-app-title]');if(a)a.content='YoGis ניהול'}</script>
 </head>
 <body>
 
@@ -349,7 +350,8 @@ const mark=sz=>BR&&BR.logo?'<img class="logo blogo" src="'+esc(BR.logo)+'" width
 function applyBrand(b){BR=b||null;const r=document.documentElement;
   if(BR&&BR.color){r.style.setProperty('--brand',BR.color);r.dataset.brand='1';const n=parseInt(BR.color.slice(1),16),L=(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255))/255;r.style.setProperty('--on-brand',L>.62?'#1C1B19':'#FFFFFF')}else{r.style.removeProperty('--brand');r.style.removeProperty('--on-brand');delete r.dataset.brand}
   if(BR&&BR.accent){r.style.setProperty('--brand2',BR.accent);r.dataset.brand2='1'}else{r.style.removeProperty('--brand2');delete r.dataset.brand2}
-  try{document.title=appName()}catch(e){}}
+  try{document.title=appName();const at=document.querySelector('link[rel=apple-touch-icon]');if(at&&!PLATFORM)at.href=BR&&BR.icons&&BR.icons.apple?BR.icons.apple:'/apple-touch-icon.png';
+    const am=document.querySelector('meta[name=apple-mobile-web-app-title]');if(am&&!PLATFORM)am.content=appName()}catch(e){}}
 /* ---------- small utils ---------- */
 const now=()=>Date.now();
 const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
@@ -784,13 +786,17 @@ function brandSection(){const st=S.studio;
   const sw=(list,key)=>'<div class="swatches">'+list.map(c=>'<button class="sw'+(BD[key]===c?' on':'')+'" style="background:'+c+'" data-sw="'+key+'" data-c="'+c+'" aria-label="צבע '+c+'"></button>').join('')+'<label class="sw custom" aria-label="צבע אחר"><input type="color" data-swc="'+key+'" value="'+(BD[key]||list[0])+'">+</label>'+(BD[key]?'<button class="linkbtn" data-sw="'+key+'" data-c="" style="font-size:.82rem">ברירת מחדל</button>':'')+'</div>';
   return '<h2>המיתוג שלי</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)">'+
    '<div class="bpreview"><div class="brand">'+(BD.logo?'<img class="logo blogo" src="'+esc(BD.logo)+'" width="40" height="40" alt="">':logo(40))+'<div><b>'+esc(BD.app_name||'YoGis')+'</b><small>'+esc(st.name)+'</small></div></div><span class="btn btn-primary btn-sm" style="pointer-events:none">הרשמה</span></div>'+
-   '<div class="field"><label>לוגו</label><div class="logorow">'+(BD.logo?'<img src="'+esc(BD.logo)+'" class="blogo" width="56" height="56" alt="">':'<span class="lead" style="font-size:.85rem">עדיין אין לוגו. מומלץ תמונה מרובעת, רצוי עם רקע שקוף.</span>')+'<label class="btn btn-soft btn-sm" style="cursor:pointer">'+(BD.logo?'החלפה':'העלאת לוגו')+'<input type="file" id="blogo" accept="image/png,image/jpeg,image/webp" hidden></label>'+(BD.logo?'<button class="btn btn-soft btn-sm" data-act="blogodel">הסרה</button>':'')+'</div></div>'+
+   '<div class="field"><label>לוגו</label><div class="logorow">'+(BD.logo?'<img src="'+esc(BD.logo)+'" class="blogo" width="56" height="56" alt="">':'<span class="lead" style="font-size:.85rem">עדיין אין לוגו. מומלץ תמונה מרובעת, רצוי עם רקע שקוף.</span>')+(BD.logo&&BD.icons&&BD.icons.apple?'<span class="homeicon"><img src="'+esc(BD.icons.apple)+'" width="44" height="44" alt=""><small>'+esc((BD.app_name||S.studio.name||'YoGis').slice(0,12))+'</small></span>':'')+'<label class="btn btn-soft btn-sm" style="cursor:pointer">'+(BD.logo?'החלפה':'העלאת לוגו')+'<input type="file" id="blogo" accept="image/png,image/jpeg,image/webp" hidden></label>'+(BD.logo?'<button class="btn btn-soft btn-sm" data-act="blogodel">הסרה</button>':'')+'</div></div>'+
    '<div class="field"><label for="bname">שם האפליקציה</label><input id="bname" maxlength="24" placeholder="YoGis" value="'+esc(BD.app_name||'')+'"><small class="lead" style="font-size:.8rem">מופיע בראש המסך במקום YoGis.</small></div>'+
    '<div class="field"><label>צבע ראשי (כפתורים והדגשות)</label>'+sw(SWATCH,'color')+'</div>'+
    '<div class="field"><label>צבע הלוגו והכותרת</label>'+sw(SWATCH2,'accent')+'</div>'+
    '<div class="sheet-actions" style="margin-top:14px"><button class="btn btn-primary" data-act="bsave">שמירת המיתוג</button><button class="btn btn-soft" data-act="breset">ביטול שינויים</button></div></div>';
 }
 function bPreview(){applyBrand(Object.keys(BD).some(k=>BD[k])?BD:null)}
+async function makeIcons(file){const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const draw=(size,frac,round)=>{const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');x.fillStyle='#F7F3EC';x.fillRect(0,0,size,size);
+    const box=size*frac,k=Math.min(box/img.width,box/img.height),w=img.width*k,h=img.height*k;x.drawImage(img,(size-w)/2,(size-h)/2,w,h);return new Promise(r=>c.toBlob(r,'image/png'))};
+  return{i512:await draw(512,.74),i192:await draw(192,.74),mask:await draw(512,.58),apple:await draw(180,.78)}}finally{URL.revokeObjectURL(url)}}
 async function shrinkImage(file){const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
   const S_=256,c=document.createElement('canvas');c.width=c.height=S_;const x=c.getContext('2d');const k=Math.min(S_/img.width,S_/img.height);const w=img.width*k,h=img.height*k;x.drawImage(img,(S_-w)/2,(S_-h)/2,w,h);
   return await new Promise(r=>c.toBlob(r,'image/png'))}finally{URL.revokeObjectURL(url)}}
@@ -882,7 +888,9 @@ function render(){
   const bl=document.getElementById('blogo');if(bl)bl.addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
     if(f.size>8e6){toast('הקובץ גדול מדי');return}toast('מעלה את הלוגו…');
     try{const blob=await shrinkImage(f);const path=SID+'/logo-'+Date.now()+'.png';const up=await sb.storage.from('brand').upload(path,blob,{contentType:'image/png',upsert:true});if(up.error)throw up.error;
-      BD.logo=sb.storage.from('brand').getPublicUrl(path).data.publicUrl;bPreview();render();toast('הלוגו הועלה. לשמירה לוחצים "שמירת המיתוג"')}catch(x){toast(esc(errMsg(x)))}});
+      BD.logo=sb.storage.from('brand').getPublicUrl(path).data.publicUrl;
+      const ic=await makeIcons(f),ts=Date.now(),icons={};for(const k of Object.keys(ic)){const pth=SID+'/icon-'+k+'-'+ts+'.png';const u=await sb.storage.from('brand').upload(pth,ic[k],{contentType:'image/png',upsert:true});if(u.error)throw u.error;icons[k]=sb.storage.from('brand').getPublicUrl(pth).data.publicUrl}
+      BD.icons=icons;bPreview();render();toast('הלוגו הועלה. לשמירה לוחצים "שמירת המיתוג"')}catch(x){toast(esc(errMsg(x)))}});
   const pq=document.getElementById('paq');if(pq)pq.addEventListener('input',e=>{paQ=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('paq');n.focus();n.setSelectionRange(pos,pos)});
   const ps=document.getElementById('pasort');if(ps)ps.addEventListener('change',e=>{paSort=e.target.value;render()});
   document.querySelectorAll('[data-pa]').forEach(box=>{const q1=x=>box.querySelector(x);
@@ -1178,9 +1186,9 @@ async function doAct(a,t,d){
       const tu=unlT?null:iso(today()+(days===0?-1:days)*DAY);
       t.disabled=true;try{await q(sb.rpc('pa_update_studio',{p_id:id,p_trial_until:tu,p_member_limit:unlM?null:lim,p_plan:g('.pa-plan').value,p_active:g('.pa-act').checked}));toast('נשמר');await loadPA()}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
     case'pahandled':{try{await q(sb.rpc('pa_handle_request',{p_id:d.rid}));await loadPA()}catch(e){toast(esc(errMsg(e)))}break}
-    case'bsave':{t.disabled=true;try{await q(sb.from('studio').update({brand:{app_name:BD.app_name||null,color:BD.color||null,accent:BD.accent||null,logo:BD.logo||null}}).eq('id',SID));BD=null;await reload();toast('המיתוג נשמר')}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
+    case'bsave':{t.disabled=true;try{await q(sb.from('studio').update({brand:{app_name:BD.app_name||null,color:BD.color||null,accent:BD.accent||null,logo:BD.logo||null,icons:BD.logo&&BD.icons?BD.icons:null}}).eq('id',SID));BD=null;await reload();toast('המיתוג נשמר')}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
     case'breset':BD=null;applyBrand(brandOf(S.studio));render();break;
-    case'blogodel':BD.logo='';bPreview();render();break;
+    case'blogodel':BD.logo='';BD.icons=null;bPreview();render();break;
     case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
     case'logout':await sb.auth.signOut();applyBrand(null);adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
     /* practitioner */
