@@ -261,6 +261,8 @@ button.stat span::after{content:' ›';opacity:.5}
 .check{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.92rem}
 .check input{width:20px;height:20px;accent-color:var(--sage-deep)}
 .foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:28px}
+.mbar{height:8px;border-radius:6px;background:var(--surface-2);margin-top:8px;overflow:hidden}.mbar i{display:block;height:100%;border-radius:6px}
+.plans{width:100%;border-collapse:collapse;margin-top:14px;font-size:.88rem}.plans th,.plans td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}.plans th:first-child,.plans td:first-child{text-align:start;color:var(--muted)}.plans th{font-weight:700}.plans td:nth-child(3){color:var(--sage-deep);font-weight:600}
 .pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px;border-radius:0!important}.slugin input:focus,.slugin input:focus-visible{outline:none}.slugin:focus-within{outline:2px solid var(--sage-deep);outline-offset:2px}
 </style>
@@ -288,7 +290,7 @@ let myTok=null,adminSess=false,myUid=null,previewName=null,SID=null,MY=[],authMo
 const STUDIO_KEY='yogis-studio';
 const SLUG_RE=/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 const pathSlug=(()=>{const x=(location.pathname.split('/')[1]||'').toLowerCase();return SLUG_RE.test(x)&&!/\./.test(x)?x:null})();
-let pubStudio=null;
+let pubStudio=null,isPA=false,PA=null;
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 const I={
  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -412,7 +414,7 @@ async function loadAdmin(){
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
   cn.forEach(x=>{const s=sesById[x.session_id];if(s)(x.kind==='late'?s.late:s.waived).push(x.person_id)});
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
-  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null},
+  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null,trial:st.trial_until?parseD(st.trial_until):null,limit:st.member_limit,active:st.active!==false,writable:st.active!==false&&(!st.trial_until||parseD(st.trial_until)>=today())},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
@@ -428,7 +430,7 @@ async function loadP(){
   (v.sessions||[]).forEach(s=>{const regs=[];const mine=s.mine?{pid:me.id,status:s.mine.status,reason:s.mine.reason}:null;if(mine)regs.push(mine);for(let i=regs.length;i<s.count;i++)regs.push({pid:null});
     sessions[s.class_id+'_'+s.on_date]={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.t),name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs,late:[],waived:[]}});
   const card=v.card?mapCard(v.card,(v.card.used||[]).map(u=>({t:Date.parse(u.t),why:u.why})),v.card.freezes||[]):null;
-  S={studio:{id:v.studio.id,slug:v.studio.slug,name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff},places:[],classes:(v.classes||[]).map(mapClass),sessions,
+  S={studio:{id:v.studio.id,slug:v.studio.slug,name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff,writable:v.studio.writable!==false},places:[],classes:(v.classes||[]).map(mapClass),sessions,
     people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
     notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),ref:n.ref?Date.parse(n.ref):null,title:n.title,body:n.body,kind:n.kind,read:n.read}))};
   phoneNotify();
@@ -438,7 +440,8 @@ async function reload(){
   render();
 }
 async function act(fn,okMsg,undo){
-  if(busy)return;busy=true;
+  if(busy)return;
+  if(mode==='admin'&&view!=='platform'&&S.studio.writable===false){toast('הסטודיו במצב קריאה בלבד כי תקופת הניסיון הסתיימה. אפשר לבקש שדרוג בהגדרות.');throw new Error('readonly')}busy=true;
   try{const r=await fn();close();await reload();if(okMsg)toast(typeof okMsg==='function'?okMsg(r):okMsg,undo);return r}
   catch(e){toast(esc(errMsg(e)));throw e}
   finally{busy=false}
@@ -542,7 +545,7 @@ function vHome(){
   let next='';
   if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים'+(nxt.c.cap?' מתוך '+nxt.c.cap:'')+' · '+esc(nxt.c.place)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
   const empty=!S.people.length?'<div class="note">עוד אין מתרגלות במערכת. הוסיפי מתרגלת בלשונית "מתרגלים", ושלחי לה את הקישור האישי ב־WhatsApp.</div>':'';
-  return header()+aBanner()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+empty+
+  return header()+aBanner()+planBanner()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+empty+
    '<div class="stats"><button class="stat sage" data-tile="active"><b>'+act_+'</b><span>כרטיסיות פעילות</span></button><button class="stat" data-tile="regs"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></button><button class="stat" data-tile="money"><b>'+punches+'</b><span>ניקובים החודש · '+shekel(punches*S.studio.price)+'</span></button><button class="stat lav" data-tile="frozen"><b>'+frozen+'</b><span>מוקפאות כרגע</span></button></div>'+
    (reqs.length?'<h2>בקשות ביטול <span>'+reqs.length+' ממתינות</span></h2><div class="list">'+reqs.map(reqCard).join('')+'</div>':'')+next+
    (attn.length?'<h2>דורשות תשומת לב <span>'+attn.length+'</span></h2><div class="list">'+attn.map(x=>row(x[0],true)).join('')+'</div>':'')+
@@ -650,8 +653,43 @@ function vMoney(){
    (()=>{const m=all.filter(x=>x.t>=mStart),k=t=>m.filter(x=>x.kind===t).length;return '<h2>פירוט החודש</h2><div class="hist"><div>שיעורים מהלו״ז (ניקוב אוטומטי)<span>'+k('class')+'</span></div><div>ניקוב ידני<span>'+k('manual')+'</span></div><div>ביטול מאוחר<span>'+k('late')+'</span></div></div>'})()+
    '<p class="foot">החישוב כולל רק שיעורים שנוקבו בפועל: ניקוב אוטומטי בשיעור, ניקוב ידני וביטול מאוחר. לא כולל שיעורים שנוצלו לפני המעבר לאפליקציה וניקובים שהוחזרו.</p>';
 }
+function activeMembers(){return S.people.filter(p=>p.cards.some(c=>c.expires>=today())).length}
+const daysLeft=ts=>Math.round((ts-today())/DAY);
+function planBanner(){const st=S.studio;
+  if(st.writable===false)return '<div class="banner" style="background:var(--bad-soft,#F6E3DE)"><div><b>'+(st.active===false?'הסטודיו מושהה':'תקופת הניסיון הסתיימה')+'</b><small>הסטודיו במצב קריאה בלבד: אפשר לצפות בכל הנתונים, אבל לא להוסיף או לשנות. המתרגלים רואים את הכרטיסייה, וההרשמה לשיעורים סגורה.</small></div><button class="btn btn-primary btn-sm" data-go="settings">לשדרוג</button></div>';
+  if(st.trial){const d=daysLeft(st.trial);return '<div class="banner" style="background:var(--lav-soft)"><div><b>'+(d<=0?'היום היום האחרון בתקופת הניסיון':'נותרו '+d+' ימים בתקופת הניסיון')+'</b><small>הניסיון כולל את כל האפשרויות. פרטים על החבילות בהגדרות.</small></div><button class="btn btn-soft btn-sm" data-go="settings">פרטים</button></div>'}
+  return ''}
+function planSection(){const st=S.studio,am=activeMembers();
+  const tl=st.trial?(st.writable===false?'תקופת הניסיון הסתיימה ב־'+fmt(st.trial):'תקופת ניסיון עד '+fmt(st.trial)+' · נותרו '+Math.max(0,daysLeft(st.trial))+' ימים'):'ללא הגבלת זמן';
+  const feat=(t,a,b)=>'<tr><td>'+t+'</td><td>'+a+'</td><td>'+b+'</td></tr>';
+  return '<h2>החבילה שלי</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="card-head"><div><b>'+(st.plan==='pro'?'חבילה מתקדמת':'חבילת בסיס')+'</b><small>'+tl+'</small></div>'+(st.writable===false?'<span class="pill p-expired">קריאה בלבד</span>':st.trial?'<span class="pill p-soon">ניסיון</span>':'<span class="pill p-active">פעילה</span>')+'</div>'+
+   '<p class="lead" style="margin:10px 0 0;font-size:.92rem">מתרגלים פעילים: <b>'+am+(st.limit!=null?' מתוך '+st.limit:'')+'</b>'+(st.limit==null?' · ללא הגבלה':'')+'</p>'+
+   (st.limit!=null?'<div class="mbar"><i style="width:'+Math.min(100,Math.round(am/Math.max(1,st.limit)*100))+'%;background:'+(am>=st.limit?'var(--bad)':'var(--sage-deep)')+'"></i></div>':'')+
+   '<table class="plans"><thead><tr><th></th><th>בסיס</th><th>מתקדמת</th></tr></thead><tbody>'+
+   feat('כרטיסיות, לו״ז והרשמה','✓','✓')+feat('מתרגלים פעילים','עד 30','ללא הגבלה')+feat('מיתוג אישי: לוגו, צבעים ושם','','✓')+feat('כמה מנהלים בצוות','','✓')+feat('דוחות מתקדמים','','✓')+feat('מחיר חודשי','בקרוב','בקרוב')+'</tbody></table>'+
+   (st.plan!=='pro'?'<button class="btn btn-primary full" style="margin-top:12px" data-act="upgrade">אני רוצה לשדרג</button>':'')+'</div>'}
+async function loadPA(){try{PA=await q(sb.rpc('pa_studios'))}catch(e){PA=[];toast(esc(errMsg(e)))}if(view==='platform')render()}
+function vPlatform(){
+  const head=header()+'<button class="back" data-go="settings">'+I.back+'חזרה להגדרות</button><h1>ניהול הפלטפורמה</h1>';
+  if(!isPA)return head+'<p class="lead">אין הרשאה.</p>';
+  if(!PA)return head+'<p class="lead">טוען…</p>';
+  const reqs=PA.reduce((n,x)=>n+x.requests.length,0);
+  return head+'<p class="lead">'+PA.length+' סטודיואים'+(reqs?' · '+reqs+' בקשות שדרוג פתוחות':'')+'</p><div class="list" style="gap:12px">'+PA.map(x=>{
+    const tr=x.trial_until?parseD(x.trial_until):null,dl=tr?daysLeft(tr):null,dv=tr?Math.max(0,Math.min(30,dl)):30;
+    const state=!x.active?['מושהה','expired']:!x.writable?['קריאה בלבד','expired']:tr?['ניסיון · '+dl+' ימים','soon']:['פעיל','active'];
+    return '<div class="card" data-pa="'+x.id+'" style="box-shadow:none;border:1px solid var(--line)"><div class="card-head"><div><b>'+esc(x.name)+'</b><small dir="ltr" style="text-align:right">yogis.co.il/'+esc(x.slug)+'</small></div><span class="pill p-'+state[1]+'">'+state[0]+'</span></div>'+
+     '<p class="lead" style="font-size:.86rem;margin:8px 0 0">'+esc(x.teacher)+' · <span dir="ltr">'+esc(x.owner_email||'')+'</span><br>נפתח '+fmt(Date.parse(x.created_at))+' · '+x.active_members+' פעילים מתוך '+x.people+' מתרגלים · '+x.classes+' שיעורים קבועים'+(x.last_activity?' · הרשמה אחרונה '+fmt(Date.parse(x.last_activity)):'')+'</p>'+
+     (x.requests.length?x.requests.map(r=>'<div class="banner" style="margin-top:10px"><div><b>בקשת שדרוג</b><small>'+fmt(Date.parse(r.at))+' · <span dir="ltr">'+esc(r.email||'')+'</span>'+(r.message?' · '+esc(r.message):'')+'</small></div><button class="btn btn-soft btn-sm" data-act="pahandled" data-rid="'+r.id+'">טופל</button></div>').join(''):'')+
+     '<div class="switch" style="margin-top:12px"><div><b>תקופת ניסיון ללא הגבלה</b><small>כשכבוי, קובעים כמה ימים נותרו (0 = הסתיים, קריאה בלבד)</small></div><input type="checkbox" class="tog pa-unlt"'+(tr?'':' checked')+' aria-label="ניסיון ללא הגבלה"></div>'+
+     '<div class="field pa-trow"'+(tr?'':' hidden')+'><label>ימים שנותרו: <b class="pa-dl">'+dv+'</b></label><input type="range" class="pa-days" min="0" max="30" step="1" value="'+dv+'" style="width:100%;accent-color:var(--sage-deep)"></div>'+
+     '<div class="switch"><div><b>מתרגלים ללא הגבלה</b><small>כשכבוי, מגבלת מתרגלים פעילים</small></div><input type="checkbox" class="tog pa-unlm"'+(x.member_limit==null?' checked':'')+' aria-label="מתרגלים ללא הגבלה"></div>'+
+     '<div class="field pa-lrow"'+(x.member_limit==null?' hidden':'')+'><label>מגבלת מתרגלים פעילים</label><input type="number" class="pa-lim" min="1" inputmode="numeric" value="'+(x.member_limit==null?30:x.member_limit)+'"></div>'+
+     '<div class="field"><label>חבילה</label><select class="pa-plan"><option value="basic"'+(x.plan==='basic'?' selected':'')+'>בסיס</option><option value="pro"'+(x.plan==='pro'?' selected':'')+'>מתקדמת</option></select></div>'+
+     '<div class="switch"><div><b>סטודיו פעיל</b><small>כיבוי משהה את הסטודיו (קריאה בלבד)</small></div><input type="checkbox" class="tog pa-act"'+(x.active?' checked':'')+' aria-label="סטודיו פעיל"></div>'+
+     '<button class="btn btn-primary full" style="margin-top:12px" data-act="pasave" data-sid="'+x.id+'">שמירה</button></div>'}).join('')+'</div>';
+}
 function vSettings(){
-  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+(isPA?'<button class="btn btn-soft full" style="margin-top:12px" data-act="platform">ניהול הפלטפורמה</button>':'')+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
@@ -706,7 +744,7 @@ function vP(){
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
    (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
    '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה עד '+S.studio.cutoff+' שעות לפני השיעור.</p>'+
-   '<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
+   (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
    '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGis על מסך הבית</button>'+(adminSess?'':'<br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="toadmin">כניסת מנהל</button>')+'</div>';
@@ -722,16 +760,20 @@ function render(){
   else if(mode==='newpw')html=vNewPw();
   else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
-  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs}[view]||vHome)();
+  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs,platform:vPlatform}[view]||vHome)();
   app.innerHTML=html;app.classList.toggle('pmode',mode!=='admin');
   document.getElementById('nav').hidden=mode!=='admin';
-  const tab=view==='person'?'people':view==='regs'?'money':view;
+  const tab=view==='person'?'people':view==='regs'?'money':view==='platform'?'settings':view;
   document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
   const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',SID)),'נשמר')})};
   bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
   const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',SID)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
+  document.querySelectorAll('[data-pa]').forEach(box=>{const q1=x=>box.querySelector(x);
+    q1('.pa-unlt').addEventListener('change',e=>{q1('.pa-trow').hidden=e.target.checked});
+    q1('.pa-unlm').addEventListener('change',e=>{q1('.pa-lrow').hidden=e.target.checked});
+    q1('.pa-days').addEventListener('input',e=>{const v=+e.target.value;q1('.pa-dl').textContent=v===0?'0 (הסתיים)':v})});
   const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr'),ok=document.getElementById('lok');er.hidden=true;ok.hidden=true;
     const email=document.getElementById('em').value.trim(),pwEl=document.getElementById('pw'),password=pwEl?pwEl.value:'';
     const btn=lf.querySelector('button[type=submit]');btn.disabled=true;
@@ -960,7 +1002,7 @@ async function doAct(a,t,d){
   try{switch(a){
     case'close':close();break;
     case'refresh':await reload();toast('עודכן');break;
-    case'add':addSheet();break;
+    case'add':if(S.studio.writable===false){toast('הסטודיו במצב קריאה בלבד. אפשר לבקש שדרוג בהגדרות.');break}if(S.studio.limit!=null&&activeMembers()>=S.studio.limit){toast('הגעת למגבלה של '+S.studio.limit+' מתרגלים פעילים. אפשר לבקש הרחבה בהגדרות.');break}addSheet();break;
     case'renew':addSheet(sel);break;
     case'saveadd':{const n=bg.querySelector('#nn').value.trim(),ph=bg.querySelector('#np').value.trim(),err=bg.querySelector('#err');
       if(!n){err.textContent='צריך להזין שם.';err.hidden=false;return}
@@ -1004,6 +1046,13 @@ async function doAct(a,t,d){
     case'tome':if(myTok){store.set(MODE_KEY,'p');await startP(myTok)}else pickSheet();break;
     case'preview':{const pp=findP(d.pid);if(pp){close();previewName=pp.name;await startP(pp.token,true)}break}
     case'toadmin':previewName=null;await startAdmin();break;
+    case'upgrade':{if(t.disabled)break;t.disabled=true;try{await q(sb.rpc('request_upgrade',{p_studio:SID,p_message:null}));t.textContent='הבקשה נשלחה';toast('הבקשה נשלחה. ניצור איתך קשר בקרוב')}catch(e){t.disabled=false;toast(esc(errMsg(e)))}break}
+    case'platform':view='platform';PA=null;render();window.scrollTo(0,0);loadPA();break;
+    case'pasave':{const id=+d.sid,box=document.querySelector('[data-pa="'+id+'"]');if(!box)break;const g=x=>box.querySelector(x);
+      const unlT=g('.pa-unlt').checked,days=+g('.pa-days').value,unlM=g('.pa-unlm').checked,lim=Math.max(1,+g('.pa-lim').value||30);
+      const tu=unlT?null:iso(today()+(days===0?-1:days)*DAY);
+      t.disabled=true;try{await q(sb.rpc('pa_update_studio',{p_id:id,p_trial_until:tu,p_member_limit:unlM?null:lim,p_plan:g('.pa-plan').value,p_active:g('.pa-act').checked}));toast('נשמר');await loadPA();if(id===SID)await reload()}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
+    case'pahandled':{try{await q(sb.rpc('pa_handle_request',{p_id:d.rid}));await loadPA()}catch(e){toast(esc(errMsg(e)))}break}
     case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
     case'logout':await sb.auth.signOut();adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
     /* practitioner */
@@ -1038,6 +1087,7 @@ async function startAdmin(want){
   const chosen=pick(want)||(pathSlug&&MY.find(s=>s.slug===pathSlug))||pick(store.get(STUDIO_KEY))||MY[0];
   SID=chosen.id;store.set(STUDIO_KEY,String(SID));
   adminSess=true;myTok=null;try{myTok=await q(sb.rpc('a_my_token_for',{p_studio:SID}))}catch(e){}
+  try{isPA=!!await q(sb.rpc('is_platform_admin'))}catch(e){isPA=false}
   mode='admin';view='home';await reload();
 }
 async function loadPub(){if(pubStudio||!pathSlug)return;try{pubStudio=await q(sb.rpc('studio_public',{p_slug:pathSlug}))}catch(e){}}
