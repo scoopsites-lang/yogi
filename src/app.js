@@ -30,6 +30,15 @@ const I={
 };
 const logo=s=>'<svg class="logo" width="'+s+'" height="'+s+'" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="50" cy="15" rx="9" ry="8"/><path d="M50 40C45 31 30 28 26 39c-4 12 9 23 24 37 15-14 28-25 24-37-4-11-19-8-24 1z"/><path d="M45 52c-3-5 1-10 5-7 4-3 8 2 5 7-1 2-3 4-5 6"/><path d="M62 82C48 72 22 68 18 79c-3 9 20 11 44 1"/><path d="M38 82c14-10 40-14 44-3 3 9-20 11-44 1"/></svg>';
 
+/* ---------- studio branding (advanced plan) ---------- */
+let BR=null;
+const brandOf=st=>st&&st.plan==='pro'&&st.brand&&Object.keys(st.brand).length?st.brand:null;
+const appName=()=>(BR&&BR.app_name)||'YoGis';
+const mark=sz=>BR&&BR.logo?'<img class="logo blogo" src="'+esc(BR.logo)+'" width="'+sz+'" height="'+sz+'" alt="">':logo(sz);
+function applyBrand(b){BR=b||null;const r=document.documentElement;
+  if(BR&&BR.color){r.style.setProperty('--brand',BR.color);r.dataset.brand='1';const n=parseInt(BR.color.slice(1),16),L=(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255))/255;r.style.setProperty('--on-brand',L>.62?'#1C1B19':'#FFFFFF')}else{r.style.removeProperty('--brand');r.style.removeProperty('--on-brand');delete r.dataset.brand}
+  if(BR&&BR.accent){r.style.setProperty('--brand2',BR.accent);r.dataset.brand2='1'}else{r.style.removeProperty('--brand2');delete r.dataset.brand2}
+  try{document.title=appName()}catch(e){}}
 /* ---------- small utils ---------- */
 const now=()=>Date.now();
 const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
@@ -132,13 +141,14 @@ async function loadAdmin(){
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
   cn.forEach(x=>{const s=sesById[x.session_id];if(s)(x.kind==='late'?s.late:s.waived).push(x.person_id)});
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
-  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null,trial:st.trial_until?parseD(st.trial_until):null,limit:st.member_limit,active:st.active!==false,writable:st.active!==false&&(!st.trial_until||parseD(st.trial_until)>=today())},
+  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null,brand:st.brand||{},trial:st.trial_until?parseD(st.trial_until):null,limit:st.member_limit,active:st.active!==false,writable:st.active!==false&&(!st.trial_until||parseD(st.trial_until)>=today())},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
       cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,kind:x.kind||'manual',sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
+  applyBrand(brandOf(S.studio));
   try{let seen=JSON.parse(store.get('yogis-aseen')||'[]');S.anotes.filter(n=>!n.read&&!seen.includes(n.id)&&now()-n.t<6*H).slice(0,3).forEach(n=>sysNotify(n.title,n.body));store.set('yogis-aseen',JSON.stringify(S.anotes.slice(0,60).map(n=>n.id)))}catch(e){}
 }
 async function loadP(){
@@ -148,9 +158,10 @@ async function loadP(){
   (v.sessions||[]).forEach(s=>{const regs=[];const mine=s.mine?{pid:me.id,status:s.mine.status,reason:s.mine.reason}:null;if(mine)regs.push(mine);for(let i=regs.length;i<s.count;i++)regs.push({pid:null});
     sessions[s.class_id+'_'+s.on_date]={id:s.id,class_id:s.class_id,on:s.on_date,t:Date.parse(s.t),name:s.name,cap:s.cap,place:s.place,cancelled:s.cancelled,done:s.done,regs,late:[],waived:[]}});
   const card=v.card?mapCard(v.card,(v.card.used||[]).map(u=>({t:Date.parse(u.t),why:u.why})),v.card.freezes||[]):null;
-  S={studio:{id:v.studio.id,slug:v.studio.slug,name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff,writable:v.studio.writable!==false},places:[],classes:(v.classes||[]).map(mapClass),sessions,
+  S={studio:{id:v.studio.id,slug:v.studio.slug,name:v.studio.name,teacher:v.studio.teacher,cutoff:v.studio.cutoff,writable:v.studio.writable!==false,plan:v.studio.plan,brand:v.studio.brand||{}},places:[],classes:(v.classes||[]).map(mapClass),sessions,
     people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
     notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),ref:n.ref?Date.parse(n.ref):null,title:n.title,body:n.body,kind:n.kind,read:n.read}))};
+  applyBrand(brandOf(S.studio));
   phoneNotify();
 }
 async function reload(){
@@ -177,7 +188,7 @@ function sysNotify(title,body){try{if(!('Notification' in window)||Notification.
 
 /* ---------- shared view pieces ---------- */
 function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'}
-function header(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+'<button class="iconbtn" data-act="tome" aria-label="'+(myTok?'הצד שלי':'צד מתרגל')+'">'+I.eye+'<span class="lbl">'+(myTok?'הצד שלי':'צד מתרגל')+'</span></button>'+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
+function header(){return '<div class="top"><div class="brand">'+mark(40)+'<div style="min-width:0"><b>'+esc(appName())+'</b><small>'+esc(S.studio.name)+'</small></div></div>'+'<button class="iconbtn" data-act="tome" aria-label="'+(myTok?'הצד שלי':'צד מתרגל')+'">'+I.eye+'<span class="lbl">'+(myTok?'הצד שלי':'צד מתרגל')+'</span></button>'+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
   const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
@@ -220,7 +231,7 @@ function history(c){
 /* ---------- manager views ---------- */
 function vLogin(){
   const st=pubStudio,signup=authMode==='signup',forgot=authMode==='forgot';
-  const head='<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>'+(st?esc(st.name):'כרטיסיות ולו״ז לסטודיו יוגה')+'</small></div></div>'+themeBtn()+'</div>';
+  const head='<div class="top"><div class="brand">'+mark(44)+'<div><b>'+esc(appName())+'</b><small>'+(st?esc(st.name):'כרטיסיות ולו״ז לסטודיו יוגה')+'</small></div></div>'+themeBtn()+'</div>';
   const pBox='<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם '+(st?'מ'+esc(st.teacher):'מהמורה')+' ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div>';
   const back=store.get(TOKEN_KEY)?'<button class="btn btn-soft full" style="margin-top:10px" data-act="backme">'+I.back+'חזרה לכרטיסייה שלי</button>':'';
   const pitch=!st&&signup?'<ul class="pitch"><li>כרטיסיות דיגיטליות עם ניקוב אוטומטי אחרי השיעור</li><li>לו״ז שבועי עם הרשמה וביטול מהטלפון</li><li>תזכורות, הקפאות ומעקב הכנסות</li><li>אפליקציה שמתקינים על מסך הבית, בלי חנות</li></ul>':'';
@@ -442,8 +453,27 @@ function paDetail(x){const st=paState(x),tr=x.trial_until?parseD(x.trial_until):
    '<div class="switch"><div><b>סטודיו פעיל</b><small>כיבוי משהה את הסטודיו (קריאה בלבד)</small></div><input type="checkbox" class="tog pa-act"'+(x.active?' checked':'')+' aria-label="סטודיו פעיל"></div>'+
    '<button class="btn btn-primary full" style="margin-top:12px" data-act="pasave" data-sid="'+x.id+'">שמירה</button></div>';
 }
+let BD=null;
+const SWATCH=['#5D7A5A','#3F6E73','#4A5A8C','#7A5A8C','#A8553A','#B0723A','#8C6A3F','#34424A'];
+const SWATCH2=['#A33B2C','#C2861C','#5D7A5A','#3F6E73','#7A5A8C','#B05A7A','#34424A','#8C6A3F'];
+function brandSection(){const st=S.studio;
+  if(st.plan!=='pro')return '<h2>המיתוג שלי</h2><div class="card locked" style="box-shadow:none;border:1px dashed var(--line)"><b>לוגו, שם וצבעים משלך</b><p class="lead" style="font-size:.9rem;margin:6px 0 10px">המתרגלים יראו את האפליקציה בשם ובצבעים של הסטודיו שלך. זמין בחבילה המתקדמת.</p><button class="btn btn-soft" data-act="upgrade">אני רוצה לשדרג</button></div>';
+  if(!BD)BD=Object.assign({app_name:'',color:'',accent:'',logo:''},st.brand||{});
+  const sw=(list,key)=>'<div class="swatches">'+list.map(c=>'<button class="sw'+(BD[key]===c?' on':'')+'" style="background:'+c+'" data-sw="'+key+'" data-c="'+c+'" aria-label="צבע '+c+'"></button>').join('')+'<label class="sw custom" aria-label="צבע אחר"><input type="color" data-swc="'+key+'" value="'+(BD[key]||list[0])+'">+</label>'+(BD[key]?'<button class="linkbtn" data-sw="'+key+'" data-c="" style="font-size:.82rem">ברירת מחדל</button>':'')+'</div>';
+  return '<h2>המיתוג שלי</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)">'+
+   '<div class="bpreview"><div class="brand">'+(BD.logo?'<img class="logo blogo" src="'+esc(BD.logo)+'" width="40" height="40" alt="">':logo(40))+'<div><b>'+esc(BD.app_name||'YoGis')+'</b><small>'+esc(st.name)+'</small></div></div><span class="btn btn-primary btn-sm" style="pointer-events:none">הרשמה</span></div>'+
+   '<div class="field"><label>לוגו</label><div class="logorow">'+(BD.logo?'<img src="'+esc(BD.logo)+'" class="blogo" width="56" height="56" alt="">':'<span class="lead" style="font-size:.85rem">עדיין אין לוגו. מומלץ תמונה מרובעת, רצוי עם רקע שקוף.</span>')+'<label class="btn btn-soft btn-sm" style="cursor:pointer">'+(BD.logo?'החלפה':'העלאת לוגו')+'<input type="file" id="blogo" accept="image/png,image/jpeg,image/webp" hidden></label>'+(BD.logo?'<button class="btn btn-soft btn-sm" data-act="blogodel">הסרה</button>':'')+'</div></div>'+
+   '<div class="field"><label for="bname">שם האפליקציה</label><input id="bname" maxlength="24" placeholder="YoGis" value="'+esc(BD.app_name||'')+'"><small class="lead" style="font-size:.8rem">מופיע בראש המסך במקום YoGis.</small></div>'+
+   '<div class="field"><label>צבע ראשי (כפתורים והדגשות)</label>'+sw(SWATCH,'color')+'</div>'+
+   '<div class="field"><label>צבע הלוגו והכותרת</label>'+sw(SWATCH2,'accent')+'</div>'+
+   '<div class="sheet-actions" style="margin-top:14px"><button class="btn btn-primary" data-act="bsave">שמירת המיתוג</button><button class="btn btn-soft" data-act="breset">ביטול שינויים</button></div></div>';
+}
+function bPreview(){applyBrand(Object.keys(BD).some(k=>BD[k])?BD:null)}
+async function shrinkImage(file){const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const S_=256,c=document.createElement('canvas');c.width=c.height=S_;const x=c.getContext('2d');const k=Math.min(S_/img.width,S_/img.height);const w=img.width*k,h=img.height*k;x.drawImage(img,(S_-w)/2,(S_-h)/2,w,h);
+  return await new Promise(r=>c.toBlob(r,'image/png'))}finally{URL.revokeObjectURL(url)}}
 function vSettings(){
-  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
@@ -490,7 +520,7 @@ function pCls(p){return inst=>{
 }}
 function vP(){
   const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read&&!expired(n)).length;
-  return '<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>'+esc(S.studio.name)+'</small></div></div>'+(adminSess?'<button class="iconbtn" data-act="toadmin">ניהול</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
+  return '<div class="top"><div class="brand">'+mark(40)+'<div><b>'+esc(appName())+'</b><small>'+esc(S.studio.name)+'</small></div></div>'+(adminSess?'<button class="iconbtn" data-act="toadmin">ניהול</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
    (previewName?'<div class="banner" style="background:var(--lav-soft)"><div><b>צפייה כמתרגל: '+esc(previewName)+'</b><small>זו התצוגה של המתרגל. חזרה לניהול בכפתור "ניהול" למעלה.</small></div></div>':'')+
    (!previewName&&!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
@@ -501,7 +531,7 @@ function vP(){
    (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
-   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת YoGis על מסך הבית</button>'+(adminSess?'':'<br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="toadmin">כניסת מנהל</button>')+'</div>';
+   '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת '+esc(appName())+' על מסך הבית</button>'+(adminSess?'':'<br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="toadmin">כניסת מנהל</button>')+'</div>';
 }
 
 /* ---------- render ---------- */
@@ -525,6 +555,12 @@ function render(){
   const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',SID)),'נשמר')})};
   bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
   const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',SID)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
+  const bn=document.getElementById('bname');if(bn)bn.addEventListener('input',e=>{BD.app_name=e.target.value;bPreview();const pb=document.querySelector('.bpreview .brand b');if(pb)pb.textContent=BD.app_name||'YoGis';const hb=document.querySelector('.top .brand b');if(hb)hb.textContent=BD.app_name||'YoGis'});
+  document.querySelectorAll('[data-swc]').forEach(el=>el.addEventListener('change',e=>{BD[el.dataset.swc]=e.target.value;bPreview();render()}));
+  const bl=document.getElementById('blogo');if(bl)bl.addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
+    if(f.size>8e6){toast('הקובץ גדול מדי');return}toast('מעלה את הלוגו…');
+    try{const blob=await shrinkImage(f);const path=SID+'/logo-'+Date.now()+'.png';const up=await sb.storage.from('brand').upload(path,blob,{contentType:'image/png',upsert:true});if(up.error)throw up.error;
+      BD.logo=sb.storage.from('brand').getPublicUrl(path).data.publicUrl;bPreview();render();toast('הלוגו הועלה. לשמירה לוחצים "שמירת המיתוג"')}catch(x){toast(esc(errMsg(x)))}});
   const pq=document.getElementById('paq');if(pq)pq.addEventListener('input',e=>{paQ=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('paq');n.focus();n.setSelectionRange(pos,pos)});
   const ps=document.getElementById('pasort');if(ps)ps.addEventListener('change',e=>{paSort=e.target.value;render()});
   document.querySelectorAll('[data-pa]').forEach(box=>{const q1=x=>box.querySelector(x);
@@ -726,9 +762,9 @@ function notesSheet(){
 
 /* ---------- clicks ---------- */
 function onClick(e){
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw]');if(!t)return;
   const d=t.dataset;
-  if(d.go){close();view=d.go;render();window.scrollTo(0,0)}
+  if(d.go){close();if(BD){BD=null;applyBrand(brandOf(S.studio))}view=d.go;render();window.scrollTo(0,0)}
   else if(d.open){sel=d.open;view='person';render();window.scrollTo(0,0)}
   else if(d.punch){askPunch(d.punch)}
   else if(d.confirm){doPunch(d.confirm).catch(()=>{})}
@@ -741,6 +777,7 @@ function onClick(e){
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
   else if(d.refund){act(()=>q(sb.rpc('a_refund',{p_reg:d.refund})),'הניקוב הוחזר').catch(()=>{})}
   else if(d.tile){const m={active:['people','active'],frozen:['people','frozen'],money:['money'],regs:['regs']}[d.tile];view=m[0];if(m[1]){filter=m[1];q_=''}render();window.scrollTo(0,0)}
+  else if(d.sw){if(BD){BD[d.sw]=d.c;bPreview();render()}}
   else if(d.pastudio){paSel=+d.pastudio;render();window.scrollTo(0,0)}
   else if(d.paf){paF=d.paf;render()}
   else if(d.auth){authMode=d.auth;render();window.scrollTo(0,0)}
@@ -814,8 +851,11 @@ async function doAct(a,t,d){
       const tu=unlT?null:iso(today()+(days===0?-1:days)*DAY);
       t.disabled=true;try{await q(sb.rpc('pa_update_studio',{p_id:id,p_trial_until:tu,p_member_limit:unlM?null:lim,p_plan:g('.pa-plan').value,p_active:g('.pa-act').checked}));toast('נשמר');await loadPA()}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
     case'pahandled':{try{await q(sb.rpc('pa_handle_request',{p_id:d.rid}));await loadPA()}catch(e){toast(esc(errMsg(e)))}break}
+    case'bsave':{t.disabled=true;try{await q(sb.from('studio').update({brand:{app_name:BD.app_name||null,color:BD.color||null,accent:BD.accent||null,logo:BD.logo||null}}).eq('id',SID));BD=null;await reload();toast('המיתוג נשמר')}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
+    case'breset':BD=null;applyBrand(brandOf(S.studio));render();break;
+    case'blogodel':BD.logo='';bPreview();render();break;
     case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
-    case'logout':await sb.auth.signOut();adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
+    case'logout':await sb.auth.signOut();applyBrand(null);adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
     /* practitioner */
     case'notes':notesSheet();break;
     case'anotes':aNotesSheet();break;
@@ -844,7 +884,7 @@ async function startAdmin(want){
   if(!data.session){await loadPub();mode='login';render();return}
   if(PLATFORM){try{isPA=!!await q(sb.rpc('is_platform_admin'))}catch(e){isPA=false}
     if(!isPA){mode='noadmin';render();return}
-    mode='platform';PA=null;render();await loadPA();return}
+    applyBrand(null);mode='platform';PA=null;render();await loadPA();return}
   try{MY=await q(sb.rpc('my_studios'))||[]}catch(e){MY=[]}
   if(!MY.length){mode='onboard';render();return}
   const pick=x=>MY.find(s=>String(s.id)===String(x));
@@ -854,7 +894,7 @@ async function startAdmin(want){
   try{isPA=!!await q(sb.rpc('is_platform_admin'))}catch(e){isPA=false}
   mode='admin';view='home';await reload();
 }
-async function loadPub(){if(pubStudio||!pathSlug)return;try{pubStudio=await q(sb.rpc('studio_public',{p_slug:pathSlug}))}catch(e){}}
+async function loadPub(){if(pubStudio||!pathSlug)return;try{pubStudio=await q(sb.rpc('studio_public',{p_slug:pathSlug}));applyBrand(brandOf(pubStudio))}catch(e){}}
 async function startP(tok,preview){token=tok;if(!preview){store.set(TOKEN_KEY,tok);personalManifest(tok);previewName=null}mode='p';view='p';window.scrollTo(0,0);await reload()}
 function pickSheet(){
   const list=S.people.slice().sort((a,b)=>a.name.localeCompare(b.name,'he'));
