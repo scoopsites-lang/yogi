@@ -6,7 +6,8 @@ const DAY=864e5,H=36e5,TOKEN_KEY='yogis-token',SEEN_KEY='yogis-seen',MODE_KEY='y
 let myTok=null,adminSess=false,myUid=null,previewName=null,SID=null,MY=[],authMode='login';
 const STUDIO_KEY='yogis-studio';
 const SLUG_RE=/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
-const pathSlug=(()=>{const x=(location.pathname.split('/')[1]||'').toLowerCase();return SLUG_RE.test(x)&&!/\./.test(x)?x:null})();
+const PLATFORM=(location.pathname.split('/')[1]||'').toLowerCase()==='platform';
+const pathSlug=(()=>{const x=(location.pathname.split('/')[1]||'').toLowerCase();return SLUG_RE.test(x)&&!/\./.test(x)&&x!=='platform'?x:null})();
 let pubStudio=null,isPA=false,PA=null;
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],DL=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 const I={
@@ -158,7 +159,7 @@ async function reload(){
 }
 async function act(fn,okMsg,undo){
   if(busy)return;
-  if(mode==='admin'&&view!=='platform'&&S.studio.writable===false){toast('הסטודיו במצב קריאה בלבד כי תקופת הניסיון הסתיימה. אפשר לבקש שדרוג בהגדרות.');throw new Error('readonly')}busy=true;
+  if(mode==='admin'&&S.studio.writable===false){toast('הסטודיו במצב קריאה בלבד כי תקופת הניסיון הסתיימה. אפשר לבקש שדרוג בהגדרות.');throw new Error('readonly')}busy=true;
   try{const r=await fn();close();await reload();if(okMsg)toast(typeof okMsg==='function'?okMsg(r):okMsg,undo);return r}
   catch(e){toast(esc(errMsg(e)));throw e}
   finally{busy=false}
@@ -223,13 +224,13 @@ function vLogin(){
   const pBox='<div class="banner" style="background:var(--sage-soft)"><div><b>מתרגלים ומתרגלות</b><small>להרשמה לשיעורים צריך לפתוח את הקישור האישי שקיבלתם '+(st?'מ'+esc(st.teacher):'מהמורה')+' ב־WhatsApp. אפשר גם להדביק אותו כאן:</small><div style="display:flex;gap:6px;margin-top:8px"><input id="plinkin" dir="ltr" placeholder="https://yogis.co.il/?t=…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface)"><button class="btn btn-primary btn-sm" data-act="usepl">כניסה</button></div></div></div>';
   const back=store.get(TOKEN_KEY)?'<button class="btn btn-soft full" style="margin-top:10px" data-act="backme">'+I.back+'חזרה לכרטיסייה שלי</button>':'';
   const pitch=!st&&signup?'<ul class="pitch"><li>כרטיסיות דיגיטליות עם ניקוב אוטומטי אחרי השיעור</li><li>לו״ז שבועי עם הרשמה וביטול מהטלפון</li><li>תזכורות, הקפאות ומעקב הכנסות</li><li>אפליקציה שמתקינים על מסך הבית, בלי חנות</li></ul>':'';
-  const title=forgot?'איפוס סיסמה':signup?'פתיחת סטודיו ב־YoGis':st?'כניסה לניהול '+esc(st.name):'כניסה לניהול הסטודיו';
+  const title=forgot?'איפוס סיסמה':PLATFORM?'כניסה לניהול הפלטפורמה':signup?'פתיחת סטודיו ב־YoGis':st?'כניסה לניהול '+esc(st.name):'כניסה לניהול הסטודיו';
   const lead=forgot?'נשלח אלייך קישור לבחירת סיסמה חדשה.':signup?'יוצרים חשבון מורה, ואז מגדירים את הסטודיו. לוקח דקה.':'כניסה למורים ולצוות הסטודיו.';
-  return head+(signup?'':pBox)+'<h1>'+title+'</h1><p class="lead">'+lead+'</p>'+pitch+back+
+  return head+(signup||PLATFORM?'':pBox)+'<h1>'+title+'</h1><p class="lead">'+lead+'</p>'+pitch+back+
    '<form id="loginf" class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="em">אימייל</label><input id="em" type="email" autocomplete="username" dir="ltr" required></div>'+
    (forgot?'':'<div class="field"><label for="pw">סיסמה'+(signup?' (לפחות 8 תווים)':'')+'</label><input id="pw" type="password" autocomplete="'+(signup?'new-password':'current-password')+'" dir="ltr" minlength="'+(signup?8:1)+'" required></div>')+
    '<p id="lerr" style="color:var(--bad);margin:10px 0 0" hidden></p><p id="lok" style="color:var(--good,#5E7D57);margin:10px 0 0" hidden></p><button class="btn btn-primary full" style="margin-top:14px" type="submit">'+(forgot?'שליחת קישור':signup?'יצירת חשבון':'כניסה')+'</button></form>'+
-   '<div class="foot">'+(signup||forgot?'<button class="linkbtn" data-auth="login">כבר יש לי חשבון. כניסה</button>':'<button class="linkbtn" data-auth="signup">מורה חדשה? פתיחת סטודיו</button><br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-auth="forgot">שכחתי סיסמה</button>')+'</div>';
+   '<div class="foot">'+(signup||forgot?'<button class="linkbtn" data-auth="login">כבר יש לי חשבון. כניסה</button>':(PLATFORM?'':'<button class="linkbtn" data-auth="signup">מורה חדשה? פתיחת סטודיו</button><br>')+'<button class="linkbtn" style="color:var(--muted);font-weight:500" data-auth="forgot">שכחתי סיסמה</button>')+'</div>';
 }
 function vNewPw(){
   return '<div class="top"><div class="brand">'+logo(44)+'<div><b>YoGis</b><small>סיסמה חדשה</small></div></div></div><h1>בחירת סיסמה חדשה</h1>'+
@@ -385,9 +386,9 @@ function planSection(){const st=S.studio,am=activeMembers();
    '<table class="plans"><thead><tr><th></th><th>בסיס</th><th>מתקדמת</th></tr></thead><tbody>'+
    feat('כרטיסיות, לו״ז והרשמה','✓','✓')+feat('מתרגלים פעילים','עד 30','ללא הגבלה')+feat('מיתוג אישי: לוגו, צבעים ושם','','✓')+feat('כמה מנהלים בצוות','','✓')+feat('דוחות מתקדמים','','✓')+feat('מחיר חודשי','בקרוב','בקרוב')+'</tbody></table>'+
    (st.plan!=='pro'?'<button class="btn btn-primary full" style="margin-top:12px" data-act="upgrade">אני רוצה לשדרג</button>':'')+'</div>'}
-async function loadPA(){try{PA=await q(sb.rpc('pa_studios'))}catch(e){PA=[];toast(esc(errMsg(e)))}if(view==='platform')render()}
+async function loadPA(){try{PA=await q(sb.rpc('pa_studios'))}catch(e){PA=[];toast(esc(errMsg(e)))}if(mode==='platform')render()}
 function vPlatform(){
-  const head=header()+'<button class="back" data-go="settings">'+I.back+'חזרה להגדרות</button><h1>ניהול הפלטפורמה</h1>';
+  const head='<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div><h1>ניהול הפלטפורמה</h1>';
   if(!isPA)return head+'<p class="lead">אין הרשאה.</p>';
   if(!PA)return head+'<p class="lead">טוען…</p>';
   const reqs=PA.reduce((n,x)=>n+x.requests.length,0);
@@ -406,7 +407,7 @@ function vPlatform(){
      '<button class="btn btn-primary full" style="margin-top:12px" data-act="pasave" data-sid="'+x.id+'">שמירה</button></div>'}).join('')+'</div>';
 }
 function vSettings(){
-  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+(isPA?'<button class="btn btn-soft full" style="margin-top:12px" data-act="platform">ניהול הפלטפורמה</button>':'')+
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
@@ -473,14 +474,15 @@ function render(){
   if(mode==='loading')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b><small>טוען…</small></div></div></div><p class="lead" style="margin-top:40px;text-align:center">טוען את הנתונים…</p>';
   else if(loadErr&&(mode==='p'||mode==='admin')&&!S.classes.length)html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>לא הצלחנו לטעון</h1><p class="lead">'+esc(loadErr)+'</p><div class="sheet-actions"><button class="btn btn-primary" data-act="refresh">ניסיון נוסף</button>'+(mode==='p'?'<button class="btn btn-soft" data-act="forget">כניסת מורה</button>':'')+'</div>';
   else if(mode==='login')html=vLogin();
+  else if(mode==='platform')html=vPlatform()+'<div class="foot"><button class="linkbtn" data-act="tostudio">מעבר לסטודיו שלי</button><br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="logout">יציאה מהחשבון</button></div>';
   else if(mode==='onboard')html=vOnboard();
   else if(mode==='newpw')html=vNewPw();
-  else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
+  else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">'+(PLATFORM?'החשבון הזה לא מוגדר כמנהל הפלטפורמה.':'החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.')+'</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
-  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs,platform:vPlatform}[view]||vHome)();
+  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs}[view]||vHome)();
   app.innerHTML=html;app.classList.toggle('pmode',mode!=='admin');
   document.getElementById('nav').hidden=mode!=='admin';
-  const tab=view==='person'?'people':view==='regs'?'money':view==='platform'?'settings':view;
+  const tab=view==='person'?'people':view==='regs'?'money':view;
   document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
@@ -764,11 +766,12 @@ async function doAct(a,t,d){
     case'preview':{const pp=findP(d.pid);if(pp){close();previewName=pp.name;await startP(pp.token,true)}break}
     case'toadmin':previewName=null;await startAdmin();break;
     case'upgrade':{if(t.disabled)break;t.disabled=true;try{await q(sb.rpc('request_upgrade',{p_studio:SID,p_message:null}));t.textContent='הבקשה נשלחה';toast('הבקשה נשלחה. ניצור איתך קשר בקרוב')}catch(e){t.disabled=false;toast(esc(errMsg(e)))}break}
-    case'platform':view='platform';PA=null;render();window.scrollTo(0,0);loadPA();break;
+    case'parefresh':PA=null;render();await loadPA();toast('עודכן');break;
+    case'tostudio':location.href=appUrl()+'?admin';break;
     case'pasave':{const id=+d.sid,box=document.querySelector('[data-pa="'+id+'"]');if(!box)break;const g=x=>box.querySelector(x);
       const unlT=g('.pa-unlt').checked,days=+g('.pa-days').value,unlM=g('.pa-unlm').checked,lim=Math.max(1,+g('.pa-lim').value||30);
       const tu=unlT?null:iso(today()+(days===0?-1:days)*DAY);
-      t.disabled=true;try{await q(sb.rpc('pa_update_studio',{p_id:id,p_trial_until:tu,p_member_limit:unlM?null:lim,p_plan:g('.pa-plan').value,p_active:g('.pa-act').checked}));toast('נשמר');await loadPA();if(id===SID)await reload()}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
+      t.disabled=true;try{await q(sb.rpc('pa_update_studio',{p_id:id,p_trial_until:tu,p_member_limit:unlM?null:lim,p_plan:g('.pa-plan').value,p_active:g('.pa-act').checked}));toast('נשמר');await loadPA()}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
     case'pahandled':{try{await q(sb.rpc('pa_handle_request',{p_id:d.rid}));await loadPA()}catch(e){toast(esc(errMsg(e)))}break}
     case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
     case'logout':await sb.auth.signOut();adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
@@ -798,6 +801,9 @@ async function startAdmin(want){
   mode='loading';store.set(MODE_KEY,'admin');render();
   const {data}=await sb.auth.getSession();
   if(!data.session){await loadPub();mode='login';render();return}
+  if(PLATFORM){try{isPA=!!await q(sb.rpc('is_platform_admin'))}catch(e){isPA=false}
+    if(!isPA){mode='noadmin';render();return}
+    mode='platform';PA=null;render();await loadPA();return}
   try{MY=await q(sb.rpc('my_studios'))||[]}catch(e){MY=[]}
   if(!MY.length){mode='onboard';render();return}
   const pick=x=>MY.find(s=>String(s.id)===String(x));
@@ -821,7 +827,7 @@ function pickSheet(){
   const u=new URLSearchParams(location.search),ut=u.get('t'),saved=store.get(TOKEN_KEY),pref=store.get(MODE_KEY);
   render();
   setInterval(()=>{if(!bg&&mode==='p'&&document.visibilityState==='visible')reload()},60000);
-  if(u.has('admin')||(pref==='admin'&&(!ut||ut===saved))){await startAdmin();return}
+  if(PLATFORM||u.has('admin')||(pref==='admin'&&(!ut||ut===saved))){await startAdmin();return}
   token=ut||saved;
   if(token){if(ut)store.set(TOKEN_KEY,ut);store.set(MODE_KEY,'p');await startP(token);
     try{const {data}=await sb.auth.getSession();if(data.session&&await q(sb.rpc('is_admin'))){adminSess=true;render()}}catch(e){}}
