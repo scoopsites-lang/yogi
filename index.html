@@ -264,6 +264,16 @@ button.stat span::after{content:' ›';opacity:.5}
 .foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:28px}
 .mbar{height:8px;border-radius:6px;background:var(--surface-2);margin-top:8px;overflow:hidden}.mbar i{display:block;height:100%;border-radius:6px}
 .plans{width:100%;border-collapse:collapse;margin-top:14px;font-size:.88rem}.plans th,.plans td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}.plans th:first-child,.plans td:first-child{text-align:start;color:var(--muted)}.plans th{font-weight:700}.plans td:nth-child(3){color:var(--sage-deep);font-weight:600}
+/* platform table */
+.pa-kpis{grid-template-columns:repeat(3,1fr)}@media(max-width:560px){.pa-kpis{grid-template-columns:1fr 1fr}}
+.pa-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}.pa-tools .search{flex:1 1 220px;min-width:0;margin:0}.pa-tools select{flex:0 1 auto;max-width:100%}@media(max-width:560px){.pa-tools select{flex:1 1 100%}}.pa-tools select{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;font:inherit;color:inherit}
+.patable{margin-top:14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.parow{display:grid;grid-template-columns:2.2fr 1.1fr .9fr 1fr 1fr 1fr 1.1fr;gap:8px;align-items:center;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;width:100%;text-align:start;font:inherit;color:inherit;cursor:pointer}
+.parow:first-child{border-top:0}.parow:not(.pahead):hover{background:var(--surface-2)}
+.pahead{cursor:default;font-size:.78rem;font-weight:700;color:var(--muted);background:var(--surface-2)}
+.parow .pill{font-style:normal}.pa-name b{display:block}.pa-name small{color:var(--muted);font-size:.8rem}
+.pa-req{font-style:normal;font-size:.7rem;background:var(--clay,#A8553A);color:#fff;border-radius:8px;padding:1px 6px;margin-inline-start:4px;vertical-align:middle}
+@media(max-width:720px){.pahead{display:none}.parow{grid-template-columns:1fr 1fr;row-gap:6px}.parow .pa-name{grid-column:1/-1}.parow span[data-l]{font-size:.86rem}.parow span[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:.78rem}}
 .pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px;border-radius:0!important}.slugin input:focus,.slugin input:focus-visible{outline:none}.slugin:focus-within{outline:2px solid var(--sage-deep);outline-offset:2px}
 </style>
@@ -672,24 +682,60 @@ function planSection(){const st=S.studio,am=activeMembers();
    feat('כרטיסיות, לו״ז והרשמה','✓','✓')+feat('מתרגלים פעילים','עד 30','ללא הגבלה')+feat('מיתוג אישי: לוגו, צבעים ושם','','✓')+feat('כמה מנהלים בצוות','','✓')+feat('דוחות מתקדמים','','✓')+feat('מחיר חודשי','בקרוב','בקרוב')+'</tbody></table>'+
    (st.plan!=='pro'?'<button class="btn btn-primary full" style="margin-top:12px" data-act="upgrade">אני רוצה לשדרג</button>':'')+'</div>'}
 async function loadPA(){try{PA=await q(sb.rpc('pa_studios'))}catch(e){PA=[];toast(esc(errMsg(e)))}if(mode==='platform')render()}
+let paSel=null,paF='all',paQ='',paSort='new';
+function paState(x){const tr=x.trial_until?parseD(x.trial_until):null;
+  if(!x.active)return{k:'suspended',t:'מושהה',c:'expired'};
+  if(!x.writable)return{k:'readonly',t:'קריאה בלבד',c:'expired'};
+  if(tr)return{k:'trial',t:'ניסיון',c:'soon',d:daysLeft(tr)};
+  return{k:'active',t:'פעיל',c:'active'}}
+const PLAN={basic:'בסיס',pro:'מתקדמת'};
+const ago=ts=>{if(!ts)return'—';const d=Math.floor((today()-new Date(new Date(ts).setHours(0,0,0,0)).getTime())/DAY);return d<=0?'היום':d===1?'אתמול':'לפני '+d+' ימים'};
+function paHead(){return '<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function vPlatform(){
-  const head='<div class="top"><div class="brand">'+logo(40)+'<div style="min-width:0"><b>YoGis</b><small>ניהול הפלטפורמה</small></div></div>'+themeBtn()+'<button class="iconbtn" data-act="parefresh" aria-label="רענון">'+I.refresh+'</button></div>'+(isStandalone()?'':'<div class="banner" style="background:var(--sage-soft)"><div><b>אייקון ניהול על מסך הבית</b><small>'+(installEvt?'התקנה של "YoGis ניהול" כאפליקציה נפרדת, עם אייקון כהה.':'בתפריט הדפדפן בוחרים "הוספה למסך הבית" או "התקנת אפליקציה". האייקון ייפתח ישר לניהול הפלטפורמה.')+'</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'')+'</div>')+'<h1>ניהול הפלטפורמה</h1>';
+  let head=paHead();
   if(!isPA)return head+'<p class="lead">אין הרשאה.</p>';
-  if(!PA)return head+'<p class="lead">טוען…</p>';
-  const reqs=PA.reduce((n,x)=>n+x.requests.length,0);
-  return head+'<p class="lead">'+PA.length+' סטודיואים'+(reqs?' · '+reqs+' בקשות שדרוג פתוחות':'')+'</p><div class="list" style="gap:12px">'+PA.map(x=>{
-    const tr=x.trial_until?parseD(x.trial_until):null,dl=tr?daysLeft(tr):null,dv=tr?Math.max(0,Math.min(30,dl)):30;
-    const state=!x.active?['מושהה','expired']:!x.writable?['קריאה בלבד','expired']:tr?['ניסיון · '+dl+' ימים','soon']:['פעיל','active'];
-    return '<div class="card" data-pa="'+x.id+'" style="box-shadow:none;border:1px solid var(--line)"><div class="card-head"><div><b>'+esc(x.name)+'</b><small dir="ltr" style="text-align:right">yogis.co.il/'+esc(x.slug)+'</small></div><span class="pill p-'+state[1]+'">'+state[0]+'</span></div>'+
-     '<p class="lead" style="font-size:.86rem;margin:8px 0 0">'+esc(x.teacher)+' · <span dir="ltr">'+esc(x.owner_email||'')+'</span><br>נפתח '+fmt(Date.parse(x.created_at))+' · '+x.active_members+' פעילים מתוך '+x.people+' מתרגלים · '+x.classes+' שיעורים קבועים'+(x.last_activity?' · הרשמה אחרונה '+fmt(Date.parse(x.last_activity)):'')+'</p>'+
-     (x.requests.length?x.requests.map(r=>'<div class="banner" style="margin-top:10px"><div><b>בקשת שדרוג</b><small>'+fmt(Date.parse(r.at))+' · <span dir="ltr">'+esc(r.email||'')+'</span>'+(r.message?' · '+esc(r.message):'')+'</small></div><button class="btn btn-soft btn-sm" data-act="pahandled" data-rid="'+r.id+'">טופל</button></div>').join(''):'')+
-     '<div class="switch" style="margin-top:12px"><div><b>תקופת ניסיון ללא הגבלה</b><small>כשכבוי, קובעים כמה ימים נותרו (0 = הסתיים, קריאה בלבד)</small></div><input type="checkbox" class="tog pa-unlt"'+(tr?'':' checked')+' aria-label="ניסיון ללא הגבלה"></div>'+
-     '<div class="field pa-trow"'+(tr?'':' hidden')+'><label>ימים שנותרו: <b class="pa-dl">'+dv+'</b></label><input type="range" class="pa-days" min="0" max="30" step="1" value="'+dv+'" style="width:100%;accent-color:var(--sage-deep)"></div>'+
-     '<div class="switch"><div><b>מתרגלים ללא הגבלה</b><small>כשכבוי, מגבלת מתרגלים פעילים</small></div><input type="checkbox" class="tog pa-unlm"'+(x.member_limit==null?' checked':'')+' aria-label="מתרגלים ללא הגבלה"></div>'+
-     '<div class="field pa-lrow"'+(x.member_limit==null?' hidden':'')+'><label>מגבלת מתרגלים פעילים</label><input type="number" class="pa-lim" min="1" inputmode="numeric" value="'+(x.member_limit==null?30:x.member_limit)+'"></div>'+
-     '<div class="field"><label>חבילה</label><select class="pa-plan"><option value="basic"'+(x.plan==='basic'?' selected':'')+'>בסיס</option><option value="pro"'+(x.plan==='pro'?' selected':'')+'>מתקדמת</option></select></div>'+
-     '<div class="switch"><div><b>סטודיו פעיל</b><small>כיבוי משהה את הסטודיו (קריאה בלבד)</small></div><input type="checkbox" class="tog pa-act"'+(x.active?' checked':'')+' aria-label="סטודיו פעיל"></div>'+
-     '<button class="btn btn-primary full" style="margin-top:12px" data-act="pasave" data-sid="'+x.id+'">שמירה</button></div>'}).join('')+'</div>';
+  if(!PA)return head+'<h1>ניהול הפלטפורמה</h1><p class="lead">טוען…</p>';
+  if(paSel!=null){const x=PA.find(y=>y.id===paSel);if(x)return head+paDetail(x);paSel=null}
+  head+=(isStandalone()?'':'<div class="banner" style="background:var(--sage-soft)"><div><b>אייקון ניהול על מסך הבית</b><small>'+(installEvt?'התקנה של "YoGis ניהול" כאפליקציה נפרדת, עם אייקון כהה.':'בתפריט הדפדפן בוחרים "הוספה למסך הבית" או "התקנת אפליקציה".')+'</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'')+'</div>');
+  const all=PA.map(x=>Object.assign({st:paState(x)},x));
+  const cnt=k=>all.filter(x=>x.st.k===k).length,reqs=all.filter(x=>x.requests.length).length,soon=all.filter(x=>x.st.k==='trial'&&x.st.d<=7).length;
+  const members=all.reduce((n,x)=>n+x.active_members,0);
+  const F=[['all','הכל',all.length],['trial','בניסיון',cnt('trial')],['soon','ניסיון נגמר בשבוע',soon],['active','פעילים',cnt('active')],['readonly','קריאה בלבד',cnt('readonly')],['suspended','מושהים',cnt('suspended')],['req','בקשות שדרוג',reqs],['pro','מתקדמת',all.filter(x=>x.plan==='pro').length]];
+  let list=all.filter(x=>paF==='all'||(paF==='req'?x.requests.length:paF==='soon'?(x.st.k==='trial'&&x.st.d<=7):paF==='pro'?x.plan==='pro':x.st.k===paF));
+  if(paQ){const v=paQ.toLowerCase();list=list.filter(x=>(x.name+' '+x.slug+' '+x.teacher+' '+(x.owner_email||'')).toLowerCase().includes(v))}
+  const sorters={new:(a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at),trial:(a,b)=>(a.st.d==null?1e9:a.st.d)-(b.st.d==null?1e9:b.st.d),members:(a,b)=>b.active_members-a.active_members,activity:(a,b)=>(Date.parse(b.last_activity||0)||0)-(Date.parse(a.last_activity||0)||0)};
+  list.sort(sorters[paSort]||sorters.new);
+  const kpi=(n,t,cls,f)=>'<button class="stat'+(cls?' '+cls:'')+'" data-paf="'+f+'"><b>'+n+'</b><span>'+t+'</span></button>';
+  return head+'<h1>ניהול הפלטפורמה</h1><p class="lead">כל הסטודיואים במקום אחד. לחיצה על שורה פותחת את פרטי הסטודיו.</p>'+
+   '<div class="stats pa-kpis">'+kpi(all.length,'סטודיואים','','all')+kpi(cnt('trial'),'בתקופת ניסיון','lav','trial')+kpi(cnt('active'),'פעילים','sage','active')+kpi(cnt('readonly')+cnt('suspended'),'קריאה בלבד / מושהים','','readonly')+kpi(reqs,'בקשות שדרוג פתוחות','','req')+kpi(members,'מתרגלים פעילים בסה״כ','sage','all')+'</div>'+
+   '<div class="pa-tools"><label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="paq" placeholder="חיפוש לפי שם, כתובת או אימייל" value="'+esc(paQ)+'"></label>'+
+   '<select id="pasort" aria-label="מיון"><option value="new"'+(paSort==='new'?' selected':'')+'>נפתחו לאחרונה</option><option value="trial"'+(paSort==='trial'?' selected':'')+'>ניסיון שמסתיים ראשון</option><option value="members"'+(paSort==='members'?' selected':'')+'>הכי הרבה מתרגלים</option><option value="activity"'+(paSort==='activity'?' selected':'')+'>פעילות אחרונה</option></select></div>'+
+   '<div class="chips" style="margin-top:10px">'+F.filter(f=>f[0]==='all'||f[2]).map(f=>'<button class="chip" data-paf="'+f[0]+'" aria-pressed="'+(paF===f[0])+'">'+f[1]+' · '+f[2]+'</button>').join('')+'</div>'+
+   '<div class="patable" role="table"><div class="parow pahead" role="row"><span>סטודיו</span><span>סטטוס</span><span>מסלול</span><span>ניסיון</span><span>מתרגלים</span><span>הרשמות 30 יום</span><span>כניסה אחרונה</span></div>'+
+   (list.length?list.map(x=>{const st=x.st;
+     return '<button class="parow" role="row" data-pastudio="'+x.id+'"><span class="pa-name"><b>'+esc(x.name)+(x.requests.length?' <em class="pa-req">בקשת שדרוג</em>':'')+'</b><small dir="ltr">/'+esc(x.slug)+'</small></span>'+
+      '<span data-l="סטטוס"><i class="pill p-'+st.c+'">'+st.t+'</i></span>'+
+      '<span data-l="מסלול">'+PLAN[x.plan]+'</span>'+
+      '<span data-l="ניסיון">'+(st.k==='trial'?(st.d<=0?'יום אחרון':st.d+' ימים'):x.trial_until?'הסתיים':'ללא הגבלה')+'</span>'+
+      '<span data-l="מתרגלים">'+x.active_members+(x.member_limit!=null?' / '+x.member_limit:'')+'</span>'+
+      '<span data-l="הרשמות 30 יום">'+x.regs30+'</span>'+
+      '<span data-l="כניסה אחרונה">'+ago(x.last_login)+'</span></button>'}).join(''):'<div class="empty">אין סטודיואים שמתאימים לסינון.</div>')+'</div>';
+}
+function paDetail(x){const st=paState(x),tr=x.trial_until?parseD(x.trial_until):null,dl=tr?daysLeft(tr):null,dv=tr?Math.max(0,Math.min(30,dl)):30;
+  const mini=(n,t)=>'<div class="stat"><b>'+n+'</b><span>'+t+'</span></div>';
+  return '<button class="back" data-act="paback">'+I.back+'כל הסטודיואים</button>'+
+   '<div class="card-head" style="margin-top:6px"><div><h1 style="margin:0">'+esc(x.name)+'</h1><small class="lead"><a href="'+appUrl()+esc(x.slug)+'" target="_blank" rel="noopener" dir="ltr">yogis.co.il/'+esc(x.slug)+'</a></small></div><span class="pill p-'+st.c+'">'+st.t+(st.k==='trial'?' · '+dl+' ימים':'')+'</span></div>'+
+   '<p class="lead" style="font-size:.88rem">'+esc(x.teacher)+' · <span dir="ltr">'+esc(x.owner_email||'')+'</span><br>נפתח '+fmt(Date.parse(x.created_at))+' · מסלול '+PLAN[x.plan]+' · '+x.staff+' מנהלים · כניסה אחרונה '+ago(x.last_login)+'</p>'+
+   '<div class="stats">'+mini(x.active_members+(x.member_limit!=null?' / '+x.member_limit:''),'מתרגלים פעילים')+mini(x.people,'מתרגלים בסה״כ')+mini(x.classes,'שיעורים קבועים')+mini(x.regs30,'הרשמות ב־30 יום')+mini(x.punches30,'ניקובים ב־30 יום')+mini(x.last_activity?fmt(Date.parse(x.last_activity)):'—','הרשמה אחרונה')+'</div>'+
+   (x.requests.length?'<h2>בקשות שדרוג</h2>'+x.requests.map(r=>'<div class="banner"><div><b>בקשה למסלול '+(PLAN[r.plan]||r.plan)+'</b><small>'+fmt(Date.parse(r.at))+' · <span dir="ltr">'+esc(r.email||'')+'</span>'+(r.message?' · '+esc(r.message):'')+'</small></div><button class="btn btn-soft btn-sm" data-act="pahandled" data-rid="'+r.id+'">טופל</button></div>').join(''):'')+
+   '<h2>הגדרות מסלול</h2><div class="card" data-pa="'+x.id+'" style="box-shadow:none;border:1px solid var(--line)">'+
+   '<div class="field" style="margin-top:0"><label>מסלול</label><select class="pa-plan"><option value="basic"'+(x.plan==='basic'?' selected':'')+'>בסיס</option><option value="pro"'+(x.plan==='pro'?' selected':'')+'>מתקדמת</option></select></div>'+
+   '<div class="switch" style="margin-top:12px"><div><b>תקופת ניסיון ללא הגבלה</b><small>כשכבוי, קובעים כמה ימים נותרו (0 = הסתיים, קריאה בלבד)</small></div><input type="checkbox" class="tog pa-unlt"'+(tr?'':' checked')+' aria-label="ניסיון ללא הגבלה"></div>'+
+   '<div class="field pa-trow"'+(tr?'':' hidden')+'><label>ימים שנותרו: <b class="pa-dl">'+dv+'</b></label><input type="range" class="pa-days" min="0" max="30" step="1" value="'+dv+'" style="width:100%;accent-color:var(--sage-deep)"></div>'+
+   '<div class="switch"><div><b>מתרגלים ללא הגבלה</b><small>כשכבוי, מגבלת מתרגלים פעילים</small></div><input type="checkbox" class="tog pa-unlm"'+(x.member_limit==null?' checked':'')+' aria-label="מתרגלים ללא הגבלה"></div>'+
+   '<div class="field pa-lrow"'+(x.member_limit==null?' hidden':'')+'><label>מגבלת מתרגלים פעילים</label><input type="number" class="pa-lim" min="1" inputmode="numeric" value="'+(x.member_limit==null?30:x.member_limit)+'"></div>'+
+   '<div class="switch"><div><b>סטודיו פעיל</b><small>כיבוי משהה את הסטודיו (קריאה בלבד)</small></div><input type="checkbox" class="tog pa-act"'+(x.active?' checked':'')+' aria-label="סטודיו פעיל"></div>'+
+   '<button class="btn btn-primary full" style="margin-top:12px" data-act="pasave" data-sid="'+x.id+'">שמירה</button></div>';
 }
 function vSettings(){
   return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+
@@ -774,6 +820,8 @@ function render(){
   const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',SID)),'נשמר')})};
   bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
   const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',SID)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
+  const pq=document.getElementById('paq');if(pq)pq.addEventListener('input',e=>{paQ=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('paq');n.focus();n.setSelectionRange(pos,pos)});
+  const ps=document.getElementById('pasort');if(ps)ps.addEventListener('change',e=>{paSort=e.target.value;render()});
   document.querySelectorAll('[data-pa]').forEach(box=>{const q1=x=>box.querySelector(x);
     q1('.pa-unlt').addEventListener('change',e=>{q1('.pa-trow').hidden=e.target.checked});
     q1('.pa-unlm').addEventListener('change',e=>{q1('.pa-lrow').hidden=e.target.checked});
@@ -973,7 +1021,7 @@ function notesSheet(){
 
 /* ---------- clicks ---------- */
 function onClick(e){
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();view=d.go;render();window.scrollTo(0,0)}
   else if(d.open){sel=d.open;view='person';render();window.scrollTo(0,0)}
@@ -988,6 +1036,8 @@ function onClick(e){
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
   else if(d.refund){act(()=>q(sb.rpc('a_refund',{p_reg:d.refund})),'הניקוב הוחזר').catch(()=>{})}
   else if(d.tile){const m={active:['people','active'],frozen:['people','frozen'],money:['money'],regs:['regs']}[d.tile];view=m[0];if(m[1]){filter=m[1];q_=''}render();window.scrollTo(0,0)}
+  else if(d.pastudio){paSel=+d.pastudio;render();window.scrollTo(0,0)}
+  else if(d.paf){paF=d.paf;render()}
   else if(d.auth){authMode=d.auth;render();window.scrollTo(0,0)}
   else if(d.studio){store.set(STUDIO_KEY,d.studio);startAdmin(+d.studio)}
   else if(d.themeset!=null){store.set(THEME_KEY,d.themeset||null);applyTheme(d.themeset||null);render()}
@@ -1051,6 +1101,7 @@ async function doAct(a,t,d){
     case'preview':{const pp=findP(d.pid);if(pp){close();previewName=pp.name;await startP(pp.token,true)}break}
     case'toadmin':previewName=null;await startAdmin();break;
     case'upgrade':{if(t.disabled)break;t.disabled=true;try{await q(sb.rpc('request_upgrade',{p_studio:SID,p_message:null}));t.textContent='הבקשה נשלחה';toast('הבקשה נשלחה. ניצור איתך קשר בקרוב')}catch(e){t.disabled=false;toast(esc(errMsg(e)))}break}
+    case'paback':paSel=null;render();window.scrollTo(0,0);break;
     case'parefresh':PA=null;render();await loadPA();toast('עודכן');break;
     case'tostudio':location.href=appUrl()+'?admin';break;
     case'pasave':{const id=+d.sid,box=document.querySelector('[data-pa="'+id+'"]');if(!box)break;const g=x=>box.querySelector(x);
