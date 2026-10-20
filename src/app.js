@@ -98,12 +98,23 @@ const cur=p=>p.cards[p.cards.length-1];
 const frozenDays=c=>c.frozen?Math.max(0,Math.min(14,Math.round((Math.min(today(),c.frozen.until)-c.frozen.since)/DAY))):0;
 const effExpires=c=>c.frozen?c.expires+frozenDays(c)*DAY:c.expires;
 const freezeUsed=c=>!!c&&(c.freezes.length>0||!!c.frozen);
-const left=c=>c.type==='monthly'?Infinity:c.total-c.used.length;
+const PROD=[
+ {k:'single',t:'שיעור ניסיון / בודד',s:'שיעור אחד · תוקף חודש',type:'single',total:1,months:1},
+ {k:'punch5',t:'כרטיסיית 5 שיעורים',s:'תוקף 3 חודשים',type:'punch',total:5,months:3},
+ {k:'punch10',t:'כרטיסיית 10 שיעורים',s:'תוקף 3 חודשים',type:'punch',total:10,months:3},
+ {k:'month4',t:'מנוי 4 כניסות בחודש',s:'4 שיעורים · תוקף חודש',type:'monthly',total:4,months:1},
+ {k:'month8',t:'מנוי 8 כניסות בחודש',s:'8 שיעורים · תוקף חודש',type:'monthly',total:8,months:1},
+ {k:'monthly',t:'מנוי חופשי חודשי',s:'ללא הגבלת שיעורים · תוקף חודש',type:'monthly',total:0,months:1}];
+const prodOn=k=>{const p=(S.studio.products||{})[k];return !!(p&&p.on)};
+const prodPrice=k=>{const p=(S.studio.products||{})[k];return p&&p.price!=null&&p.price!==''?+p.price:null};
+const unl=c=>c.type==='monthly'&&!c.total;
+const cardName=c=>c.type==='single'?'שיעור ניסיון / בודד':c.type==='monthly'?(c.total?'מנוי '+c.total+' כניסות בחודש':'מנוי חופשי חודשי'):'כרטיסיית '+c.total+' שיעורים';
+const left=c=>unl(c)?Infinity:c.total-c.used.length;
 function status(c){
   if(!c)return'none';
   if(c.frozen)return'frozen';
   if(today()>c.expires)return'expired';
-  if(c.type==='punch'&&left(c)<=0)return'done';
+  if(!unl(c)&&left(c)<=0)return'done';
   if(c.expires-today()<=14*DAY)return'soon';
   return'active';
 }
@@ -112,7 +123,7 @@ const pill=s=>'<span class="pill p-'+(s==='none'?'expired':s)+'">'+LABEL[s]+'</s
 const daysTo=c=>Math.max(0,Math.ceil((effExpires(c)-today())/DAY));
 function myRegs(p){const out=[];for(const k in S.sessions){const s=S.sessions[k];if(s.done||s.cancelled)continue;const r=s.regs.find(r=>r.pid===p.id);if(r)out.push({k,s,r})}return out.sort((a,b)=>a.s.t-b.s.t)}
 const reserved=p=>myRegs(p).length;
-const avail=p=>{const c=cur(p);return !c?0:c.type==='monthly'?Infinity:left(c)-reserved(p)};
+const avail=p=>{const c=cur(p);return !c?0:unl(c)?Infinity:left(c)-reserved(p)};
 function pendingReqs(){const out=[];for(const k in S.sessions){const s=S.sessions[k];if(s.cancelled)continue;s.regs.forEach(r=>{if(r.status==='pending')out.push({k,s,r,p:findP(r.pid)})})}return out.filter(x=>x.p).sort((a,b)=>a.s.t-b.s.t)}
 function mapCard(c,punches,freezes){
   return{id:c.id,type:c.type,total:c.total,start:parseD(c.start||c.start_date),expires:parseD(c.expires),
@@ -142,7 +153,7 @@ async function loadAdmin(){
   rg.forEach(r=>{const s=sesById[r.session_id];if(s)s.regs.push({id:r.id,pid:r.person_id,status:r.status,reason:r.reason,punched:r.punched,refunded:r.refunded})});
   cn.forEach(x=>{const s=sesById[x.session_id];if(s)(x.kind==='late'?s.late:s.waived).push(x.person_id)});
   const keyOf=id=>{const s=se.find(x=>x.id===id);return s?s.class_id+'_'+s.on_date:null};
-  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null,brand:st.brand||{},trial:st.trial_until?parseD(st.trial_until):null,limit:st.member_limit,active:st.active!==false,writable:st.active!==false&&(!st.trial_until||parseD(st.trial_until)>=today())},
+  S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,products:st.products||{},defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null,brand:st.brand||{},trial:st.trial_until?parseD(st.trial_until):null,limit:st.member_limit,active:st.active!==false,writable:st.active!==false&&(!st.trial_until||parseD(st.trial_until)>=today())},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
     people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
@@ -192,10 +203,10 @@ function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<1
 function header(){return '<div class="top"><div class="brand">'+mark(40)+'<div style="min-width:0"><b>'+esc(appName())+'</b><small>'+esc(S.studio.name)+'</small></div></div>'+'<button class="iconbtn" data-act="tome" aria-label="'+(myTok?'הצד שלי':'צד מתרגל')+'">'+I.eye+'<span class="lbl">'+(myTok?'הצד שלי':'צד מתרגל')+'</span></button>'+themeBtn()+'<button class="iconbtn bell" data-act="anotes" aria-label="התראות">'+I.bell+((u=>u?'<em>'+u+'</em>':'')((S.anotes||[]).filter(n=>!n.read).length))+'</button><button class="iconbtn" data-act="refresh" aria-label="רענון">'+I.refresh+'</button></div>'}
 function row(p,withPunch){
   const c=cur(p),s=status(c),canPunch=s==='active'||s==='soon';
-  const sub=c.type==='monthly'?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
+  const sub=unl(c)?'מנוי חודשי · '+c.used.length+' כניסות':(s==='frozen'?'מוקפאת עד '+fmt(c.frozen.until)+' · '+esc(c.frozen.reason):'בתוקף עד '+fmt(effExpires(c)));
   const fz=s==='frozen';
   return '<div class="row'+(fz?' frozen-row':'')+'"><button class="rowmain" data-open="'+p.id+'"><span class="av"'+(fz?' style="background:var(--lav-soft);color:var(--ink)" title="מוקפא"':'')+'>'+(fz?I.snow:esc(initials(p.name)))+'</span><span class="who"><b>'+esc(p.name)+'</b><small>'+sub+'</small></span>'+
-   (c.type==='monthly'?'<span class="count">∞<small>חודשי</small></span>':'<span class="count">'+left(c)+'/'+c.total+'<small>נותרו</small></span>')+'</button>'+
+   (unl(c)?'<span class="count">∞<small>חודשי</small></span>':'<span class="count">'+left(c)+'/'+c.total+'<small>נותרו</small></span>')+'</button>'+
    (withPunch?(canPunch?'<button class="punch" data-punch="'+p.id+'">'+(c.type==='monthly'?'כניסה':'ניקוב')+'</button>':pill(s)):'')+'</div>';
 }
 function reqCard(x){
@@ -212,7 +223,7 @@ function groupDays(list,rowFn){
 }
 function cardBody(c,p,forP){
   const s=status(c);
-  if(c.type==='monthly')return '<div class="big"><b>∞</b><span>מנוי חודשי ללא הגבלה</span></div><div class="meta"><div><small>כניסות החודש</small><b>'+c.used.length+'</b></div><div><small>בתוקף עד</small><b>'+fmt(effExpires(c))+'</b></div></div>';
+  if(unl(c))return '<div class="big"><b>∞</b><span>מנוי חודשי ללא הגבלה</span></div><div class="meta"><div><small>כניסות החודש</small><b>'+c.used.length+'</b></div><div><small>בתוקף עד</small><b>'+fmt(effExpires(c))+'</b></div></div>';
   const res=Math.min(reserved(p),Math.max(0,left(c)));
   let dots='';for(let i=0;i<c.total;i++){const u=i<c.used.length,r=!u&&i<c.used.length+res;dots+='<span class="dot'+(u?' used':r?' res':'')+'">'+(u?I.check:'')+'</span>'}
   return '<div class="big"><b>'+Math.max(0,left(c))+'</b><span>שיעורים נותרו מתוך '+c.total+'</span></div><div class="dots" style="grid-template-columns:repeat('+Math.min(5,c.total)+',1fr)">'+dots+'</div>'+
@@ -224,7 +235,7 @@ function history(c){
   const ev=c.used.map((u,i)=>({t:u.t,txt:(i+1)+'. '+u.why}));
   c.freezes.forEach(f=>ev.push({t:f.to,txt:'הקפאה ('+f.reason+') · '+Math.round((f.to-f.from)/DAY)+' ימים'}));
   if(c.frozen)ev.push({t:c.frozen.since,txt:'הוקפאה ('+c.frozen.reason+')'});
-  ev.push({t:c.start,txt:c.type==='monthly'?'מנוי חודשי נפתח':'כרטיסייה של '+c.total+' שיעורים נפתחה'});
+  ev.push({t:c.start,txt:'נפתח: '+cardName(c)});
   ev.sort((a,b)=>b.t-a.t);
   return '<div class="hist">'+ev.map(e=>'<div>'+esc(e.txt)+'<span>'+fmt(e.t)+'</span></div>').join('')+'</div>';
 }
@@ -318,7 +329,7 @@ function vPerson(){
   const c=cur(p),s=status(c),can=s==='active'||s==='soon',ended=s==='done'||s==='expired',mr=myRegs(p);
   return header()+'<button class="back" data-go="people">'+I.back+'כל המתרגלים</button>'+
    '<div style="display:flex;align-items:center;gap:12px;margin-top:4px"><span class="av" style="width:52px;height:52px;font-size:1.1rem">'+esc(initials(p.name))+'</span><div style="min-width:0"><h1 style="margin:0">'+esc(p.name)+'</h1><span class="lead" dir="ltr">'+esc(p.phone)+'</span></div></div>'+
-   '<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</b><small>נפתחה ב־'+fmt(c.start)+(c.type==='punch'?' · תקפה 3 חודשים':'')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p)+'</div>'+
+   '<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>'+cardName(c)+'</b><small>נפתחה ב־'+fmt(c.start)+(c.type==='punch'?' · תקפה 3 חודשים':'')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p)+'</div>'+
    (c.freezes.length&&s!=='frozen'?'<div class="note" style="background:var(--lav-soft);border-color:transparent;color:var(--ink)">'+I.snow+' הכרטיסייה הוקפאה בעבר: '+c.freezes.map(f=>fmt(f.from)+'–'+fmt(f.to)+' ('+Math.round((f.to-f.from)/DAY)+' ימים)').join(', ')+'</div>':'')+
    '<div class="actions">'+
     (ended?'<button class="btn btn-primary wide" data-act="renew">'+I.renew+'חידוש כרטיסייה</button>':'<button class="btn btn-primary wide" data-punch="'+p.id+'"'+(can?'':' disabled')+'>'+I.ck+(c.type==='monthly'?'רישום כניסה':'ניקוב ידני')+'</button>')+
@@ -476,11 +487,8 @@ async function shrinkImage(file){const url=URL.createObjectURL(file);try{const i
 function vSettings(){
   return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
-  '<div class="field"><label for="dt">ברירת מחדל לכרטיסייה חדשה</label><select id="dt">'+[5,10,20].map(n=>'<option value="'+n+'"'+(S.studio.defaultTotal==n?' selected':'')+'>'+n+' שיעורים</option>').join('')+'</select></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
-  '<h2>מדיניות ביטול</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="cut">ביטול חופשי <b id="cutl">'+cutTxt()+'</b></label><input type="range" id="cut" min="0" max="72" step="1" value="'+S.studio.cutoff+'" style="width:100%;accent-color:var(--sage-deep)"><div class="cutscale"><span>0</span><span>24</span><span>48</span><span>72 שעות</span></div></div><small class="lead" style="font-size:.85rem">אחרי חלון הזמן הזה ביטול מנקב שיעור, או שהמתרגל שולח בקשה עם הסבר ואת מחליטה. השינוי חל מיד על כל השיעורים, כולל הרשמות קיימות.</small></div>'+'<h2>סוגי כרטיסיות</h2>'+
-  '<div class="switch"><div><b>כרטיסיית שיעורים</b><small>מספר שיעורים קבוע, תוקף של 3 חודשים מיום הפתיחה. ניתן להקפאה.</small></div><input type="checkbox" class="tog" checked disabled aria-label="כרטיסיית שיעורים פעילה"></div>'+
-  '<div class="switch"><div><b>מנוי חודשי ללא הגבלה <span class="soon-tag">'+(S.studio.monthly?'פעיל':'כבוי')+'</span></b><small>כניסה חופשית לכל השיעורים למשך חודש. כשהאפשרות כבויה היא מוצגת אך לא ניתנת לבחירה.</small></div><input type="checkbox" class="tog" id="mon"'+(S.studio.monthly?' checked':'')+' aria-label="הפעלת מנוי חודשי"></div>'+
+  '<h2>מדיניות ביטול</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="cut">ביטול חופשי <b id="cutl">'+cutTxt()+'</b></label><input type="range" id="cut" min="0" max="72" step="1" value="'+S.studio.cutoff+'" style="width:100%;accent-color:var(--sage-deep)"><div class="cutscale"><span>0</span><span>24</span><span>48</span><span>72 שעות</span></div></div><small class="lead" style="font-size:.85rem">אחרי חלון הזמן הזה ביטול מנקב שיעור, או שהמתרגל שולח בקשה עם הסבר ואת מחליטה. השינוי חל מיד על כל השיעורים, כולל הרשמות קיימות.</small></div>'+'<h2>סוגי כרטיסיות</h2><p class="lead" style="font-size:.88rem;margin-top:-4px">רק סוגים פעילים זמינים בפתיחת כרטיסייה. המחיר מוצע כברירת מחדל ואפשר לשנות אותו בכל פתיחה.</p>'+PROD.map(x=>{const on=prodOn(x.k),pc=prodPrice(x.k);return '<div class="switch prodrow'+(on?'':' off')+'"><div style="flex:1;min-width:0"><b>'+x.t+' <span class="soon-tag">'+(on?'פעיל':'כבוי')+'</span></b><small>'+x.s+'</small><label class="pricein">מחיר <input type="number" inputmode="numeric" min="0" data-pprice="'+x.k+'" value="'+(pc!=null?pc:'')+'" placeholder="—"> ₪</label></div><input type="checkbox" class="tog" data-ptog="'+x.k+'"'+(on?' checked':'')+' aria-label="הפעלת '+x.t+'"></div>'}).join('')+
   '<h2>מחיר לשיעור</h2><div class="field" style="margin-top:0"><label for="pr">משמש לחישוב בעמוד ההכנסות</label><input id="pr" type="number" inputmode="numeric" min="0" value="'+S.studio.price+'"></div>'+
   '<h2>תצוגה</h2><div class="chips">'+[['','לפי הטלפון'],['light','בהירה'],['dark','כהה']].map(x=>'<button class="chip" data-themeset="'+x[0]+'" aria-pressed="'+((store.get(THEME_KEY)||'')===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
   '<h2>כתובת הסטודיו</h2><div class="field" style="margin-top:0"><div class="msg" dir="ltr" style="word-break:break-all">'+esc(studioUrl())+'</div><small class="lead" style="font-size:.82rem">הקישורים האישיים והלו״ז השבועי נשלחים עם הכתובת הזו.</small></div>'+
@@ -524,7 +532,7 @@ function vP(){
    (previewName?'<div class="banner" style="background:var(--lav-soft)"><div><b>צפייה כמתרגל: '+esc(previewName)+'</b><small>זו התצוגה של המתרגל. חזרה לניהול בכפתור "ניהול" למעלה.</small></div></div>':'')+
    (!previewName&&!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
    '<h1>שלום, '+esc(first(p))+'</h1><p class="lead">'+(mr.length?'נרשמת ל־'+mr.length+' שיעורים קרובים.':'עוד לא נרשמת לשיעורים השבוע.')+'</p>'+pBanner(p)+
-   (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+(c.type==='monthly'?'מנוי חודשי':'כרטיסיית '+c.total+' שיעורים')+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
+   (c?'<div class="card'+(s==='frozen'?' frozen':'')+'"><div class="card-head"><div><b>הכרטיסייה שלי</b><small>'+cardName(c)+'</small></div>'+pill(s)+'</div>'+cardBody(c,p,true)+'</div>':'<div class="note">עדיין אין כרטיסייה פעילה. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>')+
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
    (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
    '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה '+cutTxt()+'.</p>'+
@@ -555,8 +563,10 @@ function render(){
   const bind=(id,col,num)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>{const v=num?+e.target.value:e.target.value.trim();if(!v)return;act(()=>q(sb.from('studio').update({[col]:v}).eq('id',SID)),'נשמר')})};
   const cut=document.getElementById('cut');if(cut){cut.addEventListener('input',e=>{const v=+e.target.value;document.getElementById('cutl').textContent=v===0?'עד תחילת השיעור':'עד '+v+(v===1?' שעה':' שעות')+' לפני השיעור'});
     cut.addEventListener('change',e=>{const v=Math.max(0,Math.min(72,+e.target.value));act(()=>q(sb.from('studio').update({cutoff_hours:v}).eq('id',SID)),'מדיניות הביטול עודכנה').catch(()=>{})})}
-  bind('sn','name');bind('tn','teacher');bind('dt','default_total',1);bind('pr','price_per_class',1);
-  const m=document.getElementById('mon');if(m)m.addEventListener('change',e=>{const on=e.target.checked;act(()=>q(sb.from('studio').update({monthly_enabled:on}).eq('id',SID)),on?'מנוי חודשי הופעל':'מנוי חודשי כובה')});
+  const saveProd=(k,patch,msg)=>{const pr=JSON.parse(JSON.stringify(S.studio.products||{}));pr[k]=Object.assign({on:false},pr[k]||{},patch);act(()=>q(sb.from('studio').update({products:pr}).eq('id',SID)),msg).catch(()=>{})};
+  document.querySelectorAll('[data-ptog]').forEach(el=>el.addEventListener('change',e=>{const k=el.dataset.ptog,x=PROD.find(y=>y.k===k);saveProd(k,{on:e.target.checked},x.t+(e.target.checked?' הופעל':' כובה'))}));
+  document.querySelectorAll('[data-pprice]').forEach(el=>el.addEventListener('change',e=>{const v=e.target.value===''?null:Math.max(0,Math.round(+e.target.value||0));saveProd(el.dataset.pprice,{price:v},'המחיר נשמר')}));
+  bind('sn','name');bind('tn','teacher');bind('pr','price_per_class',1);
   const bn=document.getElementById('bname');if(bn)bn.addEventListener('input',e=>{BD.app_name=e.target.value;bPreview();const pb=document.querySelector('.bpreview .brand b');if(pb)pb.textContent=BD.app_name||'YoGis';const hb=document.querySelector('.top .brand b');if(hb)hb.textContent=BD.app_name||'YoGis'});
   document.querySelectorAll('[data-swc]').forEach(el=>el.addEventListener('change',e=>{BD[el.dataset.swc]=e.target.value;bPreview();render()}));
   const bl=document.getElementById('blogo');if(bl)bl.addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
@@ -636,19 +646,24 @@ function sesSheet(k){
 }
 function addSheet(renewFor){
   const p=renewFor&&findP(renewFor);
-  let type='punch',total=S.studio.defaultTotal,gender='f',exp=iso(addMonths(today(),3));
+  let prod=(PROD.find(x=>x.k==='punch10'&&prodOn(x.k))||PROD.find(x=>prodOn(x.k))||{}).k||null;
+  let pr=PROD.find(x=>x.k===prod),total=pr?pr.total:10,gender='f',exp=iso(addMonths(today(),pr?pr.months:3)),price=pr?prodPrice(pr.k):null;
   const draw=()=>{
-    const opt=(k,t,s,locked)=>'<button class="opt'+(locked?' locked':'')+'" data-type="'+k+'" aria-pressed="'+(type===k)+'"'+(locked?' aria-disabled="true"':'')+'><b>'+t+(locked?'<span class="soon-tag">בקרוב</span>':'')+'</b><small>'+s+'</small></button>';
+    const opt=x=>{const on=prodOn(x.k),pc=prodPrice(x.k);return '<button class="opt'+(on?'':' locked')+'" data-prod="'+x.k+'" aria-pressed="'+(prod===x.k)+'"'+(on?'':' aria-disabled="true"')+'><b>'+x.t+(on?'':'<span class="soon-tag">כבוי</span>')+'</b><small>'+x.s+(pc!=null?' · '+shekel(pc):'')+'</small></button>'};
     sheet('<h3>'+(p?'חידוש כרטיסייה':'מתרגל חדש')+'</h3>'+(p?'<p class="lead">'+esc(p.name)+'</p>':'<div class="field"><label for="nn">שם מלא</label><input id="nn" autocomplete="off" placeholder="לדוגמה: אורית כהן"></div><div class="field"><label for="np">טלפון</label><input id="np" inputmode="tel" dir="ltr" style="text-align:right" placeholder="050-0000000"></div>'+'<div class="field"><label>פנייה בהודעות ובאפליקציה</label><div class="chips">'+[['f','בלשון נקבה'],['m','בלשון זכר']].map(x=>'<button class="chip" data-gender="'+x[0]+'" aria-pressed="'+(gender===x[0])+'">'+x[1]+'</button>').join('')+'</div></div>')+
-     '<div class="field"><label>סוג כרטיסייה</label><div class="opts">'+opt('punch','כרטיסיית שיעורים','תוקף 3 חודשים')+opt('monthly','מנוי חודשי','ללא הגבלת שיעורים',!S.studio.monthly)+'</div></div>'+
-     (type==='punch'?'<div class="grid2"><div class="field"><label for="nt">מספר שיעורים</label><input id="nt" type="number" inputmode="numeric" min="1" max="100" value="'+total+'"></div><div class="field"><label for="nused">כבר נוצלו</label><input id="nused" type="number" inputmode="numeric" min="0" max="100" value="0"></div></div><p class="lead" style="font-size:.82rem;margin-top:4px">"כבר נוצלו": לכרטיסייה שהתחילה לפני האפליקציה. לא נספר בהכנסות.</p>':'')+'<div class="field"><label for="nexp">בתוקף עד</label><input id="nexp" type="date" value="'+exp+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">ברירת המחדל: '+(type==='punch'?'3 חודשים':'חודש')+' מהיום. אפשר לשנות.</p>'+
-     '<p id="err" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="'+(p?'saverenew':'saveadd')+'">'+(p?'פתיחת כרטיסייה חדשה':'הוספה ופתיחת כרטיסייה')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
-    const nt=bg.querySelector('#nt');if(nt)nt.oninput=e=>total=+e.target.value||total;bg.querySelector('#nexp').onchange=e=>{if(e.target.value)exp=e.target.value};bg.querySelectorAll('[data-gender]').forEach(b=>b.onclick=e=>{e.stopPropagation();gender=b.dataset.gender;bg.querySelectorAll('[data-gender]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
-    bg.querySelectorAll('[data-type]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.dataset.type==='monthly'&&!S.studio.monthly){toast('מנוי חודשי עוד לא הופעל. אפשר להפעיל בהגדרות.');return}
-      const nn=bg.querySelector('#nn'),keep=nn?[nn.value,bg.querySelector('#np').value]:null;type=b.dataset.type;exp=iso(addMonths(today(),type==='punch'?3:1));draw();if(keep){bg.querySelector('#nn').value=keep[0];bg.querySelector('#np').value=keep[1]}});
+     '<div class="field"><label>סוג כרטיסייה</label><div class="opts">'+PROD.map(opt).join('')+'</div></div>'+
+     (!pr?'<div class="note">אין סוגי כרטיסיות פעילים. אפשר להפעיל בהגדרות.</div>':'')+
+     (pr&&pr.type==='punch'?'<div class="grid2"><div class="field"><label for="nt">מספר שיעורים</label><input id="nt" type="number" inputmode="numeric" min="1" max="100" value="'+total+'"></div><div class="field"><label for="nused">כבר נוצלו</label><input id="nused" type="number" inputmode="numeric" min="0" max="100" value="0"></div></div><p class="lead" style="font-size:.82rem;margin-top:4px">"כבר נוצלו": לכרטיסייה שהתחילה לפני האפליקציה. לא נספר בהכנסות.</p>':'')+
+     (pr?'<div class="grid2"><div class="field"><label for="nexp">בתוקף עד</label><input id="nexp" type="date" value="'+exp+'"></div><div class="field"><label for="npr">מחיר (₪)</label><input id="npr" type="number" inputmode="numeric" min="0" placeholder="לא חובה" value="'+(price!=null?price:'')+'"></div></div><p class="lead" style="font-size:.85rem;margin-top:4px">ברירת המחדל: '+(pr.months===3?'3 חודשים':'חודש')+' מהיום. אפשר לשנות.</p>':'')+
+     '<p id="err" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="'+(p?'saverenew':'saveadd')+'"'+(pr?'':' disabled')+'>'+(p?'פתיחת כרטיסייה חדשה':'הוספה ופתיחת כרטיסייה')+'</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
+    const nt=bg.querySelector('#nt');if(nt)nt.oninput=e=>total=+e.target.value||total;const ne=bg.querySelector('#nexp');if(ne)ne.onchange=e=>{if(e.target.value)exp=e.target.value};
+    const np_=bg.querySelector('#npr');if(np_)np_.oninput=e=>{price=e.target.value===''?null:Math.max(0,+e.target.value||0)};
+    bg.querySelectorAll('[data-gender]').forEach(b=>b.onclick=e=>{e.stopPropagation();gender=b.dataset.gender;bg.querySelectorAll('[data-gender]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+    bg.querySelectorAll('[data-prod]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(!prodOn(b.dataset.prod)){toast('סוג הכרטיסייה הזה כבוי. אפשר להפעיל אותו בהגדרות.');return}
+      const nn=bg.querySelector('#nn'),keep=nn?[nn.value,bg.querySelector('#np').value]:null;prod=b.dataset.prod;pr=PROD.find(x=>x.k===prod);total=pr.total;price=prodPrice(prod);exp=iso(addMonths(today(),pr.months));draw();if(keep){bg.querySelector('#nn').value=keep[0];bg.querySelector('#np').value=keep[1]}});
   };
   draw();
-  addSheet.make=pid=>({person_id:pid,type,total:type==='monthly'?0:Math.max(1,Math.min(100,total)),start_date:iso(today()),expires:exp});addSheet.gender=()=>gender;addSheet.used=()=>{const e=bg&&bg.querySelector('#nused');return e?Math.max(0,Math.min(total,+e.value||0)):0};
+  addSheet.make=pid=>({person_id:pid,type:pr.type,product:pr.k,price:price,total:pr.type==='punch'?Math.max(1,Math.min(100,total)):pr.total,start_date:iso(today()),expires:exp});addSheet.gender=()=>gender;addSheet.used=()=>{const e=bg&&bg.querySelector('#nused');return e?Math.max(0,Math.min(total,+e.value||0)):0};
 }
 function tmplSheet(id){
   const c=id?S.classes.find(x=>x.id===id):{name:'יוגה',day:0,time:'18:00',dur:60,cap:12,place:S.places[0]||''};
@@ -680,7 +695,7 @@ function waText(href,text,note){
 function waSheet(){
   const p=findP(sel),c=cur(p),s=status(c);
   let body;
-  if(c.type==='monthly')body='המנוי החודשי שלך פעיל עד '+fmt(effExpires(c))+'.';
+  if(unl(c))body='המנוי החודשי שלך פעיל עד '+fmt(effExpires(c))+'.';
   else if(s==='frozen')body='הכרטיסייה שלך מוקפאת. נותרו בה '+left(c)+' שיעורים, והתוקף יוארך כשנפשיר אותה.';
   else if(s==='done')body='ניצלת את כל '+c.total+' השיעורים בכרטיסייה. נשמח לחדש לך!';
   else if(s==='expired')body='תוקף הכרטיסייה הסתיים ב־'+fmt(c.expires)+'. נשמח לחדש לך!';
@@ -695,7 +710,7 @@ function editSheet(){
   sheet('<h3>עריכת '+esc(first(p))+'</h3><p class="lead">פרטי המתרגלת והכרטיסייה הנוכחית.</p>'+
    '<div class="field"><label for="en">שם מלא</label><input id="en" value="'+esc(p.name)+'"></div>'+
    '<div class="field"><label for="ep">טלפון</label><input id="ep" inputmode="tel" dir="ltr" style="text-align:right" value="'+esc(p.phone)+'"></div>'+'<div class="field"><label for="eg">פנייה בהודעות ובאפליקציה</label><select id="eg"><option value="f"'+(p.gender!=='m'?' selected':'')+'>בלשון נקבה</option><option value="m"'+(p.gender==='m'?' selected':'')+'>בלשון זכר</option></select></div>'+
-   (c.type==='punch'?'<div class="field"><label for="et">מספר שיעורים בכרטיסייה</label><input id="et" type="number" inputmode="numeric" min="1" max="100" value="'+c.total+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">כבר נוצלו '+c.used.length+' שיעורים.</p>':'')+
+   (!unl(c)?'<div class="field"><label for="et">מספר שיעורים בכרטיסייה</label><input id="et" type="number" inputmode="numeric" min="1" max="100" value="'+c.total+'"></div><p class="lead" style="font-size:.85rem;margin-top:4px">כבר נוצלו '+c.used.length+' שיעורים.</p>':'')+
    '<div class="field"><label for="ex">בתוקף עד</label><input id="ex" type="date" value="'+iso(c.expires)+'"></div>'+
    '<p id="eerr" style="color:var(--bad);margin:8px 0 0" hidden></p><div class="sheet-actions"><button class="btn btn-primary" data-act="saveedit">שמירה</button><button class="btn btn-soft" data-act="close">ביטול</button></div>');
 }
