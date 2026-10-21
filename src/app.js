@@ -161,6 +161,7 @@ async function loadAdmin(){
       cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,kind:x.kind||'manual',sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
+  await evLoadAdmin();
   applyBrand(brandOf(S.studio));
   try{let seen=JSON.parse(store.get('yogis-aseen')||'[]');S.anotes.filter(n=>!n.read&&!seen.includes(n.id)&&now()-n.t<6*H).slice(0,3).forEach(n=>sysNotify(n.title,n.body));store.set('yogis-aseen',JSON.stringify(S.anotes.slice(0,60).map(n=>n.id)))}catch(e){}
 }
@@ -175,6 +176,7 @@ async function loadP(){
     people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
     notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),ref:n.ref?Date.parse(n.ref):null,title:n.title,body:n.body,kind:n.kind,read:n.read}))};
   applyBrand(brandOf(S.studio));
+  await evLoadP();
   phoneNotify();
 }
 async function reload(){
@@ -490,7 +492,7 @@ async function shrinkImage(file){const url=URL.createObjectURL(file);try{const i
   const S_=256,c=document.createElement('canvas');c.width=c.height=S_;const x=c.getContext('2d');const k=Math.min(S_/img.width,S_/img.height);const w=img.width*k,h=img.height*k;x.drawImage(img,(S_-w)/2,(S_-h)/2,w,h);
   return await new Promise(r=>c.toBlob(r,'image/png'))}finally{URL.revokeObjectURL(url)}}
 function vSettings(){
-  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+'<button class="row" style="margin-top:14px" data-go="install"><span class="who"><b>התקנה על מסך הבית</b><small>הוראות התקנה של האפליקציה בטלפון</small></span></button>'+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
   '<h2>מדיניות ביטול</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="cut">ביטול חופשי <b id="cutl">'+cutTxt()+'</b></label><input type="range" id="cut" min="0" max="72" step="1" value="'+S.studio.cutoff+'" style="width:100%;accent-color:var(--sage-deep)"><div class="cutscale"><span>0</span><span>24</span><span>48</span><span>72 שעות</span></div></div><small class="lead" style="font-size:.85rem">אחרי חלון הזמן הזה ביטול מנקב שיעור, או שהמתרגל שולח בקשה עם הסבר ואת מחליטה. השינוי חל מיד על כל השיעורים, כולל הרשמות קיימות.</small></div>'+'<h2>סוגי כרטיסיות</h2><p class="lead" style="font-size:.88rem;margin-top:-4px">רק סוגים פעילים זמינים בפתיחת כרטיסייה. המחיר מוצע כברירת מחדל ואפשר לשנות אותו בכל פתיחה.</p>'+PROD.map(x=>{const on=prodOn(x.k),pc=prodPrice(x.k);return '<div class="switch prodrow'+(on?'':' off')+'"><div style="flex:1;min-width:0"><b>'+x.t+' <span class="soon-tag">'+(on?'פעיל':'כבוי')+'</span></b><small>'+x.s+'</small><label class="pricein">מחיר <input type="number" inputmode="numeric" min="0" data-pprice="'+x.k+'" value="'+(pc!=null?pc:'')+'" placeholder="—"> ₪</label></div><input type="checkbox" class="tog" data-ptog="'+x.k+'"'+(on?' checked':'')+' aria-label="הפעלת '+x.t+'"></div>'}).join('')+
@@ -543,6 +545,7 @@ function vP(){
    '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה '+cutTxt()+'.</p>'+
    (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
+   pEventsBlock()+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
    '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת '+esc(appName())+' על מסך הבית</button>'+(adminSess?'':'<br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="toadmin">כניסת מנהל</button>')+'</div>';
 }
@@ -554,14 +557,15 @@ function render(){
   else if(loadErr&&(mode==='p'||mode==='admin')&&!S.classes.length)html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>לא הצלחנו לטעון</h1><p class="lead">'+esc(loadErr)+'</p><div class="sheet-actions"><button class="btn btn-primary" data-act="refresh">ניסיון נוסף</button>'+(mode==='p'?'<button class="btn btn-soft" data-act="forget">כניסת מורה</button>':'')+'</div>';
   else if(mode==='login')html=vLogin();
   else if(mode==='platform')html=vPlatform()+'<div class="foot"><button class="linkbtn" data-act="tostudio">מעבר לסטודיו שלי</button><br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="logout">יציאה מהחשבון</button></div>';
+  else if(mode==='pubev')html=vPublicEvent();
   else if(mode==='onboard')html=vOnboard();
   else if(mode==='newpw')html=vNewPw();
   else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">'+(PLATFORM?'החשבון הזה לא מוגדר כמנהל הפלטפורמה.':'החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.')+'</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
-  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs}[view]||vHome)();
+  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs,events:vEvents,event:vEvent,evedit:vEvEdit,rdesign:vRetreatDesign}[view]||vHome)();
   app.innerHTML=html;app.classList.toggle('pmode',mode!=='admin');
   document.getElementById('nav').hidden=mode!=='admin';
-  const tab=view==='person'?'people':view==='regs'?'money':view;
+  const tab=view==='person'?'people':view==='regs'?'money':['event','evedit','rdesign'].includes(view)?'events':view;
   document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
@@ -586,6 +590,7 @@ function render(){
     q1('.pa-unlt').addEventListener('change',e=>{q1('.pa-trow').hidden=e.target.checked});
     q1('.pa-unlm').addEventListener('change',e=>{q1('.pa-lrow').hidden=e.target.checked});
     q1('.pa-days').addEventListener('input',e=>{const v=+e.target.value;q1('.pa-dl').textContent=v===0?'0 (הסתיים)':v})});
+  evBind();
   const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr'),ok=document.getElementById('lok');er.hidden=true;ok.hidden=true;
     const email=document.getElementById('em').value.trim(),pwEl=document.getElementById('pw'),password=pwEl?pwEl.value:'';
     const btn=lf.querySelector('button[type=submit]');btn.disabled=true;
@@ -786,6 +791,7 @@ function notesSheet(){
 
 /* ---------- clicks ---------- */
 function onClick(e){
+  const ev_=e.target.closest('[data-ev]');if(ev_){evAct(ev_);return}
   const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();if(BD){BD=null;applyBrand(brandOf(S.studio))}view=d.go;render();window.scrollTo(0,0)}
@@ -901,6 +907,7 @@ async function doAct(a,t,d){
 document.addEventListener('click',e=>{if(e.target.closest('.sheet-bg'))return;onClick(e)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
+/*@MODULES@*/
 /* ---------- start ---------- */
 async function startAdmin(want){
   mode='loading';store.set(MODE_KEY,'admin');render();
@@ -930,6 +937,7 @@ function pickSheet(){
   sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){mode='newpw';render()}});
   if(/type=recovery/.test(location.hash)){mode='newpw';render();return}
   const u=new URLSearchParams(location.search),ut=u.get('t'),saved=store.get(TOKEN_KEY),pref=store.get(MODE_KEY);
+  if(evRoute){await startPublicEvent();return}
   render();
   setInterval(()=>{if(!bg&&mode==='p'&&document.visibilityState==='visible')reload()},60000);
   if(PLATFORM||u.has('admin')||(pref==='admin'&&(!ut||ut===saved))){await startAdmin();return}

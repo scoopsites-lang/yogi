@@ -290,6 +290,45 @@ button.stat span::after{content:' ›';opacity:.5}
 .prodrow.off b{color:var(--muted)}.prodrow{margin-top:8px}
 .pricein{display:flex;width:fit-content;align-items:center;gap:6px;margin-top:6px;font-size:.85rem;color:var(--muted)}.pricein input{width:84px;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:5px 8px;font:inherit;color:var(--ink)}
 .homeicon{display:inline-flex;flex-direction:column;align-items:center;gap:2px;font-size:.7rem;color:var(--muted)}.homeicon img{border-radius:11px;box-shadow:var(--shadow)}
+/* ---- events ---- */
+.stats4{grid-template-columns:repeat(4,1fr)}@media(max-width:560px){.stats4{grid-template-columns:1fr 1fr}}
+.seg.seg3{grid-template-columns:repeat(3,1fr)}.seg button .soon-tag{font-size:.62rem;padding:1px 5px}
+.evtop{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap}.evtop .lead{flex:1 1 200px}
+.evcard{display:flex;gap:12px;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;text-align:start;width:100%;font:inherit;color:inherit;cursor:pointer}
+.evthumb{flex:none;width:76px;min-height:76px;border-radius:12px;background:var(--surface-2) center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.evinfo{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.evinfo b{font-size:1.02rem}.evinfo small{color:var(--muted);font-size:.84rem}
+.evmeta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.8rem;color:var(--muted);margin-top:2px}.evmeta i{font-style:normal}
+.soonbox{box-shadow:none;border:1px dashed var(--line);margin-top:14px}.soonbox h3{margin:8px 0 2px}
+.evhero{height:170px;border-radius:18px;background:var(--surface-2) center/cover no-repeat;margin-top:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted)}.evhero.big{height:220px}
+.sharebox{margin-top:14px;padding:12px;border-radius:16px;background:var(--sage-soft)}.sharebox .msg{margin:0;word-break:break-all}
+.reglist{gap:8px;margin-top:10px}.regrow{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.regrow .who{min-width:0}.regrow .who b{display:block}.regrow .who small{color:var(--muted);font-size:.82rem}.regrow a{color:inherit}
+.regact{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.regact .pill{border:0;cursor:pointer;font:inherit;font-size:.78rem}
+.iconbtn.sm{min-height:32px;padding:0 9px}
+.grid3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px}@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}.grid3>:first-child{grid-column:1/-1}}
+.imgpick{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.imgpick .evhero{width:100%;margin-top:0}.imgpick label{cursor:pointer}
+.qlist{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}.qrow{display:flex;gap:6px}.qrow input{flex:1}
+.anslist{display:grid;gap:8px;margin-top:10px}.anslist div{background:var(--surface-2);border-radius:12px;padding:8px 10px}.anslist small{display:block;color:var(--muted)}
+.chip.sent{background:var(--sage-soft);border-color:var(--sage)}
+.evtitle{font-size:2rem;margin:14px 0 4px}
+.evfacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.evfacts span{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.88rem}
+.pricebox{margin-top:14px;padding:14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}.pricebox b{font-family:var(--f-display);font-size:1.9rem;font-weight:400;color:var(--clay)}.pricebox small{display:block;color:var(--muted);font-size:.85rem}
+.evdesc{white-space:pre-wrap;margin-top:16px;line-height:1.7}
+.checkline{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:.92rem;cursor:pointer}.checkline input{margin-top:4px;width:18px;height:18px;accent-color:var(--sage-deep);flex:none}
+.donebox{text-align:center;margin-top:30px}.donecheck{width:64px;height:64px;border-radius:50%;background:var(--sage-soft);color:var(--sage-deep);display:inline-flex;align-items:center;justify-content:center}.donecheck svg{width:34px;height:34px}
+/* ---- retreat design ---- */
+.rhero{height:150px;border-radius:18px;background:linear-gradient(160deg,var(--sage-soft),var(--lav-soft));color:var(--sage-deep);overflow:hidden;display:flex;align-items:flex-end;margin-top:10px}.rhero.big{height:210px}.rhero svg{width:100%;height:100%}
+.tabsx{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;margin-top:10px;scrollbar-width:none}.tabsx button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font:inherit;font-size:.88rem;color:var(--muted)}.tabsx button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rform .card{margin-top:10px;padding:12px}.itrow{display:grid;grid-template-columns:96px 1fr;gap:8px;margin-top:8px}.itrow input{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px;font:inherit;color:var(--ink);min-width:0}
+.occ{margin-top:10px}.occh{display:flex;justify-content:space-between;font-size:.9rem}
+.rday{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:8px}.rday summary{font-weight:700;cursor:pointer}.ritem{display:grid;grid-template-columns:56px 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.ritem:first-of-type{margin-top:8px}.ritem b{color:var(--muted);font-weight:600}
+.roomcard{display:flex;justify-content:space-between;gap:12px;align-items:center;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;text-align:start;width:100%;font:inherit;color:inherit;cursor:pointer}.roomcard.on{border-color:var(--sage-deep);background:var(--sage-soft)}.roomcard.sel{margin-top:8px}
+.roomcard small{display:block;color:var(--muted);font-size:.84rem}.roomcard small.warnx{color:var(--clay)}.rprice{text-align:end;flex:none}.rprice b{display:block;font-size:1.1rem}.rprice s{color:var(--muted);font-size:.82rem}
+.poltable{display:grid;gap:6px}.poltable div{display:flex;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.9rem}.poltable span{color:var(--muted);text-align:end}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.steps span{font-size:.8rem;padding:5px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted)}.steps .on{background:var(--ink);color:var(--bg)}.steps .done{background:var(--sage-soft);color:var(--sage-deep)}
+.summary{display:grid;gap:6px;margin-bottom:12px}.summary div{display:flex;justify-content:space-between}.summary .tot{border-top:1px solid var(--line);padding-top:8px;font-size:1.1rem}
+.countdown{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.countdown div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}.countdown b{display:block;font-size:1.05rem}.countdown small{color:var(--muted);font-size:.78rem}
+.checklist .checkline{margin-top:8px}
 .pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px;border-radius:0!important}.slugin input:focus,.slugin input:focus-visible{outline:none}.slugin:focus-within{outline:2px solid var(--sage-deep);outline-offset:2px}
 </style>
@@ -303,7 +342,7 @@ button.stat span::after{content:' ›';opacity:.5}
   <button data-go="sched"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/></svg>לו״ז</button>
   <button data-go="people"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg>מתרגלים</button>
   <button data-go="money"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V6h5a3 3 0 0 1 3 3v6M18 5v13h-5a3 3 0 0 1-3-3v-2"/></svg>הכנסות</button>
-  <button data-go="install"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7m-3-3 3 3 3-3M10 18.5h4"/></svg>התקנה</button>
+  <button data-go="events"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>אירועים</button>
   <button data-go="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>הגדרות</button>
 </div></nav>
 
@@ -472,6 +511,7 @@ async function loadAdmin(){
       cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,kind:x.kind||'manual',sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
+  await evLoadAdmin();
   applyBrand(brandOf(S.studio));
   try{let seen=JSON.parse(store.get('yogis-aseen')||'[]');S.anotes.filter(n=>!n.read&&!seen.includes(n.id)&&now()-n.t<6*H).slice(0,3).forEach(n=>sysNotify(n.title,n.body));store.set('yogis-aseen',JSON.stringify(S.anotes.slice(0,60).map(n=>n.id)))}catch(e){}
 }
@@ -486,6 +526,7 @@ async function loadP(){
     people:[{id:me.id,name:me.name,gender:me.gender||'f',cards:card?[card]:[]}],
     notes:(v.notes||[]).map(n=>({id:n.id,pid:me.id,t:Date.parse(n.t),ref:n.ref?Date.parse(n.ref):null,title:n.title,body:n.body,kind:n.kind,read:n.read}))};
   applyBrand(brandOf(S.studio));
+  await evLoadP();
   phoneNotify();
 }
 async function reload(){
@@ -801,7 +842,7 @@ async function shrinkImage(file){const url=URL.createObjectURL(file);try{const i
   const S_=256,c=document.createElement('canvas');c.width=c.height=S_;const x=c.getContext('2d');const k=Math.min(S_/img.width,S_/img.height);const w=img.width*k,h=img.height*k;x.drawImage(img,(S_-w)/2,(S_-h)/2,w,h);
   return await new Promise(r=>c.toBlob(r,'image/png'))}finally{URL.revokeObjectURL(url)}}
 function vSettings(){
-  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+'<button class="row" style="margin-top:14px" data-go="install"><span class="who"><b>התקנה על מסך הבית</b><small>הוראות התקנה של האפליקציה בטלפון</small></span></button>'+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
   '<h2>מדיניות ביטול</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="cut">ביטול חופשי <b id="cutl">'+cutTxt()+'</b></label><input type="range" id="cut" min="0" max="72" step="1" value="'+S.studio.cutoff+'" style="width:100%;accent-color:var(--sage-deep)"><div class="cutscale"><span>0</span><span>24</span><span>48</span><span>72 שעות</span></div></div><small class="lead" style="font-size:.85rem">אחרי חלון הזמן הזה ביטול מנקב שיעור, או שהמתרגל שולח בקשה עם הסבר ואת מחליטה. השינוי חל מיד על כל השיעורים, כולל הרשמות קיימות.</small></div>'+'<h2>סוגי כרטיסיות</h2><p class="lead" style="font-size:.88rem;margin-top:-4px">רק סוגים פעילים זמינים בפתיחת כרטיסייה. המחיר מוצע כברירת מחדל ואפשר לשנות אותו בכל פתיחה.</p>'+PROD.map(x=>{const on=prodOn(x.k),pc=prodPrice(x.k);return '<div class="switch prodrow'+(on?'':' off')+'"><div style="flex:1;min-width:0"><b>'+x.t+' <span class="soon-tag">'+(on?'פעיל':'כבוי')+'</span></b><small>'+x.s+'</small><label class="pricein">מחיר <input type="number" inputmode="numeric" min="0" data-pprice="'+x.k+'" value="'+(pc!=null?pc:'')+'" placeholder="—"> ₪</label></div><input type="checkbox" class="tog" data-ptog="'+x.k+'"'+(on?' checked':'')+' aria-label="הפעלת '+x.t+'"></div>'}).join('')+
@@ -854,6 +895,7 @@ function vP(){
    '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה '+cutTxt()+'.</p>'+
    (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
+   pEventsBlock()+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
    '<div class="foot"><button class="linkbtn" data-act="pinstall">התקנת '+esc(appName())+' על מסך הבית</button>'+(adminSess?'':'<br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="toadmin">כניסת מנהל</button>')+'</div>';
 }
@@ -865,14 +907,15 @@ function render(){
   else if(loadErr&&(mode==='p'||mode==='admin')&&!S.classes.length)html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>לא הצלחנו לטעון</h1><p class="lead">'+esc(loadErr)+'</p><div class="sheet-actions"><button class="btn btn-primary" data-act="refresh">ניסיון נוסף</button>'+(mode==='p'?'<button class="btn btn-soft" data-act="forget">כניסת מורה</button>':'')+'</div>';
   else if(mode==='login')html=vLogin();
   else if(mode==='platform')html=vPlatform()+'<div class="foot"><button class="linkbtn" data-act="tostudio">מעבר לסטודיו שלי</button><br><button class="linkbtn" style="color:var(--muted);font-weight:500" data-act="logout">יציאה מהחשבון</button></div>';
+  else if(mode==='pubev')html=vPublicEvent();
   else if(mode==='onboard')html=vOnboard();
   else if(mode==='newpw')html=vNewPw();
   else if(mode==='noadmin')html='<div class="top"><div class="brand">'+logo(40)+'<div><b>YoGis</b></div></div></div><h1>אין הרשאת ניהול</h1><p class="lead">'+(PLATFORM?'החשבון הזה לא מוגדר כמנהל הפלטפורמה.':'החשבון הזה מחובר, אבל הוא לא מוגדר כמנהלת הסטודיו.')+'</p><div class="sheet-actions"><button class="btn btn-soft" data-act="logout">יציאה</button></div>';
   else if(mode==='p')html=view==='install'?vInstall():vP();
-  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs}[view]||vHome)();
+  else html=({home:vHome,sched:vSched,people:vPeople,person:vPerson,install:vInstall,settings:vSettings,money:vMoney,regs:vRegs,events:vEvents,event:vEvent,evedit:vEvEdit,rdesign:vRetreatDesign}[view]||vHome)();
   app.innerHTML=html;app.classList.toggle('pmode',mode!=='admin');
   document.getElementById('nav').hidden=mode!=='admin';
-  const tab=view==='person'?'people':view==='regs'?'money':view;
+  const tab=view==='person'?'people':view==='regs'?'money':['event','evedit','rdesign'].includes(view)?'events':view;
   document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   const qi=document.getElementById('q');
   if(qi)qi.addEventListener('input',e=>{q_=e.target.value;const pos=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)});
@@ -897,6 +940,7 @@ function render(){
     q1('.pa-unlt').addEventListener('change',e=>{q1('.pa-trow').hidden=e.target.checked});
     q1('.pa-unlm').addEventListener('change',e=>{q1('.pa-lrow').hidden=e.target.checked});
     q1('.pa-days').addEventListener('input',e=>{const v=+e.target.value;q1('.pa-dl').textContent=v===0?'0 (הסתיים)':v})});
+  evBind();
   const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr'),ok=document.getElementById('lok');er.hidden=true;ok.hidden=true;
     const email=document.getElementById('em').value.trim(),pwEl=document.getElementById('pw'),password=pwEl?pwEl.value:'';
     const btn=lf.querySelector('button[type=submit]');btn.disabled=true;
@@ -1097,6 +1141,7 @@ function notesSheet(){
 
 /* ---------- clicks ---------- */
 function onClick(e){
+  const ev_=e.target.closest('[data-ev]');if(ev_){evAct(ev_);return}
   const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();if(BD){BD=null;applyBrand(brandOf(S.studio))}view=d.go;render();window.scrollTo(0,0)}
@@ -1212,6 +1257,334 @@ async function doAct(a,t,d){
 document.addEventListener('click',e=>{if(e.target.closest('.sheet-bg'))return;onClick(e)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
+/* ================= EVENTS: workshops (live), courses (soon), retreats (design preview) ================= */
+let EV={tab:'workshop',sel:null,edit:null,rtab:'list',rscreen:null,rstep:1,rbtab:'details',regTab:'registered',pub:null,pubDone:null,pevents:[]};
+const EVST={draft:['טיוטה','expired'],published:['פורסם','active'],closed:['ההרשמה סגורה','soon'],cancelled:['בוטל','expired']};
+const evUrl=e=>appUrl()+S.studio.slug+'/e/'+e.slug;
+const dtLong=ts=>{const d=new Date(ts);return 'יום '+DAYS[d.getDay()]+', '+d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()+' · '+hm(ts)};
+const evPriceNow=e=>e.early_price!=null&&e.early_until&&today()<=parseD(e.early_until)?e.early_price:e.price;
+const I2={
+ cal:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>',
+ pin:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+ user:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
+ seat:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg>',
+ share:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
+ img:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>'
+};
+
+/* ---------- loading ---------- */
+async function evLoadAdmin(){
+  try{
+    const ev=await q(sb.from('events').select('*').eq('studio_id',SID).order('starts_at',{ascending:false}));
+    const ids=ev.map(e=>e.id);
+    const rg=ids.length?await q(sb.from('event_regs').select('*').in('event_id',ids).order('created_at')):[];
+    S.events=ev.map(e=>Object.assign(e,{regs:rg.filter(r=>r.event_id===e.id)}));
+  }catch(e){S.events=S.events||[]}
+}
+async function evLoadP(){try{EV.pevents=await q(sb.rpc('p_events',{p_token:token}))||[]}catch(e){EV.pevents=[]}}
+const evFind=id=>(S.events||[]).find(e=>e.id===id);
+const regsOf=(e,st)=>e.regs.filter(r=>r.status===st);
+
+/* ---------- admin: list ---------- */
+function vEvents(){
+  const tabs=[['workshop','סדנאות'],['course','קורסים'],['retreat','ריטריטים']];
+  let body='';
+  if(EV.tab==='workshop'){
+    const all=(S.events||[]).filter(e=>e.kind==='workshop'),up=all.filter(e=>Date.parse(e.starts_at)>now()-DAY&&e.status!=='cancelled').sort((a,b)=>Date.parse(a.starts_at)-Date.parse(b.starts_at)),past=all.filter(e=>!up.includes(e));
+    const card=e=>{const st=EVST[e.status],n=regsOf(e,'registered').length,w=regsOf(e,'waitlist').length,rev=regsOf(e,'registered').reduce((s,r)=>s+(r.price||0),0);
+      return '<button class="evcard" data-ev="open" data-id="'+e.id+'">'+(e.image_url?'<span class="evthumb" style="background-image:url(\''+esc(e.image_url)+'\')"></span>':'<span class="evthumb ph">'+I2.img+'</span>')+
+       '<span class="evinfo"><b>'+esc(e.title)+'</b><small>'+dtLong(Date.parse(e.starts_at))+(e.place?' · '+esc(e.place):'')+'</small>'+
+       '<span class="evmeta"><i class="pill p-'+st[1]+'">'+st[0]+'</i><span>'+n+(e.capacity?' / '+e.capacity:'')+' נרשמו</span>'+(w?'<span>'+w+' בהמתנה</span>':'')+(rev?'<span>'+shekel(rev)+'</span>':'')+'</span></span></button>'};
+    const can=S.studio.plan==='plus'||!all.some(e=>e.status!=='cancelled');
+    body='<div class="evtop"><p class="lead" style="margin:0">סדנה עם עמוד הרשמה משלה, מקומות מוגבלים, רשימת המתנה ותזכורות.</p><button class="btn btn-primary" data-ev="new"'+(can?'':' data-locked="1"')+'>'+I.plus+'סדנה חדשה</button></div>'+
+     (S.studio.plan!=='plus'?'<div class="note">בחבילה הנוכחית אפשר לפתוח סדנה אחת. סדנאות ללא הגבלה, קורסים וריטריטים בחבילת <b>מתקדם+</b>.</div>':'')+
+     (up.length?'<div class="list" style="gap:10px;margin-top:14px">'+up.map(card).join('')+'</div>':'<div class="empty">עדיין אין סדנאות קרובות.<br>לוחצים על "סדנה חדשה" כדי להתחיל.</div>')+
+     (past.length?'<h2>אירועים שעברו ומבוטלים</h2><div class="list" style="gap:10px">'+past.map(card).join('')+'</div>':'');
+  }else if(EV.tab==='course'){
+    body='<div class="card soonbox"><span class="soon-tag">בקרוב</span><h3>קורסים</h3><p class="lead">סדרת מפגשים בתאריכים קבועים, הרשמה לכל הסדרה.</p><ul class="pitch"><li>לוח מפגשים ונוכחות לכל מפגש</li><li>שיעור השלמה למי שהחסיר</li><li>הצטרפות באמצע במחיר יחסי</li><li>תנאי קדם ותעודת סיום אוטומטית</li><li>תשלום בכמה תשלומים</li></ul></div>';
+  }else{
+    const sc=[['builder','בניית ריטריט','פרטים, חדרים ומחירים, לו״ז, טופס, תשלומים ועלויות'],['dash','לוח הבקרה של הריטריט','תפוסת חדרים, תשלומים, תזונה, הגעה ורשימת משתתפים'],['public','עמוד הריטריט הציבורי','העמוד שמשתפים, כולל תהליך ההרשמה'],['mine','מסך המשתתף','מה שהמתרגל רואה אחרי ההרשמה']];
+    body='<div class="banner" style="background:var(--lav-soft)"><div><b>תצוגת עיצוב</b><small>מסכי הריטריט מוצגים עם נתוני דוגמה כדי לעבוד על העיצוב. שום דבר כאן לא נשמר ולא נשלח.</small></div></div><div class="list" style="gap:10px;margin-top:12px">'+
+     sc.map(x=>'<button class="row" data-ev="rscreen" data-s="'+x[0]+'"><span class="who"><b>'+x[1]+'</b><small>'+x[2]+'</small></span><span style="color:var(--muted)">'+I.back.replace('M9 6l6 6-6 6','M15 6l-6 6 6 6')+'</span></button>').join('')+'</div>';
+  }
+  return header()+'<h1>אירועים</h1><div class="seg seg3">'+tabs.map(t=>'<button data-ev="tab" data-t="'+t[0]+'" aria-pressed="'+(EV.tab===t[0])+'">'+t[1]+(t[0]==='course'?' <small class="soon-tag">בקרוב</small>':t[0]==='retreat'?' <small class="soon-tag">עיצוב</small>':'')+'</button>').join('')+'</div>'+body;
+}
+
+/* ---------- admin: event detail ---------- */
+function vEvent(){
+  const e=evFind(EV.sel);if(!e){view='events';return vEvents()}
+  const st=EVST[e.status],reg=regsOf(e,'registered'),wl=regsOf(e,'waitlist'),cn=regsOf(e,'cancelled');
+  const paid=reg.filter(r=>r.paid==='paid'||r.paid==='punch').length,rev=reg.reduce((s,r)=>s+(r.price||0),0),started=Date.parse(e.starts_at)<=now();
+  const list={registered:reg,waitlist:wl,cancelled:cn}[EV.regTab]||reg;
+  const PAID={unpaid:['לא שולם','expired'],paid:['שולם','active'],refunded:['הוחזר','soon'],punch:['ניקוב','active']};
+  const rrow=r=>'<div class="regrow"><div class="who"><b>'+esc(r.name)+(r.person_id?' <span class="soon-tag">מתרגל/ת</span>':'')+'</b><small><a href="tel:'+esc(r.phone)+'" dir="ltr">'+esc(r.phone)+'</a>'+(r.email?' · <span dir="ltr">'+esc(r.email)+'</span>':'')+(r.price!=null?' · '+shekel(r.price):'')+(r.promoted_at?' · עבר מההמתנה':'')+'</small></div><div class="regact">'+
+    (r.status==='registered'?'<button class="pill p-'+PAID[r.paid][1]+'" data-ev="paid" data-id="'+r.id+'">'+PAID[r.paid][0]+'</button>'+(started?'<button class="chip" data-ev="att" data-id="'+r.id+'" aria-pressed="'+r.attended+'">'+(r.attended?'הגיע/ה':'נוכחות')+'</button>':''):'')+
+    (r.status==='waitlist'?'<button class="btn btn-soft btn-sm" data-ev="promote" data-id="'+r.id+'">העברה לנרשמים</button>':'')+
+    '<button class="iconbtn sm" data-ev="regmore" data-id="'+r.id+'" aria-label="עוד">⋯</button></div></div>';
+  return header()+'<button class="back" data-ev="back">'+I.back+'כל האירועים</button>'+
+   (e.image_url?'<div class="evhero" style="background-image:url(\''+esc(e.image_url)+'\')"></div>':'')+
+   '<div class="card-head" style="margin-top:8px"><div><h1 style="margin:0">'+esc(e.title)+'</h1><small class="lead">'+dtLong(Date.parse(e.starts_at))+(e.place?' · '+esc(e.place):'')+'</small></div><span class="pill p-'+st[1]+'">'+st[0]+'</span></div>'+
+   '<div class="stats stats4"><div class="stat sage"><b>'+reg.length+(e.capacity?'<small>/'+e.capacity+'</small>':'')+'</b><span>נרשמו</span></div><div class="stat lav"><b>'+wl.length+'</b><span>בהמתנה</span></div><div class="stat"><b>'+paid+'</b><span>שילמו</span></div><div class="stat"><b>'+shekel(rev)+'</b><span>צפי הכנסה</span></div></div>'+
+   (e.status==='draft'?'<div class="banner" style="background:var(--warn-soft)"><div><b>הסדנה עדיין טיוטה</b><small>עמוד ההרשמה לא פתוח לציבור עד שמפרסמים.</small></div><button class="btn btn-primary btn-sm" data-ev="status" data-s="published">פרסום</button></div>':
+    '<div class="sharebox"><div class="msg" dir="ltr">'+esc(evUrl(e))+'</div><div class="sheet-actions" style="margin-top:8px"><button class="btn btn-primary" data-ev="share">'+I2.share+'שיתוף ב־WhatsApp</button><button class="btn btn-soft" data-ev="copy">העתקת קישור</button><a class="btn btn-soft" target="_blank" rel="noopener" href="'+esc(evUrl(e))+'">צפייה בעמוד</a></div></div>')+
+   '<div class="sheet-actions" style="margin-top:12px"><button class="btn btn-soft" data-ev="edit">עריכת הסדנה</button>'+(reg.length?'<button class="btn btn-soft" data-ev="msgall">הודעה לנרשמים</button><button class="btn btn-soft" data-ev="csv">ייצוא לאקסל</button>':'')+
+   (e.status==='published'?'<button class="btn btn-soft" data-ev="status" data-s="closed">סגירת ההרשמה</button>':e.status==='closed'?'<button class="btn btn-soft" data-ev="status" data-s="published">פתיחת ההרשמה מחדש</button>':'')+
+   (e.status!=='cancelled'?'<button class="btn btn-soft" style="color:var(--bad)" data-ev="cancelev">ביטול הסדנה</button>':'')+'</div>'+
+   '<div class="seg seg3" style="margin-top:18px">'+[['registered','נרשמו',reg.length],['waitlist','המתנה',wl.length],['cancelled','בוטלו',cn.length]].map(t=>'<button data-ev="regtab" data-t="'+t[0]+'" aria-pressed="'+(EV.regTab===t[0])+'">'+t[1]+' · '+t[2]+'</button>').join('')+'</div>'+
+   '<div class="list reglist">'+(list.length?list.map(rrow).join(''):'<div class="empty">'+(EV.regTab==='registered'?'עדיין אין נרשמים. משתפים את הקישור כדי להתחיל.':'אין כאן אף אחד.')+'</div>')+'</div>';
+}
+
+/* ---------- admin: editor ---------- */
+function slugify(s){const d=new Date();return 'w-'+d.getFullYear().toString().slice(2)+p2(d.getMonth()+1)+p2(d.getDate())+'-'+Math.random().toString(36).slice(2,6)}
+function vEvEdit(){
+  const e=EV.edit;if(!e){view='events';return vEvents()}
+  const sd=new Date(Date.parse(e.starts_at)),ed=e.ends_at?new Date(Date.parse(e.ends_at)):null;
+  const tog=(k,t,s)=>'<div class="switch"><div><b>'+t+'</b><small>'+s+'</small></div><input type="checkbox" class="tog" data-ef="'+k+'"'+(e[k]?' checked':'')+'></div>';
+  return header()+'<button class="back" data-ev="'+(e.id?'open':'back')+'" data-id="'+(e.id||'')+'">'+I.back+(e.id?'חזרה לסדנה':'כל האירועים')+'</button><h1>'+(e.id?'עריכת סדנה':'סדנה חדשה')+'</h1>'+
+   '<div class="card evform" style="box-shadow:none;border:1px solid var(--line)">'+
+   '<div class="imgpick">'+(e.image_url?'<div class="evhero" style="background-image:url(\''+esc(e.image_url)+'\')"></div>':'<div class="evhero ph">'+I2.img+'<small>תמונת שער (לא חובה)</small></div>')+'<label class="btn btn-soft btn-sm">'+(e.image_url?'החלפת תמונה':'העלאת תמונה')+'<input type="file" id="evimg" accept="image/*" hidden></label>'+(e.image_url?'<button class="btn btn-soft btn-sm" data-ev="imgdel">הסרה</button>':'')+'</div>'+
+   '<div class="field"><label for="ef-title">שם הסדנה</label><input id="ef-title" data-ef="title" maxlength="80" value="'+esc(e.title||'')+'" placeholder="לדוגמה: סדנת נשימה ומדיטציה"></div>'+
+   '<div class="field"><label for="ef-sub">משפט קצר</label><input id="ef-sub" data-ef="subtitle" maxlength="140" value="'+esc(e.subtitle||'')+'" placeholder="מה מחכה למשתתפים, במשפט אחד"></div>'+
+   '<div class="grid3"><div class="field"><label>תאריך</label><input type="date" data-ef="date" value="'+iso(sd.getTime())+'"></div><div class="field"><label>שעת התחלה</label><input type="time" data-ef="time" value="'+hm(sd.getTime())+'"></div><div class="field"><label>שעת סיום</label><input type="time" data-ef="etime" value="'+(ed?hm(ed.getTime()):'')+'"></div></div>'+
+   '<div class="grid2"><div class="field"><label>מקום</label><input data-ef="place" list="evplaces" value="'+esc(e.place||'')+'" placeholder="'+esc(S.places[0]||'הסטודיו')+'"><datalist id="evplaces">'+S.places.map(p=>'<option value="'+esc(p)+'">').join('')+'</datalist></div><div class="field"><label>מנחה</label><input data-ef="teacher" value="'+esc(e.teacher||'')+'" placeholder="'+esc(S.studio.teacher)+'"></div></div>'+
+   '<div class="field"><label>תיאור</label><textarea data-ef="description" rows="5" maxlength="4000" placeholder="מה נעשה בסדנה, למי היא מתאימה, מה להביא">'+esc(e.description||'')+'</textarea></div>'+
+   '<h2>מקומות ומחיר</h2>'+
+   '<div class="grid2"><div class="field"><label>מספר מקומות</label><input type="number" min="0" inputmode="numeric" data-ef="capacity" value="'+(e.capacity||'')+'" placeholder="ללא הגבלה"></div><div class="field"><label>מחיר (₪)</label><input type="number" min="0" inputmode="numeric" data-ef="price" value="'+(e.price!=null?e.price:'')+'" placeholder="חינם"></div></div>'+
+   '<p class="lead" style="font-size:.82rem;margin:4px 0 0">כשהמקומות מתמלאים, נרשמים חדשים נכנסים לרשימת המתנה ועוברים אוטומטית כשמתפנה מקום.</p>'+
+   '<div class="grid2"><div class="field"><label>מחיר מוקדם (₪)</label><input type="number" min="0" inputmode="numeric" data-ef="early_price" value="'+(e.early_price!=null?e.early_price:'')+'" placeholder="לא חובה"></div><div class="field"><label>עד תאריך</label><input type="date" data-ef="early_until" value="'+(e.early_until||'')+'"></div></div>'+
+   '<div class="field"><label>מחיר למתרגלים עם כרטיסייה פעילה (₪)</label><input type="number" min="0" inputmode="numeric" data-ef="member_price" value="'+(e.member_price!=null?e.member_price:'')+'" placeholder="לא חובה · מזוהים אוטומטית לפי הטלפון"></div>'+
+   '<h2>טופס ההרשמה</h2><p class="lead" style="font-size:.85rem;margin-top:-4px">שם וטלפון תמיד נדרשים. אימייל אופציונלי.</p>'+
+   tog('ask_health','הצהרת בריאות','המשתתף מאשר שהוא כשיר להשתתף ומעדכן על מגבלות')+tog('ask_emergency','איש קשר לחירום','שם וטלפון של מי לפנות אליו במקרה הצורך')+
+   '<div class="field"><label>שאלות נוספות</label><div class="qlist">'+(e.questions||[]).map((qq,i)=>'<div class="qrow"><input data-eq="'+i+'" value="'+esc(qq)+'" maxlength="120" placeholder="שאלה"><button class="iconbtn sm" data-ev="qdel" data-i="'+i+'" aria-label="הסרה">×</button></div>').join('')+'</div>'+((e.questions||[]).length<5?'<button class="btn btn-soft btn-sm" data-ev="qadd">'+I.plus+'הוספת שאלה</button>':'')+'</div>'+
+   '<div class="field"><label>קישור לקבוצת WhatsApp של הסדנה</label><input data-ef="wa_group" dir="ltr" value="'+esc(e.wa_group||'')+'" placeholder="https://chat.whatsapp.com/…"><small class="lead" style="font-size:.8rem">יוצג לנרשמים במסך האישור.</small></div>'+
+   '<div class="field"><label>כתובת העמוד</label><div class="slugin" dir="ltr"><span>/'+esc(S.studio.slug)+'/e/</span><input data-ef="slug" value="'+esc(e.slug)+'" maxlength="42" autocapitalize="off" spellcheck="false"></div></div>'+
+   '<p id="everr" style="color:var(--bad);margin:10px 0 0" hidden></p>'+
+   '<div class="sheet-actions" style="margin-top:16px">'+(e.status==='draft'||!e.id?'<button class="btn btn-primary" data-ev="save" data-pub="1">שמירה ופרסום</button><button class="btn btn-soft" data-ev="save">שמירה כטיוטה</button>':'<button class="btn btn-primary" data-ev="save">שמירת השינויים</button>')+'</div></div>';
+}
+function evCollect(){const e=EV.edit;
+  document.querySelectorAll('[data-ef]').forEach(el=>{const k=el.dataset.ef;if(el.type==='checkbox')e[k]=el.checked;else e['_'+k]=el.value});
+  document.querySelectorAll('[data-eq]').forEach(el=>{e.questions[+el.dataset.eq]=el.value});
+  return e}
+function evPayload(){const e=evCollect(),num=v=>v===''||v==null?null:Math.max(0,Math.round(+v));
+  const title=(e._title||'').trim();if(title.length<2)throw new Error('צריך שם לסדנה');
+  if(!e._date||!e._time)throw new Error('צריך תאריך ושעת התחלה');
+  const st=new Date(e._date+'T'+e._time);let en=null;if(e._etime){en=new Date(e._date+'T'+e._etime);if(en<=st)en=new Date(en.getTime()+DAY)}
+  const slug=(e._slug||'').toLowerCase().replace(/[^a-z0-9-]/g,'');if(!/^[a-z0-9][a-z0-9-]{1,40}[a-z0-9]$/.test(slug))throw new Error('כתובת העמוד: אותיות באנגלית, מספרים ומקף');
+  const ep=num(e._early_price);if(ep!=null&&!e._early_until)throw new Error('למחיר המוקדם צריך תאריך סיום');
+  return{studio_id:SID,kind:'workshop',title,subtitle:(e._subtitle||'').trim()||null,description:(e._description||'').trim()||null,image_url:e.image_url||null,
+    teacher:(e._teacher||'').trim()||null,place:(e._place||'').trim()||null,starts_at:st.toISOString(),ends_at:en?en.toISOString():null,
+    capacity:num(e._capacity)||0,price:num(e._price),early_price:ep,early_until:ep!=null?e._early_until:null,member_price:num(e._member_price),
+    ask_health:!!e.ask_health,ask_emergency:!!e.ask_emergency,questions:(e.questions||[]).map(x=>(x||'').trim()).filter(Boolean).slice(0,5),wa_group:(e._wa_group||'').trim()||null,slug}}
+
+/* ---------- admin: actions ---------- */
+async function evAct(t){const d=t.dataset,a=d.ev;
+  try{switch(a){
+  case'tab':EV.tab=d.t;render();break;
+  case'back':EV.sel=null;EV.edit=null;view='events';render();window.scrollTo(0,0);break;
+  case'open':EV.sel=d.id;EV.edit=null;EV.regTab='registered';view='event';render();window.scrollTo(0,0);break;
+  case'regtab':EV.regTab=d.t;render();break;
+  case'new':if(d.locked){toast('בחבילה הנוכחית אפשר לפתוח סדנה אחת. אפשר לבקש שדרוג למתקדם+ בהגדרות.');break}
+    {const s=new Date(today()+7*DAY);s.setHours(10,0,0,0);EV.edit={title:'',starts_at:s.toISOString(),ends_at:new Date(s.getTime()+2*H).toISOString(),capacity:12,price:null,ask_health:true,ask_emergency:false,questions:[],status:'draft',slug:slugify()}}
+    view='evedit';render();window.scrollTo(0,0);break;
+  case'edit':{const e=evFind(EV.sel);EV.edit=JSON.parse(JSON.stringify(e));view='evedit';render();window.scrollTo(0,0);break}
+  case'qadd':evCollect();EV.edit.questions=(EV.edit.questions||[]).concat('');evRerender();break;
+  case'qdel':evCollect();EV.edit.questions.splice(+d.i,1);evRerender();break;
+  case'imgdel':evCollect();EV.edit.image_url=null;evRerender();break;
+  case'save':{const er=document.getElementById('everr');er.hidden=true;let pl;try{pl=evPayload()}catch(x){er.textContent=x.message;er.hidden=false;return}
+    if(d.pub)pl.status='published';else if(!EV.edit.id)pl.status='draft';
+    const id=EV.edit.id;t.disabled=true;
+    try{const r=await act(async()=>id?await q(sb.from('events').update(pl).eq('id',id).select().single()):await q(sb.from('events').insert(pl).select().single()),d.pub?'הסדנה פורסמה':'נשמר');
+      await evLoadAdmin();EV.sel=r.id;EV.edit=null;view='event';render();window.scrollTo(0,0)}
+    catch(x){t.disabled=false;if(/duplicate|unique/i.test(x.message||'')){er.textContent='הכתובת הזו כבר בשימוש באירוע אחר. אפשר לשנות אותה.';er.hidden=false}}break}
+  case'status':{const e=evFind(EV.sel);await act(()=>q(sb.from('events').update({status:d.s}).eq('id',e.id)),{published:'ההרשמה פתוחה',closed:'ההרשמה נסגרה'}[d.s]);await evLoadAdmin();render();break}
+  case'cancelev':{if(!t.dataset.armed){t.dataset.armed='1';t.textContent='לבטל את הסדנה? לחיצה נוספת לאישור';return}
+    const e=evFind(EV.sel);await act(()=>q(sb.from('events').update({status:'cancelled'}).eq('id',e.id)),'הסדנה בוטלה. כדאי לעדכן את הנרשמים');await evLoadAdmin();render();break}
+  case'share':{const e=evFind(EV.sel);const txt=e.title+'\n'+dtLong(Date.parse(e.starts_at))+(e.place?' · '+e.place:'')+(e.subtitle?'\n'+e.subtitle:'')+'\n\nלפרטים והרשמה:\n'+evUrl(e);window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');break}
+  case'copy':{const e=evFind(EV.sel);try{await navigator.clipboard.writeText(evUrl(e));toast('הקישור הועתק')}catch(x){toast('לא הצלחנו להעתיק')}break}
+  case'paid':{const e=evFind(EV.sel),r=e.regs.find(x=>x.id===d.id);const nx={unpaid:'paid',paid:'refunded',refunded:'unpaid',punch:'unpaid'}[r.paid];
+    await q(sb.from('event_regs').update({paid:nx}).eq('id',r.id));r.paid=nx;render();break}
+  case'att':{const e=evFind(EV.sel),r=e.regs.find(x=>x.id===d.id);await q(sb.from('event_regs').update({attended:!r.attended}).eq('id',r.id));r.attended=!r.attended;render();break}
+  case'promote':{const e=evFind(EV.sel);await act(()=>q(sb.from('event_regs').update({status:'registered',promoted_at:new Date().toISOString()}).eq('id',d.id)),'עבר/ה לרשימת הנרשמים');await evLoadAdmin();render();break}
+  case'regmore':{const e=evFind(EV.sel),r=e.regs.find(x=>x.id===d.id);const ans=r.answers||{};
+    sheet('<h3>'+esc(r.name)+'</h3><p class="lead"><a href="tel:'+esc(r.phone)+'" dir="ltr">'+esc(r.phone)+'</a>'+(r.email?' · <span dir="ltr">'+esc(r.email)+'</span>':'')+'<br>נרשם/ה ב־'+fmt(Date.parse(r.created_at))+' '+hm(Date.parse(r.created_at))+(r.price!=null?' · מחיר '+shekel(r.price):'')+'</p>'+
+     (e.ask_health?'<div class="note">הצהרת בריאות: '+(r.health_ok?'אושרה':'לא אושרה')+'</div>':'')+
+     (Object.keys(ans).length?'<div class="anslist">'+Object.keys(ans).map(k=>'<div><small>'+esc(k)+'</small><b>'+esc(ans[k]||'—')+'</b></div>').join('')+'</div>':'')+
+     '<div class="sheet-actions"><a class="btn btn-soft" target="_blank" rel="noopener" href="https://wa.me/972'+esc(r.phone.replace(/\D/g,'').replace(/^0/,''))+'">WhatsApp</a>'+(r.status!=='cancelled'?'<button class="btn btn-soft" style="color:var(--bad)" data-ev="regcancel" data-id="'+r.id+'">ביטול ההרשמה</button>':'<button class="btn btn-soft" data-ev="regrestore" data-id="'+r.id+'">החזרה לרשימה</button>')+'<button class="btn btn-soft" data-act="close">סגירה</button></div>');break}
+  case'regcancel':{const was=evFind(EV.sel).regs.find(x=>x.id===d.id).status;close();await act(()=>q(sb.from('event_regs').update({status:'cancelled'}).eq('id',d.id)),was==='registered'?'ההרשמה בוטלה. אם יש רשימת המתנה, הבא/ה בתור עבר/ה אוטומטית':'ההרשמה בוטלה');await evLoadAdmin();render();break}
+  case'regrestore':{close();const e=evFind(EV.sel);const full=e.capacity&&regsOf(e,'registered').length>=e.capacity;await act(()=>q(sb.from('event_regs').update({status:full?'waitlist':'registered'}).eq('id',d.id)),full?'הוחזר/ה לרשימת ההמתנה (הסדנה מלאה)':'הוחזר/ה לרשימת הנרשמים');await evLoadAdmin();render();break}
+  case'msgall':{const e=evFind(EV.sel),reg=regsOf(e,'registered');const def='היי, תזכורת ל'+e.title+' ב'+dtLong(Date.parse(e.starts_at))+(e.place?' · '+e.place:'')+'. מחכים לך!';
+    sheet('<h3>הודעה לנרשמים</h3><div class="field"><label for="mtxt">נוסח ההודעה</label><textarea id="mtxt" rows="4">'+esc(def)+'</textarea></div><p class="lead" style="font-size:.85rem">לוחצים על כל שם כדי לפתוח WhatsApp עם ההודעה.</p><div class="chips" id="mlist">'+reg.map(r=>'<a class="chip" target="_blank" rel="noopener" data-ph="'+esc(r.phone.replace(/\D/g,'').replace(/^0/,''))+'" href="#">'+esc(r.name)+'</a>').join('')+'</div><div class="sheet-actions"><button class="btn btn-soft" data-act="close">סגירה</button></div>');
+    bg.querySelectorAll('[data-ph]').forEach(x=>x.onclick=ev=>{ev.preventDefault();x.classList.add('sent');window.open('https://wa.me/972'+x.dataset.ph+'?text='+encodeURIComponent(bg.querySelector('#mtxt').value),'_blank')});break}
+  case'csv':{const e=evFind(EV.sel);const qs=(e.questions||[]);const rows=[['שם','טלפון','אימייל','סטטוס','מחיר','תשלום','נוכחות','הצהרת בריאות','נרשם ב'].concat(qs)];
+    e.regs.forEach(r=>rows.push([r.name,r.phone,r.email||'',{registered:'נרשם',waitlist:'המתנה',cancelled:'בוטל'}[r.status],r.price==null?'':r.price,{unpaid:'לא שולם',paid:'שולם',refunded:'הוחזר',punch:'ניקוב'}[r.paid],r.attended?'כן':'',r.health_ok?'כן':'',fmt(Date.parse(r.created_at))].concat(qs.map(k=>(r.answers||{})[k]||''))));
+    const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const a_=document.createElement('a');a_.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a_.download=e.slug+'.csv';a_.click();break}
+  /* retreat design */
+  case'rscreen':EV.rscreen=d.s;EV.rstep=1;view='rdesign';render();window.scrollTo(0,0);break;
+  case'rback':EV.rscreen=null;view='events';EV.tab='retreat';render();window.scrollTo(0,0);break;
+  case'rbtab':EV.rbtab=d.t;render();break;
+  case'rstep':EV.rstep=+d.s;render();window.scrollTo(0,0);break;
+  case'rdemo':toast('תצוגת עיצוב בלבד. הפעולה תופעל בשלב הבא');break;
+  /* public page */
+  case'pubreg':await pubSubmit(t);break;
+  case'ics':pubIcs();break;
+  case'pubopen':location.href=appUrl()+S.studio.slug+'/e/'+d.slug;break;
+  }}catch(x){if(x&&x.message!=='readonly')toast(esc(errMsg(x)))}
+}
+function evRerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
+function evBind(){
+  const im=document.getElementById('evimg');if(im)im.addEventListener('change',async ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;evCollect();toast('מעלה תמונה…');
+    try{const blob=await coverImage(f);const path=SID+'/ev-'+Date.now()+'.jpg';const up=await sb.storage.from('events').upload(path,blob,{contentType:'image/jpeg',upsert:true});if(up.error)throw up.error;
+      EV.edit.image_url=sb.storage.from('events').getPublicUrl(path).data.publicUrl;evRerender();toast('התמונה עלתה')}catch(x){toast(esc(errMsg(x)))}});
+  const pf=document.getElementById('pubf');if(pf)pf.addEventListener('submit',ev=>{ev.preventDefault();pubSubmit(pf.querySelector('[type=submit]'))});
+}
+async function coverImage(file){const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const W=1200,k=Math.min(1,W/img.width),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(r,'image/jpeg',.82))}finally{URL.revokeObjectURL(url)}}
+
+/* ---------- practitioner: studio events ---------- */
+function pEventsBlock(){const l=EV.pevents||[];if(!l.length)return'';
+  return '<div class="eyebrow">סדנאות ואירועים</div><div class="list" style="gap:10px">'+l.map(e=>'<button class="evcard" data-ev="pubopen" data-slug="'+esc(e.slug)+'">'+(e.image?'<span class="evthumb" style="background-image:url(\''+esc(e.image)+'\')"></span>':'<span class="evthumb ph">'+I2.img+'</span>')+
+   '<span class="evinfo"><b>'+esc(e.title)+'</b><small>'+dtLong(Date.parse(e.starts_at))+(e.place?' · '+esc(e.place):'')+'</small><span class="evmeta">'+(e.mine?'<i class="pill p-'+(e.mine==='registered'?'active':'soon')+'">'+(e.mine==='registered'?'נרשמת':'ברשימת המתנה')+'</i>':'')+(e.price_now!=null?'<span>'+shekel(e.price_now)+'</span>':'<span>ללא עלות</span>')+(e.left===0?'<span>מלא · רשימת המתנה</span>':e.left!=null?'<span>נותרו '+e.left+' מקומות</span>':'')+'</span></span></button>').join('')+'</div>'}
+
+/* ---------- public event page ---------- */
+const evRoute=(()=>{const m=location.pathname.toLowerCase().match(/^\/([a-z0-9][a-z0-9-]{1,28}[a-z0-9])\/e\/([a-z0-9][a-z0-9-]{1,40}[a-z0-9])\/?$/);return m?{studio:m[1],event:m[2]}:null})();
+async function startPublicEvent(){mode='pubev';render();
+  try{EV.pub=await q(sb.rpc('event_public',{p_studio:evRoute.studio,p_event:evRoute.event}))}catch(e){EV.pub=null}
+  if(EV.pub&&EV.pub.studio){S.studio=Object.assign({},S.studio,{name:EV.pub.studio.name,teacher:EV.pub.studio.teacher,slug:EV.pub.studio.slug});applyBrand(brandOf(EV.pub.studio))}
+  if(EV.pub&&EV.pub.event)try{document.title=EV.pub.event.title+' · '+(EV.pub.studio.name||'')}catch(e){}
+  EV.prefill=null;const tk=store.get(TOKEN_KEY);if(tk)try{const v=await q(sb.rpc('p_view',{p_token:tk}));if(v&&v.studio&&v.studio.slug===evRoute.studio)EV.prefill={name:v.person.name,token:tk}}catch(e){}
+  render()}
+function vPublicEvent(){
+  const P=EV.pub,st=P&&P.studio,e=P&&P.event;
+  const head='<div class="top"><div class="brand">'+mark(40)+'<div style="min-width:0"><b>'+esc(appName())+'</b><small>'+esc(st?st.name:'')+'</small></div></div>'+themeBtn()+'</div>';
+  if(!P)return head+'<p class="lead" style="margin-top:30px;text-align:center">טוען…</p>';
+  if(!e)return head+'<h1>האירוע לא נמצא</h1><p class="lead">ייתכן שהקישור שגוי או שהאירוע עדיין לא פורסם.</p>';
+  if(EV.pubDone)return head+pubDoneView(e);
+  const t0=Date.parse(e.starts_at),early=e.early_price!=null&&e.early_until&&today()<=parseD(e.early_until);
+  const priceTxt=e.price_now==null?'ללא עלות':shekel(e.price_now);
+  return head+(e.image?'<div class="evhero big" style="background-image:url(\''+esc(e.image)+'\')"></div>':'')+
+   '<h1 class="evtitle">'+esc(e.title)+'</h1>'+(e.subtitle?'<p class="lead" style="font-size:1.05rem">'+esc(e.subtitle)+'</p>':'')+
+   (e.status==='cancelled'?'<div class="banner" style="background:var(--bad-soft)"><div><b>האירוע בוטל</b></div></div>':'')+
+   '<div class="evfacts"><span>'+I2.cal+dtLong(t0)+(e.ends_at?'–'+hm(Date.parse(e.ends_at)):'')+'</span>'+(e.place?'<span>'+I2.pin+esc(e.place)+'</span>':'')+'<span>'+I2.user+esc(e.teacher||'')+'</span>'+
+   (e.capacity?'<span>'+I2.seat+(e.left>0?'נותרו '+e.left+' מקומות':'הסדנה מלאה · אפשר להירשם לרשימת המתנה')+'</span>':'')+'</div>'+
+   '<div class="pricebox"><b>'+priceTxt+'</b>'+(early?'<small>מחיר מוקדם עד '+fmt(parseD(e.early_until))+(e.price!=null?' · אחר כך '+shekel(e.price):'')+'</small>':'')+(e.member_price!=null?'<small>למתרגלים עם כרטיסייה פעילה: '+shekel(e.member_price)+' (מזוהים לפי הטלפון)</small>':'')+'</div>'+
+   (e.description?'<div class="evdesc">'+esc(e.description)+'</div>':'')+
+   (e.open?pubForm(e):'<div class="note">'+(e.status==='cancelled'?'האירוע בוטל.':t0<=now()?'האירוע כבר התקיים.':'ההרשמה לאירוע סגורה.')+'</div>')+
+   '<div class="foot">'+esc(st.name)+(st.plan==='pro'||st.plan==='plus'?'':' · מופעל באמצעות YoGis')+'</div>';
+}
+function pubForm(e){const full=e.capacity&&e.left===0,pf=EV.prefill;
+  return '<form id="pubf" class="card" style="box-shadow:none;border:1px solid var(--line);margin-top:18px"><h2 style="margin-top:0">'+(full?'הרשמה לרשימת ההמתנה':'הרשמה')+'</h2>'+
+   '<div class="field"><label for="pn">שם מלא</label><input id="pn" required maxlength="80" autocomplete="name" value="'+esc(pf?pf.name:'')+'"></div>'+
+   '<div class="field"><label for="pp">טלפון</label><input id="pp" required inputmode="tel" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="050-0000000"></div>'+
+   '<div class="field"><label for="pe">אימייל (לא חובה)</label><input id="pe" type="email" autocomplete="email" dir="ltr"></div>'+
+   (e.questions||[]).map((qq,i)=>'<div class="field"><label for="pq'+i+'">'+esc(qq)+'</label><input id="pq'+i+'" data-pq="'+esc(qq)+'" maxlength="300"></div>').join('')+
+   (e.ask_emergency?'<div class="grid2"><div class="field"><label for="pen">איש קשר לחירום</label><input id="pen" maxlength="60"></div><div class="field"><label for="pep">טלפון חירום</label><input id="pep" inputmode="tel" dir="ltr" style="text-align:right"></div></div>':'')+
+   (e.ask_health?'<label class="checkline"><input type="checkbox" id="ph"> <span>אני מצהיר/ה שמצבי הבריאותי מאפשר השתתפות, ושעדכנתי את המנחה על כל מגבלה רלוונטית.</span></label>':'')+
+   '<label class="checkline"><input type="checkbox" id="pc"> <span>קראתי ואני מסכים/ה לתנאי ההשתתפות ולמדיניות הביטול של הסטודיו.</span></label>'+
+   '<p id="perr" style="color:var(--bad);margin:10px 0 0" hidden></p><button class="btn btn-primary full" type="submit" style="margin-top:14px">'+(full?'הצטרפות לרשימת ההמתנה':'הרשמה'+(e.price_now!=null?' · '+shekel(e.price_now):''))+'</button>'+
+   (e.price_now!=null?'<p class="lead" style="font-size:.8rem;margin-top:8px;text-align:center">התשלום מתבצע מול הסטודיו. פרטים יישלחו אחרי ההרשמה.</p>':'')+'</form>'}
+async function pubSubmit(btn){const e=EV.pub.event,g=id=>document.getElementById(id),er=g('perr');er.hidden=true;
+  const ans={};document.querySelectorAll('[data-pq]').forEach(x=>{ans[x.dataset.pq]=x.value.trim()});
+  if(e.ask_emergency){ans['איש קשר לחירום']=(g('pen').value||'').trim();ans['טלפון חירום']=(g('pep').value||'').trim()}
+  btn.disabled=true;
+  try{const r=await q(sb.rpc('event_register',{p_studio:evRoute.studio,p_event:evRoute.event,p_name:g('pn').value,p_phone:g('pp').value,p_email:g('pe').value||null,p_answers:ans,p_health:e.ask_health?g('ph').checked:true,p_consent:g('pc').checked,p_token:EV.prefill?EV.prefill.token:null}));
+    EV.pubDone=Object.assign({name:g('pn').value.trim()},r);render();window.scrollTo(0,0)}
+  catch(x){er.textContent=errMsg(x);er.hidden=false;btn.disabled=false}}
+function pubDoneView(e){const r=EV.pubDone,wl=r.status==='waitlist';
+  const gcal='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(e.title)+'&dates='+gIso(e.starts_at)+'/'+gIso(e.ends_at||new Date(Date.parse(e.starts_at)+2*H).toISOString())+'&location='+encodeURIComponent(e.place||'');
+  return '<div class="donebox"><div class="donecheck">'+I.check+'</div><h1>'+(r.already?'כבר נרשמת':wl?'נכנסת לרשימת ההמתנה':'נרשמת!')+'</h1>'+
+   '<p class="lead">'+(r.already?'מספר הטלפון הזה כבר רשום לאירוע.':wl?'את/ה במקום '+(r.position||'')+' בתור. אם יתפנה מקום, '+esc(EV.pub.studio.teacher)+' תעדכן אותך.':esc(r.name)+', מחכים לך ב'+esc(e.title)+'.')+'</p>'+
+   '<div class="evfacts" style="justify-content:center"><span>'+I2.cal+dtLong(Date.parse(e.starts_at))+'</span>'+(e.place?'<span>'+I2.pin+esc(e.place)+'</span>':'')+'</div>'+
+   (r.price!=null&&!wl&&!r.already?'<div class="note">מחיר: <b>'+shekel(r.price)+'</b>'+(r.member?' (מחיר למתרגלים)':'')+'. התשלום מתבצע מול הסטודיו.</div>':'')+
+   (!wl?'<div class="sheet-actions" style="justify-content:center;margin-top:14px"><button class="btn btn-soft" data-ev="ics">הוספה ליומן</button><a class="btn btn-soft" target="_blank" rel="noopener" href="'+gcal+'">Google Calendar</a></div>':'')+'</div>'}
+const gIso=s=>new Date(s).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+function pubIcs(){const e=EV.pub.event;const end=e.ends_at||new Date(Date.parse(e.starts_at)+2*H).toISOString();
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//YoGis//HE','BEGIN:VEVENT','UID:'+e.id+'@yogis.co.il','DTSTAMP:'+gIso(new Date().toISOString()),'DTSTART:'+gIso(e.starts_at),'DTEND:'+gIso(end),'SUMMARY:'+e.title.replace(/[,;]/g,' '),'LOCATION:'+(e.place||'').replace(/[,;]/g,' '),'URL:'+location.href.split('?')[0],'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download=e.slug+'.ics';a.click()}
+
+/* ================= RETREAT: design preview with sample data (nothing is saved) ================= */
+const RT={title:'ריטריט סתיו בגליל',sub:'שלושה ימים של יוגה, נשימה ושקט בין הרים',place:'חוות הגפן, גליל עליון',from:'2026-11-26',to:'2026-11-28',teacher:'הילה רותם',capacity:24,
+  rooms:[{k:'twin',t:'חדר זוגי משותף',s:'שתי מיטות נפרדות, מקלחת בחדר',price:2400,total:12,taken:9},{k:'single',t:'חדר יחיד',s:'פרטיות מלאה, מרפסת לנוף',price:3300,total:6,taken:5},{k:'dorm',t:'בקתה משותפת',s:'4 מיטות, חוויה קהילתית',price:1900,total:8,taken:3}],
+  deposit:600,balanceDue:'2026-11-12',early:{until:'2026-10-31',off:200},
+  days:[{d:'יום חמישי 26.11',items:[['13:00','הגעה, התמקמות וארוחת צהריים קלה'],['16:00','מעגל פתיחה והיכרות'],['17:00','יוגה זורמת לשחרור הדרך'],['19:30','ארוחת ערב'],['21:00','יוגה נידרה לפני שינה']]},
+    {d:'יום שישי 27.11',items:[['06:30','מדיטציה ונשימה בזריחה'],['07:30','אשטנגה מותאמת'],['09:30','ארוחת בוקר'],['11:00','סדנת פראניאמה'],['13:00','ארוחת צהריים ומנוחה'],['16:30','יין יוגה'],['19:30','ארוחת שבת משותפת']]},
+    {d:'שבת 28.11',items:[['07:00','תרגול בוקר בחוץ'],['09:30','בראנץ׳'],['11:00','מעגל סיכום ושיתוף'],['13:00','פרידה ויציאה']]}],
+  includes:['2 לילות לינה','כל הארוחות, צמחוני','כל השיעורים והסדנאות','מזרנים וציוד עזר'],excludes:['הגעה (יש תיאום הסעות)','טיפולים אישיים בתוספת תשלום'],
+  policy:[['עד 30 יום לפני','החזר מלא פחות 100 ₪ דמי טיפול'],['14 עד 30 יום לפני','החזר 50%'],['פחות מ־14 יום','ללא החזר, אפשר להעביר מקום למישהו אחר']],
+  people:[['נועה לוי','twin','paid',2400,'טבעוני','הסעה'],['דנה כהן','twin','deposit',600,'צמחוני','רכב פרטי'],['מיכל ברק','single','paid',3300,'ללא גלוטן','הסעה'],['רונית אבן','twin','deposit',600,'צמחוני','טרמפ'],['שירה גל','dorm','pending',0,'טבעוני','הסעה'],['יעל אור','single','paid',3300,'צמחוני','רכב פרטי'],['אורי שחר','dorm','deposit',600,'צמחוני','הסעה'],['תמר נוי','twin','paid',2400,'אלרגיה לאגוזים','רכב פרטי']],
+  costs:[['מקום ולינה',18000],['אוכל',9600],['הסעות',2400],['מנחה אורח',2500],['ציוד ושונות',800]]};
+const rRoom=k=>RT.rooms.find(r=>r.k===k);
+const rDemo='<span class="soon-tag" style="margin-inline-start:6px">עיצוב בלבד</span>';
+const rDates=()=>{const a=parseD(RT.from),b=parseD(RT.to);return new Date(a).getDate()+'–'+fmt(b)+' · '+(Math.round((b-a)/DAY))+' לילות'};
+const rHero=(h)=>'<div class="rhero'+(h?' '+h:'')+'"><svg viewBox="0 0 400 160" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 L70 60 L120 95 L190 30 L260 90 L310 55 L400 110 L400 160 L0 160Z" fill="currentColor" opacity=".18"/><path d="M0 140 L90 95 L160 125 L240 80 L330 120 L400 100 L400 160 L0 160Z" fill="currentColor" opacity=".28"/><circle cx="320" cy="40" r="16" fill="currentColor" opacity=".25"/></svg></div>';
+function vRetreatDesign(){
+  const s=EV.rscreen,back='<button class="back" data-ev="rback">'+I.back+'מסכי הריטריט</button>';
+  const top=(mode==='admin'?header():'')+back+'<div class="banner" style="background:var(--lav-soft);margin-top:6px"><div><b>תצוגת עיצוב</b><small>נתוני דוגמה. כפתורים מציגים את ההתנהגות אבל לא שומרים.</small></div></div>';
+  if(s==='builder')return top+rBuilder();
+  if(s==='dash')return top+rDash();
+  if(s==='public')return top+rPublic();
+  if(s==='mine')return top+rMine();
+  return top;
+}
+function rBuilder(){
+  const tabs=[['details','פרטים'],['rooms','חדרים ומחירים'],['days','לו״ז'],['form','טופס'],['pay','תשלום וביטול'],['costs','עלויות']];
+  const f=(l,v,ph,t)=>'<div class="field"><label>'+l+'</label><input '+(t?'type="'+t+'" ':'')+'value="'+esc(v||'')+'" placeholder="'+esc(ph||'')+'"></div>';
+  let b='';
+  if(EV.rbtab==='details')b=rHero()+'<button class="btn btn-soft btn-sm" data-ev="rdemo" style="margin-top:8px">'+I2.img+' העלאת תמונת שער</button>'+f('שם הריטריט',RT.title)+f('משפט קצר',RT.sub)+'<div class="grid2">'+f('מתאריך',RT.from,'','date')+f('עד תאריך',RT.to,'','date')+'</div>'+f('מקום',RT.place)+'<div class="grid2">'+f('מנחה',RT.teacher)+f('מספר משתתפים',RT.capacity,'','number')+'</div><div class="field"><label>תיאור</label><textarea rows="4">שלושה ימים של תרגול עמוק, אוכל טוב ושקט. מתאים לכל הרמות.</textarea></div><div class="field"><label>כלול במחיר</label><div class="chips">'+RT.includes.map(x=>'<span class="chip">'+esc(x)+' ×</span>').join('')+'<button class="chip" data-ev="rdemo">+ הוספה</button></div></div>';
+  if(EV.rbtab==='rooms')b='<p class="lead">לכל סוג חדר מחיר ומספר מקומות. המערכת עוקבת אחרי התפוסה ופותחת רשימת המתנה לכל סוג בנפרד.</p>'+RT.rooms.map(r=>'<div class="card roomed" style="box-shadow:none;border:1px solid var(--line)"><div class="grid2">'+f('סוג חדר',r.t)+f('תיאור',r.s)+'</div><div class="grid3">'+f('מחיר לאדם (₪)',r.price,'','number')+f('מקומות',r.total,'','number')+f('מחיר מוקדם',r.price-RT.early.off,'','number')+'</div></div>').join('')+'<button class="btn btn-soft" data-ev="rdemo">'+I.plus+'סוג חדר נוסף</button><div class="switch" style="margin-top:12px"><div><b>בקשת שותף לחדר</b><small>המשתתף יכול לבקש עם מי לחלוק חדר</small></div><input type="checkbox" class="tog" checked></div>';
+  if(EV.rbtab==='days')b=RT.days.map(d=>'<div class="card" style="box-shadow:none;border:1px solid var(--line)"><b>'+d.d+'</b>'+d.items.map(it=>'<div class="itrow"><input type="time" value="'+it[0]+'"><input value="'+esc(it[1])+'"></div>').join('')+'<button class="btn btn-soft btn-sm" data-ev="rdemo">'+I.plus+'פריט</button></div>').join('')+'<button class="btn btn-soft" data-ev="rdemo">'+I.plus+'יום נוסף</button>';
+  if(EV.rbtab==='form')b='<p class="lead">שדות שהמשתתפים ממלאים בהרשמה.</p>'+[['הצהרת בריאות','חובה לפני ההגעה',1],['איש קשר לחירום','שם וטלפון',1],['העדפות תזונה','צמחוני, טבעוני, ללא גלוטן, אלרגיות',1],['אופן הגעה','הסעה מאורגנת, רכב פרטי, מחפש/ת טרמפ',1],['בקשת שותף לחדר','שם של חבר/ה',1],['ניסיון ביוגה','מתחילים, ממשיכים, מתקדמים',0],['מידת חולצה','למזכרת מהריטריט',0]].map(x=>'<div class="switch"><div><b>'+x[0]+'</b><small>'+x[1]+'</small></div><input type="checkbox" class="tog"'+(x[2]?' checked':'')+'></div>').join('')+'<button class="btn btn-soft" data-ev="rdemo" style="margin-top:8px">'+I.plus+'שאלה מותאמת</button>';
+  if(EV.rbtab==='pay')b='<div class="grid2">'+f('מקדמה להבטחת מקום (₪)',RT.deposit,'','number')+f('תאריך יעד ליתרה',RT.balanceDue,'','date')+'</div><div class="grid2">'+f('הנחת הרשמה מוקדמת (₪)',RT.early.off,'','number')+f('עד תאריך',RT.early.until,'','date')+'</div><div class="switch"><div><b>תשלומים</b><small>חלוקת היתרה עד 3 תשלומים</small></div><input type="checkbox" class="tog" checked></div><div class="switch"><div><b>תזכורת אוטומטית ליתרה</b><small>7 ימים ויום לפני תאריך היעד</small></div><input type="checkbox" class="tog" checked></div><h2>מדיניות ביטול</h2>'+RT.policy.map(p=>'<div class="itrow"><input value="'+esc(p[0])+'"><input value="'+esc(p[1])+'"></div>').join('')+'<div class="note">התשלום אונליין יופעל בשלב חיבור סליקה. עד אז המצב מסומן ידנית.</div>';
+  if(EV.rbtab==='costs'){const c=RT.costs.reduce((s,x)=>s+x[1],0),inc=RT.rooms.reduce((s,r)=>s+r.price*r.taken,0);
+    b=RT.costs.map(x=>'<div class="itrow"><input value="'+esc(x[0])+'"><input type="number" value="'+x[1]+'"></div>').join('')+'<button class="btn btn-soft btn-sm" data-ev="rdemo">'+I.plus+'עלות</button>'+
+     '<div class="stats" style="grid-template-columns:repeat(3,1fr);margin-top:14px"><div class="stat"><b>'+shekel(inc)+'</b><span>הכנסה צפויה</span></div><div class="stat"><b>'+shekel(c)+'</b><span>עלויות</span></div><div class="stat sage"><b>'+shekel(inc-c)+'</b><span>רווח צפוי</span></div></div><p class="lead" style="font-size:.85rem">נקודת איזון: '+Math.ceil(c/2400)+' משתתפים בחדר זוגי.</p>'}
+  return '<h1>בניית ריטריט'+rDemo+'</h1><div class="tabsx">'+tabs.map(t=>'<button data-ev="rbtab" data-t="'+t[0]+'" aria-pressed="'+(EV.rbtab===t[0])+'">'+t[1]+'</button>').join('')+'</div><div class="rform">'+b+'</div><div class="sheet-actions" style="margin-top:16px"><button class="btn btn-primary" data-ev="rdemo">שמירה ופרסום</button><button class="btn btn-soft" data-ev="rdemo">שמירה כטיוטה</button><button class="btn btn-soft" data-ev="rscreen" data-s="public">תצוגה מקדימה</button></div>';
+}
+function rDash(){
+  const P={paid:['שולם במלואו','active'],deposit:['מקדמה','soon'],pending:['ממתין לתשלום','expired']};
+  const taken=RT.rooms.reduce((s,r)=>s+r.taken,0),inc=RT.people.reduce((s,p)=>s+p[3],0),exp=RT.people.reduce((s,p)=>s+rRoom(p[1]).price,0);
+  const cnt=(i)=>{const m={};RT.people.forEach(p=>{m[p[i]]=(m[p[i]]||0)+1});return m};const diet=cnt(4),trans=cnt(5);
+  return '<h1>'+RT.title+rDemo+'</h1><p class="lead">'+rDates()+' · '+RT.place+'</p>'+
+   '<div class="stats stats4"><div class="stat sage"><b>'+taken+'<small>/'+RT.capacity+'</small></b><span>נרשמו</span></div><div class="stat"><b>'+shekel(inc)+'</b><span>התקבל</span></div><div class="stat lav"><b>'+shekel(exp-inc)+'</b><span>יתרה פתוחה</span></div><div class="stat"><b>36</b><span>ימים לריטריט</span></div></div>'+
+   '<h2>תפוסת חדרים</h2>'+RT.rooms.map(r=>'<div class="occ"><div class="occh"><b>'+r.t+'</b><span>'+r.taken+' / '+r.total+'</span></div><div class="mbar"><i style="width:'+Math.round(r.taken/r.total*100)+'%;background:'+(r.taken>=r.total-1?'var(--clay)':'var(--sage-deep)')+'"></i></div></div>').join('')+
+   '<div class="grid2" style="margin-top:6px"><div><h2>תזונה</h2><div class="chips">'+Object.keys(diet).map(k=>'<span class="chip">'+esc(k)+' · '+diet[k]+'</span>').join('')+'</div></div><div><h2>הגעה</h2><div class="chips">'+Object.keys(trans).map(k=>'<span class="chip">'+esc(k)+' · '+trans[k]+'</span>').join('')+'</div></div></div>'+
+   '<div class="sheet-actions" style="margin-top:14px"><button class="btn btn-soft" data-ev="rdemo">דוח לספק האוכל</button><button class="btn btn-soft" data-ev="rdemo">רשימת הסעה</button><button class="btn btn-soft" data-ev="rdemo">תזכורת יתרה לכולם</button><button class="btn btn-soft" data-ev="rdemo">ייצוא לאקסל</button></div>'+
+   '<h2>משתתפים</h2><div class="list reglist">'+RT.people.map(p=>'<div class="regrow"><div class="who"><b>'+p[0]+'</b><small>'+rRoom(p[1]).t+' · '+p[4]+' · '+p[5]+'</small></div><div class="regact"><span class="pill p-'+P[p[2]][1]+'">'+P[p[2]][0]+'</span><small class="lead">'+shekel(p[3])+' / '+shekel(rRoom(p[1]).price)+'</small></div></div>').join('')+'</div>';
+}
+function rPublic(){
+  const st=EV.rstep,steps=['פרטים','חדר','בריאות ותזונה','תשלום'];
+  const flow=st>1;
+  const page=rHero('big')+'<h1 class="evtitle">'+RT.title+'</h1><p class="lead" style="font-size:1.05rem">'+RT.sub+'</p>'+
+   '<div class="evfacts"><span>'+I2.cal+rDates()+'</span><span>'+I2.pin+RT.place+'</span><span>'+I2.user+RT.teacher+'</span><span>'+I2.seat+'נותרו '+(RT.capacity-17)+' מקומות</span></div>'+
+   '<div class="pricebox"><b>החל מ־'+shekel(1900-RT.early.off)+'</b><small>הנחת הרשמה מוקדמת של '+shekel(RT.early.off)+' עד '+fmt(parseD(RT.early.until))+' · מקדמה '+shekel(RT.deposit)+' להבטחת מקום</small></div>'+
+   '<h2>לו״ז</h2>'+RT.days.map((d,i)=>'<details class="rday"'+(i===0?' open':'')+'><summary>'+d.d+'</summary>'+d.items.map(it=>'<div class="ritem"><b>'+it[0]+'</b><span>'+esc(it[1])+'</span></div>').join('')+'</details>').join('')+
+   '<h2>בחירת חדר</h2><div class="list" style="gap:10px">'+RT.rooms.map(r=>{const l=r.total-r.taken;return '<button class="roomcard" data-ev="rdemo"><span><b>'+r.t+'</b><small>'+r.s+'</small><small class="'+(l<=1?'warnx':'')+'">'+(l<=0?'מלא · רשימת המתנה':'נותרו '+l+' מקומות')+'</small></span><span class="rprice"><b>'+shekel(r.price-RT.early.off)+'</b><s>'+shekel(r.price)+'</s></span></button>'}).join('')+'</div>'+
+   '<div class="grid2" style="margin-top:6px"><div><h2>כלול</h2><ul class="pitch">'+RT.includes.map(x=>'<li>'+x+'</li>').join('')+'</ul></div><div><h2>לא כלול</h2><ul class="pitch">'+RT.excludes.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></div>'+
+   '<h2>מדיניות ביטול</h2><div class="poltable">'+RT.policy.map(p=>'<div><b>'+p[0]+'</b><span>'+p[1]+'</span></div>').join('')+'</div>'+
+   '<button class="btn btn-primary full" style="margin-top:18px" data-ev="rstep" data-s="2">להרשמה</button>';
+  if(!flow||st===1)return '<h2 style="margin-top:6px">עמוד הריטריט הציבורי'+rDemo+'</h2>'+page;
+  const stepBar='<div class="steps">'+steps.map((x,i)=>'<span class="'+(i+2<st?'done':i+2===st?'on':'')+'">'+(i+1)+'. '+x+'</span>').join('')+'</div>';
+  const f=(l,ph)=>'<div class="field"><label>'+l+'</label><input placeholder="'+esc(ph||'')+'"></div>';
+  let b='';
+  if(st===2)b=f('שם מלא')+'<div class="grid2">'+f('טלפון','050-0000000')+f('אימייל')+'</div><div class="grid2">'+f('איש קשר לחירום')+f('טלפון חירום')+'</div>';
+  if(st===3)b=RT.rooms.map((r,i)=>'<label class="roomcard sel'+(i===0?' on':'')+'"><span><b>'+r.t+'</b><small>'+r.s+'</small></span><span class="rprice"><b>'+shekel(r.price-RT.early.off)+'</b></span></label>').join('')+f('בקשת שותף לחדר (לא חובה)','שם של חבר/ה');
+  if(st===4)b='<div class="field"><label>העדפת תזונה</label><div class="chips">'+['צמחוני','טבעוני','ללא גלוטן','אחר'].map((x,i)=>'<span class="chip" aria-pressed="'+(i===0)+'">'+x+'</span>').join('')+'</div></div>'+f('אלרגיות')+'<div class="field"><label>אופן הגעה</label><div class="chips">'+['הסעה מאורגנת','רכב פרטי','מחפש/ת טרמפ','יש לי מקום בטרמפ'].map((x,i)=>'<span class="chip" aria-pressed="'+(i===0)+'">'+x+'</span>').join('')+'</div></div><label class="checkline"><input type="checkbox" checked> <span>אני מצהיר/ה שמצבי הבריאותי מאפשר השתתפות.</span></label>';
+  if(st===5)b='<div class="summary"><div><span>חדר זוגי משותף</span><b>'+shekel(2400)+'</b></div><div><span>הנחת הרשמה מוקדמת</span><b>−'+shekel(200)+'</b></div><div class="tot"><span>סה״כ</span><b>'+shekel(2200)+'</b></div></div>'+
+   '<div class="opts">'+'<button class="opt" aria-pressed="true"><b>מקדמה '+shekel(RT.deposit)+'</b><small>היתרה עד '+fmt(parseD(RT.balanceDue))+'</small></button><button class="opt"><b>תשלום מלא</b><small>'+shekel(2200)+' עכשיו</small></button></div>'+
+   '<label class="checkline"><input type="checkbox" checked> <span>קראתי ואני מסכים/ה למדיניות הביטול.</span></label><div class="note">כאן ייפתח טופס הסליקה המאובטח. יופעל בשלב חיבור התשלומים.</div>';
+  return '<h2 style="margin-top:6px">הרשמה לריטריט'+rDemo+'</h2>'+stepBar+'<div class="card" style="box-shadow:none;border:1px solid var(--line)">'+b+'</div><div class="sheet-actions" style="margin-top:12px">'+(st<5?'<button class="btn btn-primary" data-ev="rstep" data-s="'+(st+1)+'">המשך</button>':'<button class="btn btn-primary" data-ev="rdemo">לתשלום מאובטח</button>')+'<button class="btn btn-soft" data-ev="rstep" data-s="'+(st-1)+'">חזרה</button></div>';
+}
+function rMine(){
+  const paid=600,total=2200;
+  return '<h2 style="margin-top:6px">מסך המשתתף'+rDemo+'</h2>'+rHero()+'<h1 class="evtitle">'+RT.title+'</h1><p class="lead">'+rDates()+' · '+RT.place+'</p>'+
+   '<div class="countdown"><div><b>36</b><small>ימים</small></div><div><b>חדר זוגי</b><small>עם נועה לוי</small></div><div><b>צמחוני</b><small>תזונה</small></div></div>'+
+   '<div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="card-head"><div><b>התשלום שלי</b><small>שולמה מקדמה · יתרה עד '+fmt(parseD(RT.balanceDue))+'</small></div><span class="pill p-soon">מקדמה</span></div><div class="mbar" style="height:10px"><i style="width:'+Math.round(paid/total*100)+'%;background:var(--sage-deep)"></i></div><p class="lead" style="font-size:.9rem;margin:8px 0 0">'+shekel(paid)+' שולמו מתוך '+shekel(total)+'</p><button class="btn btn-primary full" style="margin-top:10px" data-ev="rdemo">תשלום היתרה '+shekel(total-paid)+'</button></div>'+
+   '<h2>לו״ז</h2>'+RT.days.map((d,i)=>'<details class="rday"'+(i===0?' open':'')+'><summary>'+d.d+'</summary>'+d.items.map(it=>'<div class="ritem"><b>'+it[0]+'</b><span>'+esc(it[1])+'</span></div>').join('')+'</details>').join('')+
+   '<h2>מה להביא</h2><div class="checklist">'+['מזרן יוגה (יש גם במקום)','בגדים חמים לערב','בגד ים לבריכה','בקבוק מים','מחברת ועט','נעלי הליכה'].map((x,i)=>'<label class="checkline"><input type="checkbox"'+(i<2?' checked':'')+'> <span>'+x+'</span></label>').join('')+'</div>'+
+   '<h2>מידע מעשי</h2><div class="poltable"><div><b>הגעה</b><span>הסעה יוצאת מתחנת רכבת חיפה מרכז ב־11:00</span></div><div><b>טלפון במקום</b><span dir="ltr">050-0000000</span></div><div><b>קבוצת WhatsApp</b><span><button class="linkbtn" data-ev="rdemo">הצטרפות לקבוצה</button></span></div></div>'+
+   '<div class="sheet-actions" style="margin-top:14px"><button class="btn btn-soft" data-ev="rdemo">הוספה ליומן</button><button class="btn btn-soft" data-ev="rdemo">ביטול השתתפות</button></div>';
+}
+
 /* ---------- start ---------- */
 async function startAdmin(want){
   mode='loading';store.set(MODE_KEY,'admin');render();
@@ -1241,6 +1614,7 @@ function pickSheet(){
   sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){mode='newpw';render()}});
   if(/type=recovery/.test(location.hash)){mode='newpw';render();return}
   const u=new URLSearchParams(location.search),ut=u.get('t'),saved=store.get(TOKEN_KEY),pref=store.get(MODE_KEY);
+  if(evRoute){await startPublicEvent();return}
   render();
   setInterval(()=>{if(!bg&&mode==='p'&&document.visibilityState==='visible')reload()},60000);
   if(PLATFORM||u.has('admin')||(pref==='admin'&&(!ut||ut===saved))){await startAdmin();return}

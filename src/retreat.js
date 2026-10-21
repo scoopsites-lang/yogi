@@ -1,0 +1,82 @@
+/* ================= RETREAT: design preview with sample data (nothing is saved) ================= */
+const RT={title:'ריטריט סתיו בגליל',sub:'שלושה ימים של יוגה, נשימה ושקט בין הרים',place:'חוות הגפן, גליל עליון',from:'2026-11-26',to:'2026-11-28',teacher:'הילה רותם',capacity:24,
+  rooms:[{k:'twin',t:'חדר זוגי משותף',s:'שתי מיטות נפרדות, מקלחת בחדר',price:2400,total:12,taken:9},{k:'single',t:'חדר יחיד',s:'פרטיות מלאה, מרפסת לנוף',price:3300,total:6,taken:5},{k:'dorm',t:'בקתה משותפת',s:'4 מיטות, חוויה קהילתית',price:1900,total:8,taken:3}],
+  deposit:600,balanceDue:'2026-11-12',early:{until:'2026-10-31',off:200},
+  days:[{d:'יום חמישי 26.11',items:[['13:00','הגעה, התמקמות וארוחת צהריים קלה'],['16:00','מעגל פתיחה והיכרות'],['17:00','יוגה זורמת לשחרור הדרך'],['19:30','ארוחת ערב'],['21:00','יוגה נידרה לפני שינה']]},
+    {d:'יום שישי 27.11',items:[['06:30','מדיטציה ונשימה בזריחה'],['07:30','אשטנגה מותאמת'],['09:30','ארוחת בוקר'],['11:00','סדנת פראניאמה'],['13:00','ארוחת צהריים ומנוחה'],['16:30','יין יוגה'],['19:30','ארוחת שבת משותפת']]},
+    {d:'שבת 28.11',items:[['07:00','תרגול בוקר בחוץ'],['09:30','בראנץ׳'],['11:00','מעגל סיכום ושיתוף'],['13:00','פרידה ויציאה']]}],
+  includes:['2 לילות לינה','כל הארוחות, צמחוני','כל השיעורים והסדנאות','מזרנים וציוד עזר'],excludes:['הגעה (יש תיאום הסעות)','טיפולים אישיים בתוספת תשלום'],
+  policy:[['עד 30 יום לפני','החזר מלא פחות 100 ₪ דמי טיפול'],['14 עד 30 יום לפני','החזר 50%'],['פחות מ־14 יום','ללא החזר, אפשר להעביר מקום למישהו אחר']],
+  people:[['נועה לוי','twin','paid',2400,'טבעוני','הסעה'],['דנה כהן','twin','deposit',600,'צמחוני','רכב פרטי'],['מיכל ברק','single','paid',3300,'ללא גלוטן','הסעה'],['רונית אבן','twin','deposit',600,'צמחוני','טרמפ'],['שירה גל','dorm','pending',0,'טבעוני','הסעה'],['יעל אור','single','paid',3300,'צמחוני','רכב פרטי'],['אורי שחר','dorm','deposit',600,'צמחוני','הסעה'],['תמר נוי','twin','paid',2400,'אלרגיה לאגוזים','רכב פרטי']],
+  costs:[['מקום ולינה',18000],['אוכל',9600],['הסעות',2400],['מנחה אורח',2500],['ציוד ושונות',800]]};
+const rRoom=k=>RT.rooms.find(r=>r.k===k);
+const rDemo='<span class="soon-tag" style="margin-inline-start:6px">עיצוב בלבד</span>';
+const rDates=()=>{const a=parseD(RT.from),b=parseD(RT.to);return new Date(a).getDate()+'–'+fmt(b)+' · '+(Math.round((b-a)/DAY))+' לילות'};
+const rHero=(h)=>'<div class="rhero'+(h?' '+h:'')+'"><svg viewBox="0 0 400 160" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 L70 60 L120 95 L190 30 L260 90 L310 55 L400 110 L400 160 L0 160Z" fill="currentColor" opacity=".18"/><path d="M0 140 L90 95 L160 125 L240 80 L330 120 L400 100 L400 160 L0 160Z" fill="currentColor" opacity=".28"/><circle cx="320" cy="40" r="16" fill="currentColor" opacity=".25"/></svg></div>';
+function vRetreatDesign(){
+  const s=EV.rscreen,back='<button class="back" data-ev="rback">'+I.back+'מסכי הריטריט</button>';
+  const top=(mode==='admin'?header():'')+back+'<div class="banner" style="background:var(--lav-soft);margin-top:6px"><div><b>תצוגת עיצוב</b><small>נתוני דוגמה. כפתורים מציגים את ההתנהגות אבל לא שומרים.</small></div></div>';
+  if(s==='builder')return top+rBuilder();
+  if(s==='dash')return top+rDash();
+  if(s==='public')return top+rPublic();
+  if(s==='mine')return top+rMine();
+  return top;
+}
+function rBuilder(){
+  const tabs=[['details','פרטים'],['rooms','חדרים ומחירים'],['days','לו״ז'],['form','טופס'],['pay','תשלום וביטול'],['costs','עלויות']];
+  const f=(l,v,ph,t)=>'<div class="field"><label>'+l+'</label><input '+(t?'type="'+t+'" ':'')+'value="'+esc(v||'')+'" placeholder="'+esc(ph||'')+'"></div>';
+  let b='';
+  if(EV.rbtab==='details')b=rHero()+'<button class="btn btn-soft btn-sm" data-ev="rdemo" style="margin-top:8px">'+I2.img+' העלאת תמונת שער</button>'+f('שם הריטריט',RT.title)+f('משפט קצר',RT.sub)+'<div class="grid2">'+f('מתאריך',RT.from,'','date')+f('עד תאריך',RT.to,'','date')+'</div>'+f('מקום',RT.place)+'<div class="grid2">'+f('מנחה',RT.teacher)+f('מספר משתתפים',RT.capacity,'','number')+'</div><div class="field"><label>תיאור</label><textarea rows="4">שלושה ימים של תרגול עמוק, אוכל טוב ושקט. מתאים לכל הרמות.</textarea></div><div class="field"><label>כלול במחיר</label><div class="chips">'+RT.includes.map(x=>'<span class="chip">'+esc(x)+' ×</span>').join('')+'<button class="chip" data-ev="rdemo">+ הוספה</button></div></div>';
+  if(EV.rbtab==='rooms')b='<p class="lead">לכל סוג חדר מחיר ומספר מקומות. המערכת עוקבת אחרי התפוסה ופותחת רשימת המתנה לכל סוג בנפרד.</p>'+RT.rooms.map(r=>'<div class="card roomed" style="box-shadow:none;border:1px solid var(--line)"><div class="grid2">'+f('סוג חדר',r.t)+f('תיאור',r.s)+'</div><div class="grid3">'+f('מחיר לאדם (₪)',r.price,'','number')+f('מקומות',r.total,'','number')+f('מחיר מוקדם',r.price-RT.early.off,'','number')+'</div></div>').join('')+'<button class="btn btn-soft" data-ev="rdemo">'+I.plus+'סוג חדר נוסף</button><div class="switch" style="margin-top:12px"><div><b>בקשת שותף לחדר</b><small>המשתתף יכול לבקש עם מי לחלוק חדר</small></div><input type="checkbox" class="tog" checked></div>';
+  if(EV.rbtab==='days')b=RT.days.map(d=>'<div class="card" style="box-shadow:none;border:1px solid var(--line)"><b>'+d.d+'</b>'+d.items.map(it=>'<div class="itrow"><input type="time" value="'+it[0]+'"><input value="'+esc(it[1])+'"></div>').join('')+'<button class="btn btn-soft btn-sm" data-ev="rdemo">'+I.plus+'פריט</button></div>').join('')+'<button class="btn btn-soft" data-ev="rdemo">'+I.plus+'יום נוסף</button>';
+  if(EV.rbtab==='form')b='<p class="lead">שדות שהמשתתפים ממלאים בהרשמה.</p>'+[['הצהרת בריאות','חובה לפני ההגעה',1],['איש קשר לחירום','שם וטלפון',1],['העדפות תזונה','צמחוני, טבעוני, ללא גלוטן, אלרגיות',1],['אופן הגעה','הסעה מאורגנת, רכב פרטי, מחפש/ת טרמפ',1],['בקשת שותף לחדר','שם של חבר/ה',1],['ניסיון ביוגה','מתחילים, ממשיכים, מתקדמים',0],['מידת חולצה','למזכרת מהריטריט',0]].map(x=>'<div class="switch"><div><b>'+x[0]+'</b><small>'+x[1]+'</small></div><input type="checkbox" class="tog"'+(x[2]?' checked':'')+'></div>').join('')+'<button class="btn btn-soft" data-ev="rdemo" style="margin-top:8px">'+I.plus+'שאלה מותאמת</button>';
+  if(EV.rbtab==='pay')b='<div class="grid2">'+f('מקדמה להבטחת מקום (₪)',RT.deposit,'','number')+f('תאריך יעד ליתרה',RT.balanceDue,'','date')+'</div><div class="grid2">'+f('הנחת הרשמה מוקדמת (₪)',RT.early.off,'','number')+f('עד תאריך',RT.early.until,'','date')+'</div><div class="switch"><div><b>תשלומים</b><small>חלוקת היתרה עד 3 תשלומים</small></div><input type="checkbox" class="tog" checked></div><div class="switch"><div><b>תזכורת אוטומטית ליתרה</b><small>7 ימים ויום לפני תאריך היעד</small></div><input type="checkbox" class="tog" checked></div><h2>מדיניות ביטול</h2>'+RT.policy.map(p=>'<div class="itrow"><input value="'+esc(p[0])+'"><input value="'+esc(p[1])+'"></div>').join('')+'<div class="note">התשלום אונליין יופעל בשלב חיבור סליקה. עד אז המצב מסומן ידנית.</div>';
+  if(EV.rbtab==='costs'){const c=RT.costs.reduce((s,x)=>s+x[1],0),inc=RT.rooms.reduce((s,r)=>s+r.price*r.taken,0);
+    b=RT.costs.map(x=>'<div class="itrow"><input value="'+esc(x[0])+'"><input type="number" value="'+x[1]+'"></div>').join('')+'<button class="btn btn-soft btn-sm" data-ev="rdemo">'+I.plus+'עלות</button>'+
+     '<div class="stats" style="grid-template-columns:repeat(3,1fr);margin-top:14px"><div class="stat"><b>'+shekel(inc)+'</b><span>הכנסה צפויה</span></div><div class="stat"><b>'+shekel(c)+'</b><span>עלויות</span></div><div class="stat sage"><b>'+shekel(inc-c)+'</b><span>רווח צפוי</span></div></div><p class="lead" style="font-size:.85rem">נקודת איזון: '+Math.ceil(c/2400)+' משתתפים בחדר זוגי.</p>'}
+  return '<h1>בניית ריטריט'+rDemo+'</h1><div class="tabsx">'+tabs.map(t=>'<button data-ev="rbtab" data-t="'+t[0]+'" aria-pressed="'+(EV.rbtab===t[0])+'">'+t[1]+'</button>').join('')+'</div><div class="rform">'+b+'</div><div class="sheet-actions" style="margin-top:16px"><button class="btn btn-primary" data-ev="rdemo">שמירה ופרסום</button><button class="btn btn-soft" data-ev="rdemo">שמירה כטיוטה</button><button class="btn btn-soft" data-ev="rscreen" data-s="public">תצוגה מקדימה</button></div>';
+}
+function rDash(){
+  const P={paid:['שולם במלואו','active'],deposit:['מקדמה','soon'],pending:['ממתין לתשלום','expired']};
+  const taken=RT.rooms.reduce((s,r)=>s+r.taken,0),inc=RT.people.reduce((s,p)=>s+p[3],0),exp=RT.people.reduce((s,p)=>s+rRoom(p[1]).price,0);
+  const cnt=(i)=>{const m={};RT.people.forEach(p=>{m[p[i]]=(m[p[i]]||0)+1});return m};const diet=cnt(4),trans=cnt(5);
+  return '<h1>'+RT.title+rDemo+'</h1><p class="lead">'+rDates()+' · '+RT.place+'</p>'+
+   '<div class="stats stats4"><div class="stat sage"><b>'+taken+'<small>/'+RT.capacity+'</small></b><span>נרשמו</span></div><div class="stat"><b>'+shekel(inc)+'</b><span>התקבל</span></div><div class="stat lav"><b>'+shekel(exp-inc)+'</b><span>יתרה פתוחה</span></div><div class="stat"><b>36</b><span>ימים לריטריט</span></div></div>'+
+   '<h2>תפוסת חדרים</h2>'+RT.rooms.map(r=>'<div class="occ"><div class="occh"><b>'+r.t+'</b><span>'+r.taken+' / '+r.total+'</span></div><div class="mbar"><i style="width:'+Math.round(r.taken/r.total*100)+'%;background:'+(r.taken>=r.total-1?'var(--clay)':'var(--sage-deep)')+'"></i></div></div>').join('')+
+   '<div class="grid2" style="margin-top:6px"><div><h2>תזונה</h2><div class="chips">'+Object.keys(diet).map(k=>'<span class="chip">'+esc(k)+' · '+diet[k]+'</span>').join('')+'</div></div><div><h2>הגעה</h2><div class="chips">'+Object.keys(trans).map(k=>'<span class="chip">'+esc(k)+' · '+trans[k]+'</span>').join('')+'</div></div></div>'+
+   '<div class="sheet-actions" style="margin-top:14px"><button class="btn btn-soft" data-ev="rdemo">דוח לספק האוכל</button><button class="btn btn-soft" data-ev="rdemo">רשימת הסעה</button><button class="btn btn-soft" data-ev="rdemo">תזכורת יתרה לכולם</button><button class="btn btn-soft" data-ev="rdemo">ייצוא לאקסל</button></div>'+
+   '<h2>משתתפים</h2><div class="list reglist">'+RT.people.map(p=>'<div class="regrow"><div class="who"><b>'+p[0]+'</b><small>'+rRoom(p[1]).t+' · '+p[4]+' · '+p[5]+'</small></div><div class="regact"><span class="pill p-'+P[p[2]][1]+'">'+P[p[2]][0]+'</span><small class="lead">'+shekel(p[3])+' / '+shekel(rRoom(p[1]).price)+'</small></div></div>').join('')+'</div>';
+}
+function rPublic(){
+  const st=EV.rstep,steps=['פרטים','חדר','בריאות ותזונה','תשלום'];
+  const flow=st>1;
+  const page=rHero('big')+'<h1 class="evtitle">'+RT.title+'</h1><p class="lead" style="font-size:1.05rem">'+RT.sub+'</p>'+
+   '<div class="evfacts"><span>'+I2.cal+rDates()+'</span><span>'+I2.pin+RT.place+'</span><span>'+I2.user+RT.teacher+'</span><span>'+I2.seat+'נותרו '+(RT.capacity-17)+' מקומות</span></div>'+
+   '<div class="pricebox"><b>החל מ־'+shekel(1900-RT.early.off)+'</b><small>הנחת הרשמה מוקדמת של '+shekel(RT.early.off)+' עד '+fmt(parseD(RT.early.until))+' · מקדמה '+shekel(RT.deposit)+' להבטחת מקום</small></div>'+
+   '<h2>לו״ז</h2>'+RT.days.map((d,i)=>'<details class="rday"'+(i===0?' open':'')+'><summary>'+d.d+'</summary>'+d.items.map(it=>'<div class="ritem"><b>'+it[0]+'</b><span>'+esc(it[1])+'</span></div>').join('')+'</details>').join('')+
+   '<h2>בחירת חדר</h2><div class="list" style="gap:10px">'+RT.rooms.map(r=>{const l=r.total-r.taken;return '<button class="roomcard" data-ev="rdemo"><span><b>'+r.t+'</b><small>'+r.s+'</small><small class="'+(l<=1?'warnx':'')+'">'+(l<=0?'מלא · רשימת המתנה':'נותרו '+l+' מקומות')+'</small></span><span class="rprice"><b>'+shekel(r.price-RT.early.off)+'</b><s>'+shekel(r.price)+'</s></span></button>'}).join('')+'</div>'+
+   '<div class="grid2" style="margin-top:6px"><div><h2>כלול</h2><ul class="pitch">'+RT.includes.map(x=>'<li>'+x+'</li>').join('')+'</ul></div><div><h2>לא כלול</h2><ul class="pitch">'+RT.excludes.map(x=>'<li>'+x+'</li>').join('')+'</ul></div></div>'+
+   '<h2>מדיניות ביטול</h2><div class="poltable">'+RT.policy.map(p=>'<div><b>'+p[0]+'</b><span>'+p[1]+'</span></div>').join('')+'</div>'+
+   '<button class="btn btn-primary full" style="margin-top:18px" data-ev="rstep" data-s="2">להרשמה</button>';
+  if(!flow||st===1)return '<h2 style="margin-top:6px">עמוד הריטריט הציבורי'+rDemo+'</h2>'+page;
+  const stepBar='<div class="steps">'+steps.map((x,i)=>'<span class="'+(i+2<st?'done':i+2===st?'on':'')+'">'+(i+1)+'. '+x+'</span>').join('')+'</div>';
+  const f=(l,ph)=>'<div class="field"><label>'+l+'</label><input placeholder="'+esc(ph||'')+'"></div>';
+  let b='';
+  if(st===2)b=f('שם מלא')+'<div class="grid2">'+f('טלפון','050-0000000')+f('אימייל')+'</div><div class="grid2">'+f('איש קשר לחירום')+f('טלפון חירום')+'</div>';
+  if(st===3)b=RT.rooms.map((r,i)=>'<label class="roomcard sel'+(i===0?' on':'')+'"><span><b>'+r.t+'</b><small>'+r.s+'</small></span><span class="rprice"><b>'+shekel(r.price-RT.early.off)+'</b></span></label>').join('')+f('בקשת שותף לחדר (לא חובה)','שם של חבר/ה');
+  if(st===4)b='<div class="field"><label>העדפת תזונה</label><div class="chips">'+['צמחוני','טבעוני','ללא גלוטן','אחר'].map((x,i)=>'<span class="chip" aria-pressed="'+(i===0)+'">'+x+'</span>').join('')+'</div></div>'+f('אלרגיות')+'<div class="field"><label>אופן הגעה</label><div class="chips">'+['הסעה מאורגנת','רכב פרטי','מחפש/ת טרמפ','יש לי מקום בטרמפ'].map((x,i)=>'<span class="chip" aria-pressed="'+(i===0)+'">'+x+'</span>').join('')+'</div></div><label class="checkline"><input type="checkbox" checked> <span>אני מצהיר/ה שמצבי הבריאותי מאפשר השתתפות.</span></label>';
+  if(st===5)b='<div class="summary"><div><span>חדר זוגי משותף</span><b>'+shekel(2400)+'</b></div><div><span>הנחת הרשמה מוקדמת</span><b>−'+shekel(200)+'</b></div><div class="tot"><span>סה״כ</span><b>'+shekel(2200)+'</b></div></div>'+
+   '<div class="opts">'+'<button class="opt" aria-pressed="true"><b>מקדמה '+shekel(RT.deposit)+'</b><small>היתרה עד '+fmt(parseD(RT.balanceDue))+'</small></button><button class="opt"><b>תשלום מלא</b><small>'+shekel(2200)+' עכשיו</small></button></div>'+
+   '<label class="checkline"><input type="checkbox" checked> <span>קראתי ואני מסכים/ה למדיניות הביטול.</span></label><div class="note">כאן ייפתח טופס הסליקה המאובטח. יופעל בשלב חיבור התשלומים.</div>';
+  return '<h2 style="margin-top:6px">הרשמה לריטריט'+rDemo+'</h2>'+stepBar+'<div class="card" style="box-shadow:none;border:1px solid var(--line)">'+b+'</div><div class="sheet-actions" style="margin-top:12px">'+(st<5?'<button class="btn btn-primary" data-ev="rstep" data-s="'+(st+1)+'">המשך</button>':'<button class="btn btn-primary" data-ev="rdemo">לתשלום מאובטח</button>')+'<button class="btn btn-soft" data-ev="rstep" data-s="'+(st-1)+'">חזרה</button></div>';
+}
+function rMine(){
+  const paid=600,total=2200;
+  return '<h2 style="margin-top:6px">מסך המשתתף'+rDemo+'</h2>'+rHero()+'<h1 class="evtitle">'+RT.title+'</h1><p class="lead">'+rDates()+' · '+RT.place+'</p>'+
+   '<div class="countdown"><div><b>36</b><small>ימים</small></div><div><b>חדר זוגי</b><small>עם נועה לוי</small></div><div><b>צמחוני</b><small>תזונה</small></div></div>'+
+   '<div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="card-head"><div><b>התשלום שלי</b><small>שולמה מקדמה · יתרה עד '+fmt(parseD(RT.balanceDue))+'</small></div><span class="pill p-soon">מקדמה</span></div><div class="mbar" style="height:10px"><i style="width:'+Math.round(paid/total*100)+'%;background:var(--sage-deep)"></i></div><p class="lead" style="font-size:.9rem;margin:8px 0 0">'+shekel(paid)+' שולמו מתוך '+shekel(total)+'</p><button class="btn btn-primary full" style="margin-top:10px" data-ev="rdemo">תשלום היתרה '+shekel(total-paid)+'</button></div>'+
+   '<h2>לו״ז</h2>'+RT.days.map((d,i)=>'<details class="rday"'+(i===0?' open':'')+'><summary>'+d.d+'</summary>'+d.items.map(it=>'<div class="ritem"><b>'+it[0]+'</b><span>'+esc(it[1])+'</span></div>').join('')+'</details>').join('')+
+   '<h2>מה להביא</h2><div class="checklist">'+['מזרן יוגה (יש גם במקום)','בגדים חמים לערב','בגד ים לבריכה','בקבוק מים','מחברת ועט','נעלי הליכה'].map((x,i)=>'<label class="checkline"><input type="checkbox"'+(i<2?' checked':'')+'> <span>'+x+'</span></label>').join('')+'</div>'+
+   '<h2>מידע מעשי</h2><div class="poltable"><div><b>הגעה</b><span>הסעה יוצאת מתחנת רכבת חיפה מרכז ב־11:00</span></div><div><b>טלפון במקום</b><span dir="ltr">050-0000000</span></div><div><b>קבוצת WhatsApp</b><span><button class="linkbtn" data-ev="rdemo">הצטרפות לקבוצה</button></span></div></div>'+
+   '<div class="sheet-actions" style="margin-top:14px"><button class="btn btn-soft" data-ev="rdemo">הוספה ליומן</button><button class="btn btn-soft" data-ev="rdemo">ביטול השתתפות</button></div>';
+}
