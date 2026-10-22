@@ -842,7 +842,7 @@ async function shrinkImage(file){const url=URL.createObjectURL(file);try{const i
   const S_=256,c=document.createElement('canvas');c.width=c.height=S_;const x=c.getContext('2d');const k=Math.min(S_/img.width,S_/img.height);const w=img.width*k,h=img.height*k;x.drawImage(img,(S_-w)/2,(S_-h)/2,w,h);
   return await new Promise(r=>c.toBlob(r,'image/png'))}finally{URL.revokeObjectURL(url)}}
 function vSettings(){
-  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+planSection()+brandSection()+'<button class="row" style="margin-top:14px" data-go="install"><span class="who"><b>התקנה על מסך הבית</b><small>הוראות התקנה של האפליקציה בטלפון</small></span></button>'+
+  return header()+'<h1>הגדרות</h1><p class="lead">פרטי הסטודיו, מקומות תרגול וסוגי כרטיסיות.</p>'+'<h2>התראות</h2><div id="pushrow"></div>'+planSection()+brandSection()+'<button class="row" style="margin-top:14px" data-go="install"><span class="who"><b>התקנה על מסך הבית</b><small>הוראות התקנה של האפליקציה בטלפון</small></span></button>'+
   '<h2>הסטודיו</h2><div class="field"><label for="sn">שם הסטודיו</label><input id="sn" value="'+esc(S.studio.name)+'"></div><div class="field"><label for="tn">שם המורה</label><input id="tn" value="'+esc(S.studio.teacher)+'"></div>'+
   '<h2>מקומות תרגול</h2><div class="chips">'+S.places.map(pl=>'<span class="chip">'+esc(pl)+' <button data-delplace="'+esc(pl)+'" aria-label="הסרת '+esc(pl)+'" style="border:0;background:none;color:var(--muted);padding:0 2px">×</button></span>').join('')+'</div><label class="search"><input id="newplace" placeholder="מקום חדש, למשל: חוף הים"><button class="btn btn-sm btn-soft" data-act="addplace">הוספה</button></label>'+
   '<h2>מדיניות ביטול</h2><div class="card" style="box-shadow:none;border:1px solid var(--line)"><div class="field" style="margin-top:0"><label for="cut">ביטול חופשי <b id="cutl">'+cutTxt()+'</b></label><input type="range" id="cut" min="0" max="72" step="1" value="'+S.studio.cutoff+'" style="width:100%;accent-color:var(--sage-deep)"><div class="cutscale"><span>0</span><span>24</span><span>48</span><span>72 שעות</span></div></div><small class="lead" style="font-size:.85rem">אחרי חלון הזמן הזה ביטול מנקב שיעור, או שהמתרגל שולח בקשה עם הסבר ואת מחליטה. השינוי חל מיד על כל השיעורים, כולל הרשמות קיימות.</small></div>'+'<h2>סוגי כרטיסיות</h2><p class="lead" style="font-size:.88rem;margin-top:-4px">רק סוגים פעילים זמינים בפתיחת כרטיסייה. המחיר מוצע כברירת מחדל ואפשר לשנות אותו בכל פתיחה.</p>'+PROD.map(x=>{const on=prodOn(x.k),pc=prodPrice(x.k);return '<div class="switch prodrow'+(on?'':' off')+'"><div style="flex:1;min-width:0"><b>'+x.t+' <span class="soon-tag">'+(on?'פעיל':'כבוי')+'</span></b><small>'+x.s+'</small><label class="pricein">מחיר <input type="number" inputmode="numeric" min="0" data-pprice="'+x.k+'" value="'+(pc!=null?pc:'')+'" placeholder="—"> ₪</label></div><input type="checkbox" class="tog" data-ptog="'+x.k+'"'+(on?' checked':'')+' aria-label="הפעלת '+x.t+'"></div>'}).join('')+
@@ -941,6 +941,7 @@ function render(){
     q1('.pa-unlm').addEventListener('change',e=>{q1('.pa-lrow').hidden=e.target.checked});
     q1('.pa-days').addEventListener('input',e=>{const v=+e.target.value;q1('.pa-dl').textContent=v===0?'0 (הסתיים)':v})});
   evBind();
+  if(mode==='admin'&&view==='settings')pushRow();
   const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr'),ok=document.getElementById('lok');er.hidden=true;ok.hidden=true;
     const email=document.getElementById('em').value.trim(),pwEl=document.getElementById('pw'),password=pwEl?pwEl.value:'';
     const btn=lf.querySelector('button[type=submit]');btn.disabled=true;
@@ -1118,11 +1119,26 @@ async function pTap(k){
    '<button class="btn btn-soft" data-act="close">השארת ההרשמה</button></div>');
 }
 async function addOpening(cardId,n){if(!n)return;const rows=[];for(let i=0;i<n;i++)rows.push({card_id:cardId,why:'ניצול קודם (לפני המעבר לאפליקציה)',kind:'opening'});await q(sb.from('punches').insert(rows))}
+const VAPID='BLoDXNocaqk5R2R58JG9Lkh72QAiRNAgh5hEXFRqow-lsHTESvvI0QLxL7NOjJXqfrHWFe_NFcBOEIQKmlkxf5w';
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+async function pushSub(){try{if(!pushOk())return null;const r=await navigator.serviceWorker.ready;return await r.pushManager.getSubscription()}catch(e){return null}}
+function b64u(s){const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))}
+async function pushOn(){
+  if(!pushOk()){toast(/iphone|ipad/i.test(navigator.userAgent)?'באייפון צריך קודם להתקין את האפליקציה למסך הבית ולפתוח אותה משם':'הדפדפן הזה לא תומך בהתראות');return false}
+  const perm=await Notification.requestPermission();if(perm!=='granted'){toast('ההתראות לא אושרו. אפשר להפעיל בהגדרות הטלפון');return false}
+  const r=await navigator.serviceWorker.ready;let sub=await r.pushManager.getSubscription();
+  if(!sub)sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});
+  const j=sub.toJSON();await q(sb.from('push_subs').upsert({endpoint:j.endpoint,user_id:myUid,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,200)}));
+  store.set('yogis-push','1');return true}
+async function pushOff(){const sub=await pushSub();if(sub){try{await q(sb.from('push_subs').delete().eq('endpoint',sub.endpoint))}catch(e){}try{await sub.unsubscribe()}catch(e){}}store.set('yogis-push',null)}
+async function pushRow(){const el=document.getElementById('pushrow');if(!el)return;const sub=await pushSub(),on=!!sub&&typeof Notification!=='undefined'&&Notification.permission==='granted';
+  el.innerHTML='<div class="switch"><div><b>התראות פוש לטלפון</b><small>'+(on?'פעיל במכשיר הזה: הרשמות, ביטולים ובקשות יגיעו גם כשהאפליקציה סגורה.':'קבלת התראה בכל פעם שמתרגל נרשם, מבטל או שולח בקשה, גם כשהאפליקציה סגורה.')+'</small></div><input type="checkbox" class="tog" id="pushtog"'+(on?' checked':'')+' aria-label="התראות פוש"></div>'+(on?'<button class="linkbtn" data-act="pushtest" style="font-size:.85rem">שליחת התראת בדיקה</button>':'');
+  document.getElementById('pushtog').onchange=async e=>{e.target.disabled=true;try{if(e.target.checked){if(await pushOn())toast('התראות פוש הופעלו')}else{await pushOff();toast('התראות פוש כובו')}}catch(x){toast(esc(errMsg(x)))}pushRow()}}
 function aNotesSheet(){
   const list=S.anotes||[];
   if(list.some(n=>!n.read)){list.forEach(n=>n.read=true);sb.rpc('a_read_admin_notes').then(()=>{});render()}
   sheet('<h3>התראות ניהול</h3>'+(list.length?'<div>'+list.map(n=>'<div class="noteitem"><b>'+esc(n.title)+'</b><small>'+esc(n.body)+'</small><small>'+fmt(n.t)+' · '+hm(n.t)+'</small></div>').join('')+'</div>':'<p class="lead">אין התראות כרגע. כאן יופיעו עדכונים כמו הפשרת כרטיסייה על ידי מתרגל.</p>')+
-   '<div class="sheet-actions"><button class="btn btn-soft" data-act="close">סגירה</button></div>');
+   '<div id="pushrow" style="margin-top:12px"></div><div class="sheet-actions"><button class="btn btn-soft" data-act="close">סגירה</button></div>');pushRow();
 }
 function pUnfreezeSheet(){
   const p=S.people[0],c=cur(p),d=frozenDays(c);
@@ -1234,6 +1250,7 @@ async function doAct(a,t,d){
     case'bsave':{t.disabled=true;try{await q(sb.from('studio').update({brand:{app_name:BD.app_name||null,color:BD.color||null,accent:BD.accent||null,logo:BD.logo||null,icons:BD.logo&&BD.icons?BD.icons:null}}).eq('id',SID));BD=null;await reload();toast('המיתוג נשמר')}catch(e){toast(esc(errMsg(e)))}finally{t.disabled=false}break}
     case'breset':BD=null;applyBrand(brandOf(S.studio));render();break;
     case'blogodel':BD.logo='';BD.icons=null;bPreview();render();break;
+    case'pushtest':await q(sb.from('admin_notes').insert({studio_id:SID,title:'בדיקת התראה',body:'כך תיראה התראה כשמתרגל נרשם או מבטל.',kind:'test'}));toast('נשלחה התראת בדיקה');break;
     case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
     case'logout':await sb.auth.signOut();applyBrand(null);adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
     /* practitioner */
@@ -1615,6 +1632,7 @@ function pickSheet(){
   if(/type=recovery/.test(location.hash)){mode='newpw';render();return}
   const u=new URLSearchParams(location.search),ut=u.get('t'),saved=store.get(TOKEN_KEY),pref=store.get(MODE_KEY);
   if(evRoute){await startPublicEvent();return}
+  try{navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='refresh'&&(mode==='admin'||mode==='p'))reload()})}catch(e){}
   render();
   setInterval(()=>{if(!bg&&mode==='p'&&document.visibilityState==='visible')reload()},60000);
   if(PLATFORM||u.has('admin')||(pref==='admin'&&(!ut||ut===saved))){await startAdmin();return}
