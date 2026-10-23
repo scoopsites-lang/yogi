@@ -329,6 +329,7 @@ button.stat span::after{content:' ›';opacity:.5}
 .summary{display:grid;gap:6px;margin-bottom:12px}.summary div{display:flex;justify-content:space-between}.summary .tot{border-top:1px solid var(--line);padding-top:8px;font-size:1.1rem}
 .countdown{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.countdown div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}.countdown b{display:block;font-size:1.05rem}.countdown small{color:var(--muted);font-size:.78rem}
 .checklist .checkline{margin-top:8px}
+.unpunch{border:1px solid var(--line);background:var(--surface);color:var(--bad);border-radius:8px;font:inherit;font-size:.72rem;padding:1px 7px;margin-inline-start:6px;cursor:pointer}
 .pitch{margin:6px 0 14px;padding:0 18px 0 0;color:var(--muted);line-height:1.9;font-size:.92rem}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}.slugin span{padding:0 2px 0 12px;color:var(--muted);font-size:.92rem;white-space:nowrap}.slugin input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding-left:4px;border-radius:0!important}.slugin input:focus,.slugin input:focus-visible{outline:none}.slugin:focus-within{outline:2px solid var(--sage-deep);outline-offset:2px}
 </style>
@@ -507,7 +508,7 @@ async function loadAdmin(){
   S={studio:{id:st.id,slug:st.slug,plan:st.plan,name:st.name,teacher:st.teacher,monthly:st.monthly_enabled,products:st.products||{},defaultTotal:st.default_total,cutoff:st.cutoff_hours,price:st.price_per_class==null?50:st.price_per_class,sent:st.last_sent?Date.parse(st.last_sent):null,brand:st.brand||{},trial:st.trial_until?parseD(st.trial_until):null,limit:st.member_limit,active:st.active!==false,writable:st.active!==false&&(!st.trial_until||parseD(st.trial_until)>=today())},
     places:st.places||[],classes:cl.map(mapClass),sessions,notes:[],
     anotes:an.map(n=>({id:n.id,t:Date.parse(n.created_at),title:n.title,body:n.body,pid:n.person_id,read:(n.read_by||[]).includes(myUid)})),
-    people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',
+    people:pe.map(p=>({id:p.id,name:p.name,phone:p.phone,token:p.token,gender:p.gender||'f',notes:p.notes||'',
       cards:ca.filter(c=>c.person_id===p.id).map(c=>mapCard(c,pu.filter(x=>x.card_id===c.id).map(x=>({id:x.id,t:Date.parse(x.at),why:x.why,kind:x.kind||'manual',sk:x.session_id?keyOf(x.session_id):null})),fr.filter(f=>f.card_id===c.id)))})).filter(p=>p.cards.length)
   };
   S.people.reverse();
@@ -584,13 +585,13 @@ function cardBody(c,p,forP){
    '<div class="meta"><div><small>'+(s==='frozen'?'תוקף נוכחי (מתארך)':'בתוקף עד')+'</small><b>'+fmt(effExpires(c))+'</b></div><div><small>'+(s==='expired'?'פג תוקף לפני':'ימים לתום התוקף')+'</small><b>'+(s==='expired'?Math.ceil((today()-c.expires)/DAY)+' ימים':daysTo(c))+'</b></div></div>'+
    (s==='frozen'?'<div class="note">'+(forP?'הכרטיסייה מוקפאת ':'מוקפאת ')+'מ־'+fmt(c.frozen.since)+' עד '+fmt(c.frozen.until)+' ('+esc(c.frozen.reason)+'). ההפשרה אוטומטית בסוף התקופה, והתוקף יוארך במספר ימי ההקפאה.'+(forP?'<button class="btn btn-lav full" style="margin-top:10px" data-act="punfreeze">'+I.snow+'הפשרת הכרטיסייה עכשיו</button>':'')+'</div>':'');
 }
-function history(c){
-  const ev=c.used.map((u,i)=>({t:u.t,txt:(i+1)+'. '+u.why}));
+function history(c,admin){
+  const ev=c.used.map((u,i)=>({t:u.t,txt:(i+1)+'. '+u.why,pid:admin&&u.id?u.id:null}));
   c.freezes.forEach(f=>ev.push({t:f.to,txt:'הקפאה ('+f.reason+') · '+Math.round((f.to-f.from)/DAY)+' ימים'}));
   if(c.frozen)ev.push({t:c.frozen.since,txt:'הוקפאה ('+c.frozen.reason+')'});
   ev.push({t:c.start,txt:'נפתח: '+cardName(c)});
   ev.sort((a,b)=>b.t-a.t);
-  return '<div class="hist">'+ev.map(e=>'<div>'+esc(e.txt)+'<span>'+fmt(e.t)+'</span></div>').join('')+'</div>';
+  return '<div class="hist">'+ev.map(e=>'<div>'+esc(e.txt)+'<span>'+fmt(e.t)+(e.pid?' <button class="unpunch" data-unpunch="'+e.pid+'" aria-label="ביטול הניקוב">ביטול</button>':'')+'</span></div>').join('')+'</div>';
 }
 
 /* ---------- manager views ---------- */
@@ -692,7 +693,8 @@ function vPerson(){
     '<button class="btn btn-soft" data-act="plink">'+I.link+'הקישור האישי של '+esc(first(p))+'</button>'+
    '</div><h2>שיעורים קרובים <span>'+mr.length+'</span></h2>'+
    (mr.length?'<div class="hist">'+mr.map(x=>'<div>'+esc(x.s.name)+(x.r.status==='pending'?' · בקשת ביטול ממתינה':'')+'<span>'+dayTime(x.s.t)+' · '+dm(x.s.t)+'</span></div>').join('')+'</div>':'<p class="lead">'+G(p,'לא רשומה','לא רשום')+' לשיעורים כרגע.</p>')+
-   '<h2>היסטוריה</h2>'+history(c);
+   '<h2>הערות</h2><div class="field" style="margin-top:0"><textarea id="pnotes" rows="3" maxlength="3000" placeholder="הערות פנימיות על '+esc(first(p))+': מגבלות, העדפות, תשלומים… רק את רואה אותן">'+esc(p.notes||'')+'</textarea><small class="lead" id="pnotesst" style="font-size:.8rem">נשמר אוטומטית</small></div>'+
+   '<h2>היסטוריה</h2>'+history(c,true);
 }
 const shekel=n=>'₪'+Math.round(n).toLocaleString('he-IL');
 function upcomingRegs(){const out=[];[0,1].forEach(o=>weekInst(o).forEach(i=>{const s=getS(i.k);if(s.cancelled||i.t<=now())return;if(o===1&&i.t>wkStart(now())+14*DAY)return;s.regs.forEach(r=>out.push({inst:i,r,p:findP(r.pid)}))}));return out}
@@ -941,6 +943,9 @@ function render(){
     q1('.pa-unlm').addEventListener('change',e=>{q1('.pa-lrow').hidden=e.target.checked});
     q1('.pa-days').addEventListener('input',e=>{const v=+e.target.value;q1('.pa-dl').textContent=v===0?'0 (הסתיים)':v})});
   evBind();
+  const pn=document.getElementById('pnotes');if(pn){let tm=null;const st=document.getElementById('pnotesst');const save=async()=>{const p=findP(sel);if(!p)return;const v=pn.value.trim();if(v===(p.notes||''))return;
+      st.textContent='שומר…';try{await q(sb.from('people').update({notes:v||null}).eq('id',p.id));p.notes=v;st.textContent='נשמר'}catch(x){st.textContent=errMsg(x)}};
+    pn.addEventListener('input',()=>{st.textContent='…';clearTimeout(tm);tm=setTimeout(save,900)});pn.addEventListener('blur',()=>{clearTimeout(tm);save()})}
   if(mode==='admin'&&view==='settings')pushRow();
   const lf=document.getElementById('loginf');if(lf)lf.addEventListener('submit',async e=>{e.preventDefault();const er=document.getElementById('lerr'),ok=document.getElementById('lok');er.hidden=true;ok.hidden=true;
     const email=document.getElementById('em').value.trim(),pwEl=document.getElementById('pw'),password=pwEl?pwEl.value:'';
@@ -1158,7 +1163,7 @@ function notesSheet(){
 /* ---------- clicks ---------- */
 function onClick(e){
   const ev_=e.target.closest('[data-ev]');if(ev_){evAct(ev_);return}
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw],[data-unpunch]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();if(BD){BD=null;applyBrand(brandOf(S.studio))}view=d.go;render();window.scrollTo(0,0)}
   else if(d.open){sel=d.open;view='person';render();window.scrollTo(0,0)}
@@ -1173,6 +1178,9 @@ function onClick(e){
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
   else if(d.refund){act(()=>q(sb.rpc('a_refund',{p_reg:d.refund})),'הניקוב הוחזר').catch(()=>{})}
   else if(d.tile){const m={active:['people','active'],frozen:['people','frozen'],money:['money'],regs:['regs']}[d.tile];view=m[0];if(m[1]){filter=m[1];q_=''}render();window.scrollTo(0,0)}
+  else if(d.unpunch){
+    if(!t.dataset.armed){t.dataset.armed='1';t.textContent='לבטל?';setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='ביטול'}},3000);return}
+    const id=d.unpunch;act(()=>q(sb.from('punches').update({void:true}).eq('id',id)),'הניקוב בוטל. השיעור חזר לכרטיסייה',()=>act(()=>q(sb.from('punches').update({void:false}).eq('id',id)),'הניקוב הוחזר')).catch(()=>{})}
   else if(d.sw){if(BD){BD[d.sw]=d.c;bPreview();render()}}
   else if(d.pastudio){paSel=+d.pastudio;render();window.scrollTo(0,0)}
   else if(d.paf){paF=d.paf;render()}
