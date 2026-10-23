@@ -228,7 +228,9 @@ function cardBody(c,p,forP){
   const s=status(c);
   if(unl(c))return '<div class="big"><b>∞</b><span>מנוי חודשי ללא הגבלה</span></div><div class="meta"><div><small>כניסות החודש</small><b>'+c.used.length+'</b></div><div><small>בתוקף עד</small><b>'+fmt(effExpires(c))+'</b></div></div>';
   const res=Math.min(reserved(p),Math.max(0,left(c)));
-  let dots='';for(let i=0;i<c.total;i++){const u=i<c.used.length,r=!u&&i<c.used.length+res;dots+='<span class="dot'+(u?' used':r?' res':'')+'">'+(u?I.check:'')+'</span>'}
+  const adm=mode==='admin'&&!forP&&p&&p.id;
+  let dots='';for(let i=0;i<c.total;i++){const u=i<c.used.length,r=!u&&i<c.used.length+res,cls='dot'+(u?' used':r?' res':'');
+    dots+=adm?'<button class="'+cls+' tap" data-dot="'+(u?'u':'f')+'" data-pid="'+p.id+'"'+(u&&c.used[i].id?' data-punchid="'+c.used[i].id+'"':'')+' aria-label="'+(u?'ביטול ניקוב':'ניקוב')+'">'+(u?I.check:'')+'</button>':'<span class="'+cls+'">'+(u?I.check:'')+'</span>'}
   return '<div class="big"><b>'+Math.max(0,left(c))+'</b><span>שיעורים נותרו מתוך '+c.total+'</span></div><div class="dots" style="grid-template-columns:repeat('+Math.min(5,c.total)+',1fr)">'+dots+'</div>'+
    '<div class="legend"><span><i style="background:var(--sage)"></i>נוצלו</span>'+(res?'<span><i style="background:var(--lav)"></i>שמורים לשיעורים שנרשמת אליהם</span>':'')+'<span><i style="border:1.5px dashed var(--sage)"></i>פנויים</span></div>'+
    '<div class="meta"><div><small>'+(s==='frozen'?'תוקף נוכחי (מתארך)':'בתוקף עד')+'</small><b>'+fmt(effExpires(c))+'</b></div><div><small>'+(s==='expired'?'פג תוקף לפני':'ימים לתום התוקף')+'</small><b>'+(s==='expired'?Math.ceil((today()-c.expires)/DAY)+' ימים':daysTo(c))+'</b></div></div>'+
@@ -812,7 +814,7 @@ function notesSheet(){
 /* ---------- clicks ---------- */
 function onClick(e){
   const ev_=e.target.closest('[data-ev]');if(ev_){evAct(ev_);return}
-  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw],[data-unpunch]');if(!t)return;
+  const t=e.target.closest('[data-go],[data-open],[data-punch],[data-confirm],[data-act],[data-filter],[data-ses],[data-ptap],[data-wk],[data-pwk],[data-approve],[data-decline],[data-refund],[data-deltmpl],[data-edittmpl],[data-readnote],[data-delplace],[data-tile],[data-themeset],[data-auth],[data-studio],[data-pastudio],[data-paf],[data-sw],[data-unpunch],[data-dot]');if(!t)return;
   const d=t.dataset;
   if(d.go){close();if(BD){BD=null;applyBrand(brandOf(S.studio))}view=d.go;render();window.scrollTo(0,0)}
   else if(d.open){sel=d.open;view='person';render();window.scrollTo(0,0)}
@@ -827,6 +829,10 @@ function onClick(e){
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
   else if(d.refund){act(()=>q(sb.rpc('a_refund',{p_reg:d.refund})),'הניקוב הוחזר').catch(()=>{})}
   else if(d.tile){const m={active:['people','active'],frozen:['people','frozen'],money:['money'],regs:['regs']}[d.tile];view=m[0];if(m[1]){filter=m[1];q_=''}render();window.scrollTo(0,0)}
+  else if(d.dot){const p=findP(d.pid),c=p&&cur(p);if(!c)return;
+    if(d.dot==='f'){const st=status(c);if(st==='active'||st==='soon')askPunch(p.id);else toast(st==='frozen'?'הכרטיסייה מוקפאת. צריך להפשיר לפני ניקוב':'אי אפשר לנקב כרטיסייה ש'+(st==='expired'?'פג תוקפה':'נוצלה'));return}
+    const u=c.used.find(x=>x.id===d.punchid);if(!u)return;
+    sheet('<h3>ביטול ניקוב</h3><p class="lead">'+esc(p.name)+' · '+esc(u.why)+'<br>'+fmt(u.t)+' '+hm(u.t)+'</p><p>אחרי הביטול יישארו <b>'+(left(c)+1)+'</b> שיעורים בכרטיסייה.</p><div class="sheet-actions"><button class="btn btn-primary" data-act="dounpunch" data-id="'+u.id+'">ביטול הניקוב</button><button class="btn btn-soft" data-act="close">השארה</button></div>')}
   else if(d.unpunch){
     if(!t.dataset.armed){t.dataset.armed='1';t.textContent='לבטל?';setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='ביטול'}},3000);return}
     const id=d.unpunch;act(()=>q(sb.from('punches').update({void:true}).eq('id',id)),'הניקוב בוטל. השיעור חזר לכרטיסייה',()=>act(()=>q(sb.from('punches').update({void:false}).eq('id',id)),'הניקוב הוחזר')).catch(()=>{})}
@@ -908,6 +914,7 @@ async function doAct(a,t,d){
     case'breset':BD=null;applyBrand(brandOf(S.studio));render();break;
     case'blogodel':BD.logo='';BD.icons=null;bPreview();render();break;
     case'pushtest':await q(sb.from('admin_notes').insert({studio_id:SID,title:'בדיקת התראה',body:'כך תיראה התראה כשמתרגל נרשם או מבטל.',kind:'test'}));toast('נשלחה התראת בדיקה');break;
+    case'dounpunch':{const id=d.id;await act(()=>q(sb.from('punches').update({void:true}).eq('id',id)),'הניקוב בוטל. השיעור חזר לכרטיסייה',()=>act(()=>q(sb.from('punches').update({void:false}).eq('id',id)),'הניקוב הוחזר'));break}
     case'newstudio':mode='onboard';render();window.scrollTo(0,0);break;
     case'logout':await sb.auth.signOut();applyBrand(null);adminSess=false;myTok=null;SID=null;MY=[];store.set(MODE_KEY,null);store.set(STUDIO_KEY,null);authMode='login';mode='login';view='home';render();break;
     /* practitioner */
