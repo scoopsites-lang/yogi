@@ -216,6 +216,11 @@ function reqCard(x){
   return '<div class="req"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>'+esc(x.p.name)+'</b><span class="lead" style="font-size:.85rem">'+esc(x.s.name)+' · '+dayTime(x.s.t)+'</span></div>'+
    '<q>'+esc(x.r.reason||'ללא הסבר')+'</q><div class="btns"><button class="btn btn-primary btn-sm" data-approve="'+x.r.id+'">ביטול ללא ניקוב</button><button class="btn btn-soft btn-sm" data-decline="'+x.r.id+'">השארת הניקוב</button></div></div>';
 }
+/* active week: once the last class of the current week has ended, next week becomes the active one */
+function weekDone(off){const l=weekInst(off);return l.length>0&&l.every(i=>i.t+(i.c.dur||60)*6e4<=now())}
+const actOff=()=>weekDone(0)?1:0;
+let wkAuto=true;const wkCur=()=>wkAuto?actOff():wkOff;
+const weekName=off=>({'-2':'לפני שבועיים','-1':'שבוע שעבר','0':'השבוע','1':'שבוע הבא','2':'בעוד שבועיים'})[off]||(off>0?'בעוד '+off+' שבועות':'לפני '+(-off)+' שבועות');
 function weekLabel(off){const ws=new Date(wkStart(now()));ws.setDate(ws.getDate()+7*off);const we=new Date(ws);we.setDate(we.getDate()+6);return dm(ws.getTime())+'–'+dm(we.getTime())}
 function groupDays(list,rowFn){
   let html='',lastDay=-1;const td=today();
@@ -282,7 +287,7 @@ function vHome(){
   const act_=all.filter(x=>x[2]==='active'||x[2]==='soon').length;
   const month=new Date(today());month.setDate(1);
   const punches=all.reduce((n,x)=>n+x[1].used.filter(u=>u.t>=month.getTime()&&u.kind!=='opening').length,0);
-  const regsWeek=weekInst(0).filter(i=>i.t>now()).reduce((n,i)=>n+getS(i.k).regs.length,0);
+  const regsWeek=weekInst(actOff()).filter(i=>i.t>now()).reduce((n,i)=>n+getS(i.k).regs.length,0);
   const frozen=all.filter(x=>x[2]==='frozen').length;
   const attn=all.filter(x=>['soon','done','expired'].includes(x[2]));
   const ready=all.filter(x=>x[2]==='active'||x[2]==='soon').map(x=>x[0]).concat(all.filter(x=>x[2]==='frozen').map(x=>x[0]));
@@ -292,7 +297,7 @@ function vHome(){
   if(nxt){INST[nxt.k]=nxt;const s=getS(nxt.k);next='<h2>השיעור הבא <span>'+(nxt.t-now()<DAY?'בעוד '+inTxt(nxt.t-now()):'יום '+DAYS[new Date(nxt.t).getDay()])+'</span></h2><button class="nextcls" style="width:100%;text-align:start" data-ses="'+nxt.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:1.1rem">'+esc(nxt.c.name)+'</b><span class="lead">'+dayTime(nxt.t)+'</span></div><div class="lead" style="font-size:.88rem">'+s.regs.length+' רשומים'+(nxt.c.cap?' מתוך '+nxt.c.cap:'')+' · '+esc(nxt.c.place)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'}
   const empty=!S.people.length?'<div class="note">עוד אין מתרגלות במערכת. הוסיפי מתרגלת בלשונית "מתרגלים", ושלחי לה את הקישור האישי ב־WhatsApp.</div>':'';
   return header()+aBanner()+planBanner()+'<h1>'+greet()+', '+esc(S.studio.teacher)+'</h1><p class="lead">מי מגיעה השבוע, ומי צריכה תשומת לב.</p>'+empty+
-   '<div class="stats"><button class="stat sage" data-tile="active"><b>'+act_+'</b><span>כרטיסיות פעילות</span></button><button class="stat" data-tile="regs"><b>'+regsWeek+'</b><span>הרשמות לשאר השבוע</span></button><button class="stat" data-tile="money"><b>'+punches+'</b><span>ניקובים החודש · '+shekel(punches*S.studio.price)+'</span></button><button class="stat lav" data-tile="frozen"><b>'+frozen+'</b><span>מוקפאות כרגע</span></button></div>'+
+   '<div class="stats"><button class="stat sage" data-tile="active"><b>'+act_+'</b><span>כרטיסיות פעילות</span></button><button class="stat" data-tile="regs"><b>'+regsWeek+'</b><span>'+(actOff()?'הרשמות לשבוע הבא':'הרשמות לשאר השבוע')+'</span></button><button class="stat" data-tile="money"><b>'+punches+'</b><span>ניקובים החודש · '+shekel(punches*S.studio.price)+'</span></button><button class="stat lav" data-tile="frozen"><b>'+frozen+'</b><span>מוקפאות כרגע</span></button></div>'+
    (reqs.length?'<h2>בקשות ביטול <span>'+reqs.length+' ממתינות</span></h2><div class="list">'+reqs.map(reqCard).join('')+'</div>':'')+next+
    (attn.length?'<h2>דורשות תשומת לב <span>'+attn.length+'</span></h2><div class="list">'+attn.map(x=>row(x[0],true)).join('')+'</div>':'')+
    (ready.length?'<h2>ניקוב ידני <span>למי שהגיעה בלי הרשמה</span></h2><div class="list">'+ready.map(p=>row(p,true)).join('')+'</div>':'');
@@ -304,9 +309,10 @@ function adminCls(inst){
   return '<button class="cls '+cls+'" data-ses="'+inst.k+'"><span class="tm">'+inst.c.time+'<small>'+inst.c.dur+' דק׳</small></span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+n+' / '+capTxt(inst.c)+' רשומים · '+esc(inst.c.place)+'</small>'+(inst.c.cap?'<span class="cap"><i style="width:'+Math.min(100,n/inst.c.cap*100)+'%"></i></span>':'')+'</span><span class="st">'+st+'</span></button>';
 }
 function vSched(){
-  const list=weekInst(wkOff);
+  const off=wkCur(),act=actOff(),list=weekInst(off);
   return header()+'<h1>לו״ז שיעורים</h1><p class="lead">המתרגלות נרשמות מהטלפון. ביטול חופשי '+cutTxt()+'.</p>'+
-   '<div class="seg"><button data-wk="0" aria-pressed="'+(wkOff===0)+'">השבוע · '+weekLabel(0)+'</button><button data-wk="1" aria-pressed="'+(wkOff===1)+'">שבוע הבא · '+weekLabel(1)+'</button></div>'+
+   '<div class="weeknav"><button class="iconbtn" data-wk="'+(off-1)+'"'+(off<=-3?' disabled':'')+' aria-label="שבוע קודם">'+I.back+'</button><div class="wkmid"><b>'+weekName(off)+(off===act?' <span class="pill p-active">פעיל</span>':'')+'</b><small>'+weekLabel(off)+'</small></div><button class="iconbtn" data-wk="'+(off+1)+'"'+(off>=6?' disabled':'')+' aria-label="שבוע הבא">'+I.back.replace('M9 6l6 6-6 6','M15 6l-6 6 6 6')+'</button></div>'+
+   (off!==act?'<button class="linkbtn" data-wk="auto" style="display:block;margin:6px auto 0">חזרה לשבוע הפעיל</button>':'')+
    '<button class="btn btn-primary full" style="margin-top:12px" data-act="sendwk">'+I.msg+'שליחת הלו״ז ב־WhatsApp</button>'+
    (S.studio.sent?'<p class="lead" style="font-size:.82rem;margin-top:6px;text-align:center">נשלח לאחרונה ב־'+fmt(S.studio.sent)+'</p>':'')+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,adminCls):'<div class="empty">אין שיעורים קבועים. הוסיפי שיעור למטה.</div>')+'</div>'+
@@ -350,13 +356,13 @@ function vPerson(){
 const shekel=n=>'₪'+Math.round(n).toLocaleString('he-IL');
 function upcomingRegs(){const out=[];[0,1].forEach(o=>weekInst(o).forEach(i=>{const s=getS(i.k);if(s.cancelled||i.t<=now())return;if(o===1&&i.t>wkStart(now())+14*DAY)return;s.regs.forEach(r=>out.push({inst:i,r,p:findP(r.pid)}))}));return out}
 function vRegs(){
-  const list=weekInst(0).filter(i=>i.t>now()&&!getS(i.k).cancelled);
+  const list=weekInst(actOff()).filter(i=>i.t>now()&&!getS(i.k).cancelled);
   const total=list.reduce((n,i)=>n+getS(i.k).regs.length,0);
   let html='';
-  if(!list.length)html='<div class="empty">אין עוד שיעורים השבוע.</div>';
+  if(!list.length)html='<div class="empty">'+(actOff()?'אין שיעורים בשבוע הבא.':'אין עוד שיעורים השבוע.')+'</div>';
   else html=groupDays(list,inst=>{INST[inst.k]=inst;const s=getS(inst.k);
     return '<button class="nextcls" style="width:100%;text-align:start" data-ses="'+inst.k+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>'+inst.c.time+' · '+esc(inst.c.name)+'</b><span class="lead" style="font-size:.85rem">'+s.regs.length+(inst.c.cap?' / '+inst.c.cap:'')+' רשומים</span></div><div class="lead" style="font-size:.85rem">'+esc(inst.c.place)+' · צפי '+shekel(s.regs.length*S.studio.price)+'</div><div class="names">'+(s.regs.length?s.regs.map(r=>'<span class="'+(r.status==='pending'?'pend':'')+'">'+esc((findP(r.pid)||{name:'?'}).name)+'</span>').join(''):'<span>עדיין אין נרשמים</span>')+'</div></button>'});
-  return header()+'<button class="back" data-go="home">'+I.back+'חזרה</button><h1>הרשמות לשאר השבוע</h1><p class="lead">'+total+' הרשמות ב־'+list.length+' שיעורים · צפי הכנסה '+shekel(total*S.studio.price)+' לפי '+shekel(S.studio.price)+' לשיעור.</p><div class="list" style="gap:8px">'+html+'</div>';
+  return header()+'<button class="back" data-go="home">'+I.back+'חזרה</button><h1>'+(actOff()?'הרשמות לשבוע הבא':'הרשמות לשאר השבוע')+'</h1><p class="lead">'+total+' הרשמות ב־'+list.length+' שיעורים · צפי הכנסה '+shekel(total*S.studio.price)+' לפי '+shekel(S.studio.price)+' לשיעור.</p><div class="list" style="gap:8px">'+html+'</div>';
 }
 function expectedTable(price){
   const end=now()+7*DAY,rows=[...weekInst(0),...weekInst(1)].filter(i=>i.t>now()&&i.t<end&&!getS(i.k).cancelled);
@@ -739,10 +745,10 @@ function linkSheet(){
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(l,bg.querySelector('.msg'))};
 }
 function weekSheet(){
-  const list=weekInst(wkOff).filter(i=>!getS(i.k).cancelled&&i.t>now());
+  const list=weekInst(wkCur()).filter(i=>!getS(i.k).cancelled&&i.t>now());
   let lines='',last=-1;
   list.forEach(i=>{const d=new Date(i.t).getDay();lines+=(d!==last?'\n*יום '+DAYS[d]+' '+dm(i.t)+'*\n':'')+i.c.time+' · '+i.c.name+' ('+i.c.dur+' דק׳) · '+i.c.place+'\n';last=d});
-  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkOff)+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+studioUrl()+'\n\nביטול חופשי '+cutTxt()+'.\n'+S.studio.name;
+  const text='שבוע טוב!\nהלו״ז לשבוע '+weekLabel(wkCur())+':\n'+(lines||'\nאין שיעורים פתוחים השבוע.\n')+'\nלהרשמה לשיעורים:\n'+studioUrl()+'\n\nביטול חופשי '+cutTxt()+'.\n'+S.studio.name;
   sheet('<h3>שליחת הלו״ז השבועי</h3><p class="lead">בוחרים ב־WhatsApp את קבוצת המתרגלות או רשימת התפוצה. מי שכבר פתח פעם אחת את הקישור האישי שלו, נכנס מהקישור הזה ישר לכרטיסייה ולהרשמה.</p>'+waText('https://wa.me/?text='+encodeURIComponent(text),text));
   bg.querySelector('#cp').onclick=e=>{e.stopPropagation();copyText(text,bg.querySelector('.msg'))};
   bg.querySelector('a.btn').addEventListener('click',()=>{sb.from('studio').update({last_sent:new Date().toISOString()}).eq('id',SID).then(()=>{})});
@@ -823,7 +829,7 @@ function onClick(e){
   else if(d.filter){filter=d.filter;render()}
   else if(d.ses){sesSheet(d.ses)}
   else if(d.ptap){pTap(d.ptap)}
-  else if(d.wk){wkOff=+d.wk;render()}
+  else if(d.wk){if(d.wk==='auto'){wkAuto=true}else{wkAuto=false;wkOff=+d.wk;if(wkOff===actOff())wkAuto=true}render()}
   else if(d.pwk){pwkOff=+d.pwk;render()}
   else if(d.approve){act(()=>q(sb.rpc('a_resolve',{p_reg:d.approve,p_approve:true})),'הבקשה אושרה. לא ינוקב שיעור').catch(()=>{})}
   else if(d.decline){act(()=>q(sb.rpc('a_resolve',{p_reg:d.decline,p_approve:false})),'ההרשמה נשארת. השיעור ינוקב').catch(()=>{})}
