@@ -896,7 +896,7 @@ function pCls(p){return inst=>{
   return '<button class="cls '+cls+'" data-ptap="'+inst.k+'"'+(past||s.cancelled?' aria-disabled="true"':'')+'><span class="tm">'+inst.c.time+'</span><span class="info"><b>'+esc(inst.c.name)+'</b><small>'+sub+'</small></span><span class="st">'+st+'</span></button>';
 }}
 function vP(){
-  const p=S.people[0],c=cur(p),s=status(c),list=weekInst(pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read&&!expired(n)).length;
+  const p=S.people[0],c=cur(p),s=status(c),list=weekInst(actOff()+pwkOff),mr=myRegs(p),unread=myNotes(p).filter(n=>!n.read&&!expired(n)).length;
   return '<div class="top"><div class="brand">'+mark(40)+'<div><b>'+esc(appName())+'</b><small>'+esc(S.studio.name)+'</small></div></div>'+(adminSess?'<button class="iconbtn" data-act="toadmin">ניהול</button>':'')+themeBtn()+'<button class="iconbtn bell" data-act="notes" aria-label="התראות">'+I.bell+(unread?'<em>'+unread+'</em>':'')+'</button></div>'+
    (previewName?'<div class="banner" style="background:var(--lav-soft)"><div><b>צפייה כמתרגל: '+esc(previewName)+'</b><small>זו התצוגה של המתרגל. חזרה לניהול בכפתור "ניהול" למעלה.</small></div></div>':'')+
    (!previewName&&!isStandalone()?'<div class="banner" style="background:var(--sage-soft)"><div><b>'+G(p,'התקיני','התקן')+' את YoGis על מסך הבית</b><small>כך הכרטיסייה והלו״ז תמיד בהישג יד, בלחיצה אחת.</small></div>'+(installEvt?'<button class="btn btn-primary btn-sm" data-act="doinstall">התקנה</button>':'<button class="btn btn-primary btn-sm" data-act="pinstall">איך מתקינים</button>')+'</div>':'')+
@@ -905,7 +905,7 @@ function vP(){
    (s==='soon'?'<div class="note">התוקף מסתיים בעוד '+daysTo(c)+' ימים. כדאי לשבץ את השיעורים שנותרו.</div>':'')+
    (s==='done'||s==='expired'?'<div class="note">הכרטיסייה הסתיימה. לחידוש אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+
    '<div class="eyebrow">לו״ז שבועי</div><p class="lead" style="text-align:center;font-size:.9rem">'+G(p,'הקישי על שיעור כדי להירשם, והקישי שוב כדי לבטל.','הקש על שיעור כדי להירשם, והקש שוב כדי לבטל.')+'<br>ניתן לבטל ללא "ניקוב" בכרטיסייה '+cutTxt()+'.</p>'+
-   (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg"><button data-pwk="0" aria-pressed="'+(pwkOff===0)+'">השבוע</button><button data-pwk="1" aria-pressed="'+(pwkOff===1)+'">שבוע הבא</button></div>'+
+   (S.studio.writable===false?'<div class="note">ההרשמה לשיעורים סגורה כרגע. אפשר לפנות ל'+esc(S.studio.teacher)+'.</div>':'')+'<div class="seg">'+[0,1].map(i=>{const o=actOff()+i;return '<button data-pwk="'+i+'" aria-pressed="'+(pwkOff===i)+'">'+weekName(o)+' <small style="font-weight:500">'+weekLabel(o)+'</small></button>'}).join('')+'</div>'+
    '<div class="list" style="gap:8px">'+(list.length?groupDays(list,pCls(p)):'<div class="empty">עדיין לא פורסם לו״ז.</div>')+'</div>'+
    pEventsBlock()+
    (c?'<h2>השיעורים שלי</h2>'+history(c):'')+
