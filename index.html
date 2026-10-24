@@ -573,7 +573,7 @@ function reqCard(x){
 function weekDone(off){const l=weekInst(off);return l.length>0&&l.every(i=>i.t+(i.c.dur||60)*6e4<=now())}
 const actOff=()=>weekDone(0)?1:0;
 let wkAuto=true;const wkCur=()=>wkAuto?actOff():wkOff;
-const weekName=off=>actOff()===1&&(off===1||off===2)?(off===1?'השבוע הקרוב':'בשבוע הבא'):({'-2':'לפני שבועיים','-1':'שבוע שעבר','0':'השבוע','1':'שבוע הבא','2':'בעוד שבועיים'})[off]||(off>0?'בעוד '+off+' שבועות':'לפני '+(-off)+' שבועות');
+const weekName=off=>actOff()===1&&(off===1||off===2)?(off===1?'השבוע':'בשבוע הבא'):({'-2':'לפני שבועיים','-1':'שבוע שעבר','0':'השבוע','1':'שבוע הבא','2':'בעוד שבועיים'})[off]||(off>0?'בעוד '+off+' שבועות':'לפני '+(-off)+' שבועות');
 function weekLabel(off){const ws=new Date(wkStart(now()));ws.setDate(ws.getDate()+7*off);const we=new Date(ws);we.setDate(we.getDate()+6);return dm(ws.getTime())+'–'+dm(we.getTime())}
 function groupDays(list,rowFn){
   let html='',lastDay=-1;const td=today();
